@@ -58,7 +58,7 @@ export default function Home() {
           <h1 className="text-5xl font-extrabold tracking-tighter text-white sm:text-7xl">
             PROMPTER
             <br />
-            <span className="text-brand-400">AI 프롬프트 거래 사이트</span>
+            <span className="text-brand-400">AI 프롬프트 거래 사이트 111</span>
           </h1>
           <p className="text-surface-300 mx-auto mt-6 max-w-2xl text-lg">
             검증되고 인증된 최고의 프롬프트를 둘러보거나 당신만의 프롬프트를 전
