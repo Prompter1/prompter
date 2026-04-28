@@ -8,6 +8,7 @@ import {
   Users,
   Shield,
 } from 'lucide-react'
+import Link from 'next/link'
 
 const categories = [
   {
@@ -134,12 +135,18 @@ export default function Home() {
             </a>
           </div>
           <div className="flex items-center gap-3">
-            <button className="text-surface-300 rounded-xl px-4 py-2 text-sm font-medium transition-colors hover:text-white">
+            <Link
+              href="/login"
+              className="text-surface-300 rounded-xl px-4 py-2 text-sm font-medium transition-colors hover:text-white"
+            >
               로그인
-            </button>
-            <button className="bg-brand-500 hover:bg-brand-600 hover:shadow-brand-500/25 rounded-xl px-4 py-2 text-sm font-semibold text-white transition-all hover:shadow-lg">
+            </Link>
+            <Link
+              href="/login"
+              className="bg-brand-500 hover:bg-brand-600 hover:shadow-brand-500/25 rounded-xl px-4 py-2 text-sm font-semibold text-white transition-all hover:shadow-lg"
+            >
               시작하기
-            </button>
+            </Link>
           </div>
         </div>
       </nav>
@@ -336,12 +343,12 @@ export default function Home() {
             수익을 창출해 보세요.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <a
-              href="#"
+            <Link
+              href="/login"
               className="bg-brand-500 shadow-brand-500/25 hover:bg-brand-600 rounded-2xl px-8 py-4 text-sm font-semibold text-white shadow-xl transition-all"
             >
               무료로 시작하기
-            </a>
+            </Link>
           </div>
         </div>
       </section>
