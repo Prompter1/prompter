@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     '프롬프트 마켓',
   ],
   authors: [{ name: 'Prompter' }],
-  generator: 'v0.app',
+  generator: 'Prompter.app',
   icons: {
     icon: [
       { url: '/icon-light-32x32.png', media: '(prefers-color-scheme: light)' },
