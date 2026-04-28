@@ -3,8 +3,7 @@
 import { useState } from 'react'
 import { Sparkles, ArrowLeft, Loader2 } from 'lucide-react'
 import Link from 'next/link'
-import { supabase } from '../../src/lib/supabase'
-
+import { supabase } from '@/src/lib/supabase' // 기존에 만든 supabase 설정 파일
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
