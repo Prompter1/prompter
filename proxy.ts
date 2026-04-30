@@ -2,7 +2,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 // 'default' 키워드를 추가하여 Next.js가 확실히 인식하게 합니다.
-export default async function middleware(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -76,6 +76,6 @@ export const config = {
      * - _next/image (이미지 최적화 파일)
      * - favicon.ico, sitemap.xml, robots.txt (메타데이터 파일)
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)',
+    '/((?!api|_next/static|_next/image|auth|favicon.ico|sitemap.xml|robots.txt).*)',
   ],
 }
