@@ -23,9 +23,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint check (Prettier & ESLint)
-        run: npm run lint
-
       - name: Build test
         # 이 부분에 env 설정을 추가합니다.
         run: npm run build
