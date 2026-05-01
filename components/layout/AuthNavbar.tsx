@@ -20,7 +20,7 @@ const navLinks = [
   { href: '/community', label: '커뮤니티' },
 ]
 
-export default function AuthNavbar({ user }: AuthNavbarProps) {
+export default function AuthNavbar({ user }: Readonly<AuthNavbarProps>) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
