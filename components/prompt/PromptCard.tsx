@@ -1,6 +1,6 @@
 'use client'
 
-import { Crown, Sparkles, Zap, Shield } from 'lucide-react'
+import { Crown, Sparkles, Zap } from 'lucide-react'
 import Image from 'next/image'
 
 interface Member {
@@ -71,7 +71,7 @@ function getPointsBadge(points: number) {
   return null
 }
 
-export default function PromptCard({ prompt }: PromptCardProps) {
+export default function PromptCard({ prompt }: Readonly<PromptCardProps>) {
   const { title, content, price, ai_types, categories, author } = prompt
   const pointsBadge = getPointsBadge(author.points)
 
@@ -95,7 +95,7 @@ export default function PromptCard({ prompt }: PromptCardProps) {
         <div className="mb-4 flex items-center gap-3">
           <div className="relative">
             <Image
-              src={author.avatar_url || '/default-avatar.png'}
+              src={author.avatar_url || '/images/default-avatar.png'}
               alt={author.nickname}
               width={40}
               height={40}
@@ -176,7 +176,7 @@ export default function PromptCard({ prompt }: PromptCardProps) {
       </div>
 
       {/* 호버 시 그라데이션 효과 */}
-      <div className="from-brand-500/5 pointer-events-none absolute inset-0 bg-gradient-to-t via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+      <div className="from-brand-500/5 pointer-events-none absolute inset-0 bg-linear-to-t via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
     </article>
   )
 }
