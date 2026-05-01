@@ -1,9 +1,9 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState } from 'react'
-import { createBrowserClient } from '@supabase/ssr'
-import { User } from '@supabase/supabase-js'
+import { User, AuthChangeEvent, Session } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
+import { supabase } from '@/src/lib/supabase'
 
 type AuthContextType = {
   user: User | null
@@ -20,26 +20,32 @@ export function AuthProvider({
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-
   useEffect(() => {
+    // 초기 세션 1회 조회
+    supabase.auth
+      .getSession()
+      .then(({ data }: { data: { session: Session | null } }) => {
+        const session = data.session
+        setUser(session?.user ?? null)
+        setIsLoading(false)
+      })
+
+    // 이후 상태 변경 구독
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null)
-      setIsLoading(false)
+    } = supabase.auth.onAuthStateChange(
+      (event: AuthChangeEvent, session: Session | null) => {
+        setUser(session?.user ?? null)
+        setIsLoading(false)
 
-      // 로그인/로그아웃 이벤트 발생 시 페이지 새로고침 (서버 컴포넌트 동기화)
-      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
-        router.refresh()
+        if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+          router.refresh()
+        }
       }
-    })
+    )
 
     return () => subscription.unsubscribe()
-  }, [supabase, router])
+  }, [router])
 
   const signOut = async () => {
     await supabase.auth.signOut()

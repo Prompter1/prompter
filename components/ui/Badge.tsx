@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils'
+import { cn } from '@/src/lib/utils'
 
 interface BadgeProps {
   children: React.ReactNode
@@ -14,7 +14,11 @@ const VARIANT_STYLES: Record<NonNullable<BadgeProps['variant']>, string> = {
   sponsor: 'bg-amber-500/15 text-amber-400',
 }
 
-export function Badge({ children, variant = 'default', className }: BadgeProps) {
+export function Badge({
+  children,
+  variant = 'default',
+  className,
+}: Readonly<BadgeProps>) {
   return (
     <span
       className={cn(
