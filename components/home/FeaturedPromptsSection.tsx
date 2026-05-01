@@ -49,7 +49,9 @@ export function FeaturedPromptsSection() {
                   <span
                     className={`text-sm font-bold ${prompt.price === 0 ? 'text-emerald-400' : 'text-white'}`}
                   >
-                    {prompt.price === 0 ? '무료' : `${prompt.price.toLocaleString()}원`}
+                    {prompt.price === 0
+                      ? '무료'
+                      : `${prompt.price.toLocaleString()}원`}
                   </span>
                 </div>
               </div>
