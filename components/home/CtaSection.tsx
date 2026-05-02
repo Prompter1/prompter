@@ -3,7 +3,7 @@ import { ArrowRight, CheckCircle } from 'lucide-react'
 
 export default function CTASection() {
   return (
-    <section className="border-surface-700/50 from-surface-800/30 to-surface-900 border-t bg-gradient-to-b py-24">
+    <section className="border-surface-700/50 from-surface-800/30 to-surface-900 border-t bg-linear-to-b py-24">
       <div className="mx-auto max-w-4xl px-6 text-center">
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5">
           <CheckCircle className="h-4 w-4 text-emerald-400" />

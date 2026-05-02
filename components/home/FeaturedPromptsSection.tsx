@@ -21,7 +21,7 @@ export function FeaturedPromptsSection() {
               className="group border-surface-700/50 bg-surface-800/80 hover:border-brand-500/50 hover:shadow-brand-500/5 relative overflow-hidden rounded-2xl border backdrop-blur transition-all hover:shadow-lg"
             >
               {/* Thumbnail */}
-              <div className="from-surface-700 to-surface-800 aspect-[16/10] w-full bg-gradient-to-br">
+              <div className="from-surface-700 to-surface-800 aspect-16/10 w-full bg-linear-to-br">
                 <div className="flex h-full items-center justify-center">
                   <Sparkles className="text-surface-600 h-8 w-8" />
                 </div>

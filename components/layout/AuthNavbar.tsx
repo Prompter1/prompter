@@ -27,7 +27,7 @@ export default function AuthNavbar({ user }: Readonly<AuthNavbarProps>) {
     <nav className="border-surface-700/50 bg-surface-900/80 fixed top-0 z-50 w-full border-b backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <Link href="/" className="flex items-center gap-2">
-          <div className="from-brand-400 to-brand-600 shadow-brand-500/20 flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br shadow-lg">
+          <div className="from-brand-400 to-brand-600 shadow-brand-500/20 flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br shadow-lg">
             <Sparkles className="h-5 w-5 text-white" />
           </div>
           <span className="text-xl font-bold tracking-tight">PROMPTER</span>

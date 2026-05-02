@@ -39,7 +39,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${globalThis.location.origin}/auth/callback`,
           queryParams: { access_type: 'offline', prompt: 'consent' },
         },
       })
@@ -68,7 +68,7 @@ export default function LoginPage() {
         <div className="border-surface-700/50 bg-surface-800/80 rounded-3xl border p-8 backdrop-blur-xl">
           {/* Logo */}
           <div className="mb-8 flex flex-col items-center">
-            <div className="from-brand-400 to-brand-600 shadow-brand-500/25 mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br shadow-lg">
+            <div className="from-brand-400 to-brand-600 shadow-brand-500/25 mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-linear-to-br shadow-lg">
               <Sparkles className="h-7 w-7 text-white" />
             </div>
             <h1 className="text-2xl font-bold text-white">PROMPTER</h1>
