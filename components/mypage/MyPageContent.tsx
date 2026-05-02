@@ -9,24 +9,8 @@ import { ProfileCard } from '@/components/mypage/ProfileCard'
 import { MyPromptsTab } from '@/components/mypage/tabs/MyPromptsTab'
 import { StatsTab } from '@/components/mypage/tabs/StatsTab'
 import { PurchasesTab } from '@/components/mypage/tabs/PurchasesTab'
-
+import { PromptPost } from '@/types/index'
 type TabType = 'myPrompts' | 'stats' | 'purchases'
-
-interface PromptPost {
-  id: number
-  title: string
-  content: string
-  price: number
-  ai_types: string[]
-  categories: string[]
-  author: {
-    id: string
-    nickname: string
-    avatar_url: string
-    points: number
-    is_sponsor: boolean
-  }
-}
 
 interface MemberData {
   nickname: string
@@ -72,7 +56,7 @@ export function MyPageContent() {
             .select(
               `
               id, title, content, price, ai_types, categories,
-              author:members!author_id(id, nickname, avatar_url, points, is_sponsor)
+              author:members!author_id(id, nickname, avatar_url, points, is_sponsor),is_verified, result_media
             `
             )
             .eq('author_id', user.id)

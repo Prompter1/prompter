@@ -16,6 +16,8 @@ export interface PromptPost {
   ai_types: string[]
   categories: string[]
   author: Member
+  is_verified: boolean
+  result_media: string[]
 }
 
 // ─── Category ─────────────────────────────────────────────────────────────────

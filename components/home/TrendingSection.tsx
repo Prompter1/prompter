@@ -58,7 +58,7 @@ const topCreators: Creator[] = [
   {
     id: 1,
     name: 'PromptMaster',
-    avatar: '/placeholder-user.jpg',
+    avatar: '/images/default-avatar.png',
     prompts: 42,
     sales: 1250,
     isSponsor: true,
@@ -66,7 +66,7 @@ const topCreators: Creator[] = [
   {
     id: 2,
     name: 'AICreator',
-    avatar: '/placeholder-user.jpg',
+    avatar: '/images/default-avatar.png',
     prompts: 38,
     sales: 980,
     isSponsor: false,
@@ -74,7 +74,7 @@ const topCreators: Creator[] = [
   {
     id: 3,
     name: 'ContentPro',
-    avatar: '/placeholder-user.jpg',
+    avatar: '/images/default-avatar.png',
     prompts: 29,
     sales: 756,
     isSponsor: true,
@@ -157,6 +157,7 @@ export default function TrendingSection() {
                       src={creator.avatar}
                       alt={creator.name}
                       fill
+                      sizes="40px"
                       className="object-cover"
                     />
                   </div>

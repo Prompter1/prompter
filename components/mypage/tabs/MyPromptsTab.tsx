@@ -18,6 +18,8 @@ interface PromptPost {
     points: number
     is_sponsor: boolean
   }
+  is_verified: boolean
+  result_media: string[]
 }
 
 interface MyPromptsTabProps {
