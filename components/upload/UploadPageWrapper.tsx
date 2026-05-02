@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/providers/auth-provider'
 import AuthNavbar from '@/components/layout/AuthNavbar'
-import { UploadForm } from '@/components/upload/UploadForm'
+import { UploadForm } from './UploadForm'
 
 export function UploadPageWrapper() {
   const { user, isLoading } = useAuth()

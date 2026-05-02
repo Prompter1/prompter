@@ -11,15 +11,17 @@ import {
   CheckCircle,
   AlertCircle,
   Loader2,
+  Scissors,
 } from 'lucide-react'
 import Image from 'next/image'
 import { useAuth } from '@/providers/auth-provider'
-import {
-  uploadMediaFile,
-  isAllowedMediaType,
-  isFileSizeValid,
-} from '@/src/lib/storage'
+import { uploadMediaFile, isAllowedMediaType } from '@/src/lib/storage'
 import { createPromptPost } from '@/src/lib/prompts'
+import {
+  formatMediaFile,
+  formatFileSize,
+  TARGET_IMAGE_SIZE_MB,
+} from '@/src/lib/mediaFormatter'
 import { cn } from '@/src/lib/utils'
 
 // ── 상수 ──────────────────────────────────────────────
@@ -47,35 +49,34 @@ const CATEGORY_OPTIONS = [
 
 // ── 타입 ──────────────────────────────────────────────
 interface MediaPreview {
-  file: File
+  file: File // 포매팅 완료된 최종 파일
+  originalFile: File // 원본 (크기 비교용)
   previewUrl: string
   type: 'image' | 'video'
+  wasCompressed: boolean
+  compressionRatio: number
 }
 
-type UploadStatus = 'idle' | 'uploading' | 'success' | 'error'
+type UploadStatus = 'idle' | 'formatting' | 'uploading' | 'success' | 'error'
 
-// ── 서브 컴포넌트 ──────────────────────────────────────
-
+// ── TagSelector ────────────────────────────────────────
 function TagSelector({
   label,
   options,
   selected,
   onChange,
-  colorMap,
 }: Readonly<{
   label: string
   options: string[]
   selected: string[]
   onChange: (val: string[]) => void
-  colorMap?: Record<string, string>
 }>) {
-  const toggle = (opt: string) => {
+  const toggle = (opt: string) =>
     onChange(
       selected.includes(opt)
         ? selected.filter((s) => s !== opt)
         : [...selected, opt]
     )
-  }
 
   return (
     <div>
@@ -83,77 +84,91 @@ function TagSelector({
         {label}
       </label>
       <div className="flex flex-wrap gap-2">
-        {options.map((opt) => {
-          const active = selected.includes(opt)
-          const color = colorMap?.[opt] ?? ''
-          return (
-            <button
-              key={opt}
-              type="button"
-              onClick={() => toggle(opt)}
-              className={cn(
-                'rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
-                active
-                  ? color ||
-                      'bg-brand-500/20 border-brand-500/60 text-brand-300'
-                  : 'border-surface-600 bg-surface-800 text-surface-400 hover:border-surface-500 hover:text-surface-200'
-              )}
-            >
-              {opt}
-            </button>
-          )
-        })}
+        {options.map((opt) => (
+          <button
+            key={opt}
+            type="button"
+            onClick={() => toggle(opt)}
+            className={cn(
+              'rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
+              selected.includes(opt)
+                ? 'bg-brand-500/20 border-brand-500/60 text-brand-300'
+                : 'border-surface-600 bg-surface-800 text-surface-400 hover:border-surface-500 hover:text-surface-200'
+            )}
+          >
+            {opt}
+          </button>
+        ))}
       </div>
     </div>
   )
 }
 
-function ProgressBar({ progress }: Readonly<{ progress: number }>) {
+// ── ProgressBar ────────────────────────────────────────
+function ProgressBar({
+  progress,
+  label,
+}: Readonly<{ progress: number; label?: string }>) {
   return (
-    <div className="bg-surface-700 h-1.5 w-full overflow-hidden rounded-full">
-      <div
-        className="bg-brand-500 h-full rounded-full transition-all duration-300"
-        style={{ width: `${progress}%` }}
-      />
+    <div className="border-surface-700/50 bg-surface-800/60 rounded-2xl border p-5">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-surface-300 text-sm font-medium">
+          {label ?? '처리 중...'}
+        </span>
+        <span className="text-brand-400 text-sm font-bold">{progress}%</span>
+      </div>
+      <div className="bg-surface-700 h-1.5 w-full overflow-hidden rounded-full">
+        <div
+          className="bg-brand-500 h-full rounded-full transition-all duration-300"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
     </div>
   )
 }
 
+// ── MediaDropZone ──────────────────────────────────────
 function MediaDropZone({
   previews,
   onAdd,
   onRemove,
   error,
+  disabled,
 }: Readonly<{
   previews: MediaPreview[]
   onAdd: (files: FileList) => void
   onRemove: (idx: number) => void
   error?: string
+  disabled?: boolean
 }>) {
   const inputRef = useRef<HTMLInputElement>(null)
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault()
-      if (e.dataTransfer.files.length) onAdd(e.dataTransfer.files)
+      if (!disabled && e.dataTransfer.files.length) onAdd(e.dataTransfer.files)
     },
-    [onAdd]
+    [onAdd, disabled]
   )
 
   return (
     <div>
       <label className="text-surface-200 mb-2 block text-sm font-medium">
         결과물 미디어{' '}
-        <span className="text-surface-500 font-normal">(선택, 최대 5개)</span>
+        <span className="text-surface-500 font-normal">
+          (선택, 최대 5개 · {TARGET_IMAGE_SIZE_MB}MB 초과 시 자동 압축)
+        </span>
       </label>
 
-      {/* 드롭존 */}
       <div
         onDrop={handleDrop}
         onDragOver={(e) => e.preventDefault()}
-        onClick={() => inputRef.current?.click()}
+        onClick={() => !disabled && inputRef.current?.click()}
         className={cn(
-          'border-surface-600 bg-surface-800/50 hover:border-brand-500/50 hover:bg-surface-800 flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-10 transition-all',
+          'border-surface-600 bg-surface-800/50 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-10 transition-all',
+          disabled
+            ? 'cursor-not-allowed opacity-50'
+            : 'hover:border-brand-500/50 hover:bg-surface-800 cursor-pointer',
           error && 'border-red-500/50'
         )}
       >
@@ -164,7 +179,7 @@ function MediaDropZone({
           클릭하거나 파일을 드래그하세요
         </p>
         <p className="text-surface-500 mt-1 text-xs">
-          JPG, PNG, GIF, WebP, MP4, WebM
+          이미지 및 영상 → WebP 압축 / 5초 트리밍
         </p>
         <input
           ref={inputRef}
@@ -183,7 +198,6 @@ function MediaDropZone({
         </p>
       )}
 
-      {/* 미리보기 그리드 */}
       {previews.length > 0 && (
         <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-5">
           {previews.map((p, idx) => (
@@ -206,6 +220,24 @@ function MediaDropZone({
                   </span>
                 </div>
               )}
+
+              {/* 압축 뱃지 */}
+              {p.wasCompressed && (
+                <div className="absolute bottom-1 left-1 flex items-center gap-0.5 rounded-full bg-black/70 px-1.5 py-0.5">
+                  <Scissors className="h-2.5 w-2.5 text-emerald-400" />
+                  <span className="text-[9px] text-emerald-400">
+                    {Math.round((1 - p.compressionRatio) * 100)}% 압축
+                  </span>
+                </div>
+              )}
+
+              {/* 파일 크기 */}
+              <div className="absolute top-1 left-1 rounded-full bg-black/60 px-1.5 py-0.5">
+                <span className="text-[9px] text-white">
+                  {formatFileSize(p.file.size)}
+                </span>
+              </div>
+
               <button
                 type="button"
                 onClick={(e) => {
@@ -219,7 +251,7 @@ function MediaDropZone({
             </div>
           ))}
 
-          {previews.length < 5 && (
+          {previews.length < 5 && !disabled && (
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
@@ -234,57 +266,59 @@ function MediaDropZone({
   )
 }
 
-// ── 메인 컴포넌트 ──────────────────────────────────────
+// ── UploadForm (메인) ──────────────────────────────────
 export function UploadForm() {
   const { user } = useAuth()
   const router = useRouter()
 
-  // 폼 상태
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [aiTypes, setAiTypes] = useState<string[]>([])
   const [categories, setCategories] = useState<string[]>([])
-
-  // 미디어 상태
   const [mediaPreviews, setMediaPreviews] = useState<MediaPreview[]>([])
   const [mediaError, setMediaError] = useState('')
-
-  // 제출 상태
   const [status, setStatus] = useState<UploadStatus>('idle')
-  const [uploadProgress, setUploadProgress] = useState(0)
+  const [progress, setProgress] = useState(0)
+  const [progressLabel, setProgressLabel] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
-
-  // 유효성 검사 상태
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
-  // ── 파일 추가 ──
+  // ── 파일 추가 → 포매팅 → 미리보기 등록 ──
   const handleAddFiles = useCallback(
-    (files: FileList) => {
+    async (files: FileList) => {
       setMediaError('')
       const remaining = 5 - mediaPreviews.length
       const incoming = Array.from(files).slice(0, remaining)
 
-      const newPreviews: MediaPreview[] = []
-      const errors: string[] = []
-
       for (const file of incoming) {
         if (!isAllowedMediaType(file)) {
-          errors.push(`${file.name}: 지원하지 않는 파일 형식입니다.`)
+          setMediaError(`${file.name}: 지원하지 않는 파일 형식입니다.`)
           continue
         }
-        if (!isFileSizeValid(file)) {
-          errors.push(`${file.name}: 350MB를 초과합니다.`)
-          continue
-        }
-        newPreviews.push({
-          file,
-          previewUrl: URL.createObjectURL(file),
-          type: file.type.startsWith('video/') ? 'video' : 'image',
-        })
-      }
 
-      if (errors.length) setMediaError(errors[0])
-      setMediaPreviews((prev) => [...prev, ...newPreviews])
+        const isVideo = file.type.startsWith('video/')
+        setStatus('formatting')
+        setProgress(0)
+        setProgressLabel(`${file.name} ${isVideo ? '트리밍' : '압축'} 중...`)
+
+        const result = await formatMediaFile(file, (p) => setProgress(p))
+
+        setStatus('idle')
+        setProgress(0)
+        setProgressLabel('')
+
+        setMediaPreviews((prev) => [
+          ...prev,
+          {
+            file: result.file,
+            originalFile: file,
+            previewUrl: URL.createObjectURL(result.file),
+            type: result.file.type.startsWith('video/') ? 'video' : 'image',
+            wasCompressed: result.wasCompressed,
+            compressionRatio: result.compressionRatio,
+          },
+        ])
+      }
     },
     [mediaPreviews.length]
   )
@@ -311,40 +345,36 @@ export function UploadForm() {
     return Object.keys(errors).length === 0
   }
 
+  // ── 제출 ──
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!user) return
-    if (!validate()) return
+    if (!user || !validate()) return
 
     setStatus('uploading')
-    setUploadProgress(0)
+    setProgress(0)
     setErrorMsg('')
 
     try {
-      // 1. 미디어 파일 업로드 (기존 로직 유지)
       const mediaUrls: string[] = []
       const totalFiles = mediaPreviews.length
 
       for (let i = 0; i < totalFiles; i++) {
-        const { url } = await uploadMediaFile(
-          mediaPreviews[i].file,
-          user.id,
-          (p) => {
-            const base = (i / totalFiles) * 80
-            setUploadProgress(Math.round(base + p * 0.8 * (1 / totalFiles)))
-          }
+        const preview = mediaPreviews[i]
+        setProgressLabel(
+          `업로드 중 (${i + 1}/${totalFiles}) — ${preview.file.name}`
         )
+
+        const { url } = await uploadMediaFile(preview.file, user.id, (p) => {
+          const base = (i / Math.max(totalFiles, 1)) * 90
+          setProgress(
+            Math.round(base + (p / 100) * (90 / Math.max(totalFiles, 1)))
+          )
+        })
         mediaUrls.push(url)
       }
 
-      setUploadProgress(85)
-
-      // 🌟 2. 새로운 테이블 구조에 맞게 데이터 가공 (JSONB 형식)
-      const resultMediaPayload = mediaPreviews.map((preview, index) => ({
-        type: preview.type,
-        url: mediaUrls[index],
-        name: preview.file.name,
-      }))
+      setProgress(94)
+      setProgressLabel('프롬프트 저장 중...')
 
       await createPromptPost({
         title: title.trim(),
@@ -353,23 +383,28 @@ export function UploadForm() {
         ai_types: aiTypes,
         categories,
         author_id: user.id,
-        result_media: resultMediaPayload,
+        result_media: mediaPreviews.map((p, idx) => ({
+          type: p.type,
+          url: mediaUrls[idx],
+          name: p.file.name,
+        })),
         is_verified: false,
       })
 
-      setUploadProgress(100)
+      setProgress(100)
       setStatus('success')
-
       setTimeout(() => router.push('/mypage'), 1500)
     } catch (err) {
       setStatus('error')
-      console.error('업로드 에러 상세:', err)
       setErrorMsg(
         err instanceof Error ? err.message : '업로드 중 오류가 발생했습니다.'
       )
     }
   }
-  // ── 렌더 ──
+
+  const isBusy =
+    status === 'formatting' || status === 'uploading' || status === 'success'
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -473,24 +508,15 @@ export function UploadForm() {
         onAdd={handleAddFiles}
         onRemove={handleRemoveFile}
         error={mediaError}
+        disabled={isBusy}
       />
 
-      {/* 업로드 진행률 */}
-      {status === 'uploading' && (
-        <div className="border-surface-700/50 bg-surface-800/60 rounded-2xl border p-5">
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-surface-300 text-sm font-medium">
-              업로드 중...
-            </span>
-            <span className="text-brand-400 text-sm font-bold">
-              {uploadProgress}%
-            </span>
-          </div>
-          <ProgressBar progress={uploadProgress} />
-        </div>
+      {/* 진행률 */}
+      {(status === 'formatting' || status === 'uploading') && (
+        <ProgressBar progress={progress} label={progressLabel} />
       )}
 
-      {/* 에러 메시지 */}
+      {/* 에러 */}
       {status === 'error' && (
         <div className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3">
           <AlertCircle className="h-5 w-5 shrink-0 text-red-400" />
@@ -498,7 +524,7 @@ export function UploadForm() {
         </div>
       )}
 
-      {/* 성공 메시지 */}
+      {/* 성공 */}
       {status === 'success' && (
         <div className="flex items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3">
           <CheckCircle className="h-5 w-5 shrink-0 text-emerald-400" />
@@ -511,15 +537,20 @@ export function UploadForm() {
       {/* 제출 버튼 */}
       <button
         type="submit"
-        disabled={status === 'uploading' || status === 'success'}
+        disabled={isBusy}
         className={cn(
           'flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-semibold text-white transition-all',
-          status === 'uploading' || status === 'success'
+          isBusy
             ? 'bg-surface-700 text-surface-400 cursor-not-allowed'
             : 'bg-brand-500 hover:bg-brand-600 hover:shadow-brand-500/20 hover:shadow-lg'
         )}
       >
-        {status === 'uploading' ? (
+        {status === 'formatting' ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            미디어 처리 중...
+          </>
+        ) : status === 'uploading' ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />
             업로드 중...
