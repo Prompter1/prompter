@@ -8,6 +8,8 @@ export interface CreatePromptInput {
   categories: string[]
   author_id: string
   media_urls?: string[]
+  result_media?: any[]
+  is_verified?: boolean
 }
 
 /**
@@ -27,6 +29,9 @@ export async function createPromptPost(
       ai_types: input.ai_types,
       categories: input.categories,
       author_id: input.author_id,
+      media_urls: input.media_urls,
+      result_media: input.result_media,
+      is_verified: input.is_verified,
     })
     .select('id')
     .single()

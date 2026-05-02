@@ -311,7 +311,6 @@ export function UploadForm() {
     return Object.keys(errors).length === 0
   }
 
-  // ── 제출 ──
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user) return
@@ -322,7 +321,7 @@ export function UploadForm() {
     setErrorMsg('')
 
     try {
-      // 1. 미디어 파일 업로드
+      // 1. 미디어 파일 업로드 (기존 로직 유지)
       const mediaUrls: string[] = []
       const totalFiles = mediaPreviews.length
 
@@ -340,30 +339,36 @@ export function UploadForm() {
 
       setUploadProgress(85)
 
-      // 2. DB 인서트
+      // 🌟 2. 새로운 테이블 구조에 맞게 데이터 가공 (JSONB 형식)
+      const resultMediaPayload = mediaPreviews.map((preview, index) => ({
+        type: preview.type,
+        url: mediaUrls[index],
+        name: preview.file.name,
+      }))
+
       await createPromptPost({
         title: title.trim(),
         content: content.trim(),
-        price: 0, // 무료 프롬프트
+        price: 0,
         ai_types: aiTypes,
         categories,
         author_id: user.id,
-        media_urls: mediaUrls,
+        result_media: resultMediaPayload,
+        is_verified: false,
       })
 
       setUploadProgress(100)
       setStatus('success')
 
-      // 3. 성공 후 마이페이지로 이동
       setTimeout(() => router.push('/mypage'), 1500)
     } catch (err) {
       setStatus('error')
+      console.error('업로드 에러 상세:', err)
       setErrorMsg(
         err instanceof Error ? err.message : '업로드 중 오류가 발생했습니다.'
       )
     }
   }
-
   // ── 렌더 ──
   return (
     <form
