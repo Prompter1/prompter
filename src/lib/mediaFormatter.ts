@@ -1,7 +1,10 @@
 import imageCompression from 'browser-image-compression'
 
-/** 영상 최대 녹화 시간 (초) */
-const MAX_VIDEO_DURATION_SEC = 5
+/** 결과물 미디어 영상 트리밍 기준 (초) */
+export const RESULT_MEDIA_MAX_VIDEO_SEC = 5
+
+/** 증빙(검수) 미디어 영상 트리밍 기준 (초) */
+export const VERIFICATION_EVIDENCE_MAX_VIDEO_SEC = 30
 /** 이미지 압축 목표 크기 (MB) */
 export const TARGET_IMAGE_SIZE_MB = 5
 /** 이미지 최대 너비/높이 (px) */
@@ -94,10 +97,17 @@ export async function formatImage(
 }
 
 // ── 영상 포매터 ─────────────────────────────────────────────────────────────
+export type FormatMediaOptions = {
+  /** 영상이 이 길이(초)를 넘으면 트리밍합니다. 기본: 결과물용 5초 */
+  maxTrimSeconds?: number
+}
+
 export async function formatVideo(
   file: File,
-  onProgress?: (progress: number) => void
+  onProgress?: (progress: number) => void,
+  options?: FormatMediaOptions
 ): Promise<FormatResult> {
+  const maxSec = options?.maxTrimSeconds ?? RESULT_MEDIA_MAX_VIDEO_SEC
   const originalSize = file.size
   console.log(
     `[VideoFormatter] 시작: ${file.name} (${formatFileSize(originalSize)})`
@@ -118,16 +128,19 @@ export async function formatVideo(
       const duration = videoEl.duration
       console.log(`[VideoFormatter] 재생 시간: ${duration.toFixed(2)}s`)
 
-      // 이미 5초 이하인 영상은 압축 없이 반환
-      if (duration <= MAX_VIDEO_DURATION_SEC) {
-        console.log(`[VideoFormatter] 5초 이하 영상이므로 처리를 생략합니다.`)
+      if (duration <= maxSec) {
+        console.log(
+          `[VideoFormatter] ${maxSec}초 이하 영상이므로 처리를 생략합니다.`
+        )
         URL.revokeObjectURL(objectUrl)
         onProgress?.(100)
         resolve({ file, compressionRatio: 1, wasCompressed: false })
         return
       }
 
-      console.log(`[VideoFormatter] 5초 트리밍을 통한 용량 최적화 시작...`)
+      console.log(
+        `[VideoFormatter] ${maxSec}초 트리밍을 통한 용량 최적화 시작...`
+      )
       const mimeType = getSupportedVideoMimeType()
       if (!mimeType) {
         console.error(`[VideoFormatter] 코덱 미지원으로 원본 반환.`)
@@ -178,10 +191,10 @@ export async function formatVideo(
         if (ctx) ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height)
         elapsed += 1 / FPS
         onProgress?.(
-          Math.min(Math.round((elapsed / MAX_VIDEO_DURATION_SEC) * 100), 99)
+          Math.min(Math.round((elapsed / maxSec) * 100), 99)
         )
 
-        if (elapsed >= MAX_VIDEO_DURATION_SEC) {
+        if (elapsed >= maxSec) {
           clearInterval(interval)
           recorder.stop()
           videoEl.pause()
@@ -198,7 +211,8 @@ export async function formatVideo(
 // ── 통합 포매터 ───────────────────────────────────────────────────────────────
 export async function formatMediaFile(
   file: File,
-  onProgress?: (progress: number) => void
+  onProgress?: (progress: number) => void,
+  options?: FormatMediaOptions
 ): Promise<FormatResult> {
   console.log(
     `%c[MediaFormatter] ${file.name} 처리 분석 중...`,
@@ -209,7 +223,7 @@ export async function formatMediaFile(
     return formatImage(file, onProgress)
   }
   if (file.type.startsWith('video/')) {
-    return formatVideo(file, onProgress)
+    return formatVideo(file, onProgress, options)
   }
 
   onProgress?.(100)
