@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import Link from 'next/link'
 import { Flame, Crown, ArrowRight } from 'lucide-react'
 
 interface TrendingPrompt {
@@ -98,7 +99,7 @@ export default function TrendingSection() {
           </div>
           <div className="space-y-3">
             {trendingPrompts.map((prompt, idx) => (
-              <a
+              <Link
                 key={prompt.id}
                 href={`/prompt/${prompt.id}`}
                 className="group border-surface-700/50 bg-surface-800/30 hover:border-surface-600 hover:bg-surface-800/50 flex items-center gap-4 rounded-2xl border p-4 transition-all"
@@ -122,7 +123,7 @@ export default function TrendingSection() {
                     {formatNumber(prompt.views)} views
                   </p>
                 </div>
-              </a>
+              </Link>
             ))}
           </div>
         </div>

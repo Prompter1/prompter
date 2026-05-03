@@ -19,7 +19,6 @@ export function Navbar() {
   return (
     <nav className="border-surface-700/50 bg-surface-900/80 fixed top-0 z-50 w-full border-b backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        {}
         <Link href="/" className="flex items-center gap-2">
           <div className="from-brand-400 to-brand-600 flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br">
             <Sparkles className="h-5 w-5 text-white" />
@@ -40,7 +39,6 @@ export function Navbar() {
           ))}
         </div>
 
-        {}
         <div className="flex items-center gap-3">
           {isLoading ? (
             <div className="bg-surface-700 h-8 w-24 animate-pulse rounded-xl" />

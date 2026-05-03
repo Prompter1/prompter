@@ -1,9 +1,9 @@
 'use client'
 
-import { log } from 'console'
-import { Crown, Sparkles, Zap, ShieldCheck } from 'lucide-react'
+import { Sparkles, ShieldCheck } from 'lucide-react'
 import Image from 'next/image'
-import { PromptPost } from '@/types/index'
+import Link from 'next/link'
+import type { PromptPost } from '@/types'
 
 interface PromptCardProps {
   prompt: PromptPost
@@ -27,11 +27,11 @@ export default function PromptCard({ prompt }: Readonly<PromptCardProps>) {
       ? new RegExp(/\.(mp4|webm)$/i).exec(firstMedia)
       : false
 
-  console.log('디버깅 - 원본 데이터:', firstMediaRaw)
-  console.log('디버깅 - 처리된 URL:', firstMedia)
-
   return (
-    <article className="group border-surface-700/50 hover:border-brand-500/50 hover:shadow-brand-500/10 relative flex flex-col overflow-hidden rounded-2xl border bg-[#12121A] transition-all duration-300 hover:shadow-lg">
+    <Link
+      href={`/prompt/${prompt.id}`}
+      className="group border-surface-700/50 hover:border-brand-500/50 hover:shadow-brand-500/10 relative flex flex-col overflow-hidden rounded-2xl border bg-[#12121A] transition-all duration-300 hover:shadow-lg"
+    >
       {/* 썸네일 영역 (이미지 or 영상 or 플레이스홀더) */}
       <div className="relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden bg-[#1A1A24]">
         {firstMedia ? (
@@ -98,6 +98,6 @@ export default function PromptCard({ prompt }: Readonly<PromptCardProps>) {
           </span>
         </div>
       </div>
-    </article>
+    </Link>
   )
 }

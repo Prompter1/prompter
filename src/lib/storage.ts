@@ -35,11 +35,6 @@ export async function uploadMediaFile(
   return { url: publicUrl, path: filePath }
 }
 
-export async function deleteMediaFile(path: string): Promise<void> {
-  const { error } = await supabase.storage.from(BUCKET_NAME).remove([path])
-  if (error) throw new Error(error.message)
-}
-
 export function isAllowedMediaType(file: File): boolean {
   const allowed = [
     'image/jpeg',
@@ -50,10 +45,6 @@ export function isAllowedMediaType(file: File): boolean {
     'video/webm',
   ]
   return allowed.includes(file.type)
-}
-
-export function isFileSizeValid(file: File, maxMB = 350): boolean {
-  return file.size <= maxMB * 1024 * 1024
 }
 
 async function simulateProgress(onProgress: UploadProgressCallback) {

@@ -11,15 +11,13 @@ export interface CreatePromptInput {
   result_media?: any[]
   is_verified?: boolean
 }
-  
+
 /**
  * prompt_posts 테이블에 새 프롬프트를 인서트합니다.
  */
 export async function createPromptPost(
   input: CreatePromptInput
 ): Promise<{ id: number }> {
-  console.log('author_id being inserted:', input.author_id)
-
   const { data, error } = await supabase
     .from('prompt_posts')
     .insert({

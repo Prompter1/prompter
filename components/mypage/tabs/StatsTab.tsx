@@ -1,14 +1,7 @@
 'use client'
 
 import { BarChart2, TrendingUp, Coins, Eye, Sparkles } from 'lucide-react'
-
-interface PromptPost {
-  id: number
-  title: string
-  price: number
-  ai_types: string[]
-  categories: string[]
-}
+import type { PromptPost } from '@/types'
 
 interface StatsTabProps {
   prompts: PromptPost[]

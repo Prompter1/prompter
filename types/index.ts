@@ -20,21 +20,6 @@ export interface PromptPost {
   result_media: string[]
 }
 
-// ─── Category ─────────────────────────────────────────────────────────────────
-export interface Category {
-  name: string
-  icon: React.ComponentType<{ className?: string }>
-  prompts: number
-  gradient: string
-}
-
-// ─── Stat ─────────────────────────────────────────────────────────────────────
-export interface Stat {
-  label: string
-  value: string
-  icon: React.ComponentType<{ className?: string }>
-}
-
 // ─── Featured Prompt (lightweight, no author) ─────────────────────────────────
 export interface FeaturedPrompt {
   id: number

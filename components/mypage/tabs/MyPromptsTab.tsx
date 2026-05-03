@@ -4,23 +4,7 @@ import { FileText, Sparkles, Plus } from 'lucide-react'
 import PromptCard from '@/components/prompt/PromptCard'
 import { useRouter } from 'next/navigation'
 import { navigationUtils } from '@/src/lib/navigation'
-interface PromptPost {
-  id: number
-  title: string
-  content: string
-  price: number
-  ai_types: string[]
-  categories: string[]
-  author: {
-    id: string
-    nickname: string
-    avatar_url: string
-    points: number
-    is_sponsor: boolean
-  }
-  is_verified: boolean
-  result_media: string[]
-}
+import type { PromptPost } from '@/types'
 
 interface MyPromptsTabProps {
   prompts: PromptPost[]

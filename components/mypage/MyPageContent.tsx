@@ -9,7 +9,7 @@ import { ProfileCard } from '@/components/mypage/ProfileCard'
 import { MyPromptsTab } from '@/components/mypage/tabs/MyPromptsTab'
 import { StatsTab } from '@/components/mypage/tabs/StatsTab'
 import { PurchasesTab } from '@/components/mypage/tabs/PurchasesTab'
-import { PromptPost } from '@/types/index'
+import type { PromptPost } from '@/types'
 type TabType = 'myPrompts' | 'stats' | 'purchases'
 
 interface MemberData {

@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { Shield, Sparkles } from 'lucide-react'
 import { SectionHeader } from '@/components/ui/SectionHeader'
 import { Badge } from '@/components/ui/Badge'
@@ -16,9 +17,10 @@ export function FeaturedPromptsSection() {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {FEATURED_PROMPTS.map((prompt) => (
-            <article
+            <Link
               key={prompt.id}
-              className="group border-surface-700/50 bg-surface-800/80 hover:border-brand-500/50 hover:shadow-brand-500/5 relative overflow-hidden rounded-2xl border backdrop-blur transition-all hover:shadow-lg"
+              href={`/prompt/${prompt.id}`}
+              className="group border-surface-700/50 bg-surface-800/80 hover:border-brand-500/50 hover:shadow-brand-500/5 relative block overflow-hidden rounded-2xl border backdrop-blur transition-all hover:shadow-lg"
             >
               {/* Thumbnail */}
               <div className="from-surface-700 to-surface-800 aspect-16/10 w-full bg-linear-to-br">
@@ -55,7 +57,7 @@ export function FeaturedPromptsSection() {
                   </span>
                 </div>
               </div>
-            </article>
+            </Link>
           ))}
         </div>
       </div>
