@@ -57,6 +57,14 @@ export async function GET(request: Request) {
     )
   }
 
-  // 인증 성공 시 메인 페이지나 대시보드로 리다이렉트
-  return NextResponse.redirect(origin)
+  const nextPath = searchParams.get('next')
+  const safePath =
+    nextPath &&
+    nextPath.startsWith('/') &&
+    !nextPath.startsWith('//') &&
+    !nextPath.includes(':')
+      ? nextPath
+      : '/'
+
+  return NextResponse.redirect(new URL(safePath, origin).toString())
 }

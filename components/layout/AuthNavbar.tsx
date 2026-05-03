@@ -2,8 +2,9 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Sparkles, Bell, Menu, X } from 'lucide-react'
+import { Sparkles, Bell, Menu, X, Shield } from 'lucide-react'
 import { useState } from 'react'
+import { useIsAdmin } from '@/hooks/useIsAdmin'
 
 interface User {
   nickname: string
@@ -22,6 +23,7 @@ const navLinks = [
 
 export default function AuthNavbar({ user }: Readonly<AuthNavbarProps>) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { isAdmin } = useIsAdmin()
 
   return (
     <nav className="border-surface-700/50 bg-surface-900/80 fixed top-0 z-50 w-full border-b backdrop-blur-xl">
@@ -46,6 +48,15 @@ export default function AuthNavbar({ user }: Readonly<AuthNavbarProps>) {
         </div>
 
         <div className="hidden items-center gap-3 md:flex">
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="text-brand-400 hover:text-brand-300 flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium transition-colors"
+            >
+              <Shield className="h-4 w-4" />
+              관리자
+            </Link>
+          )}
           <button className="text-surface-400 hover:bg-surface-800 relative rounded-xl p-2 transition-colors hover:text-white">
             <Bell className="h-5 w-5" />
             <span className="bg-brand-500 absolute top-1.5 right-1.5 h-2 w-2 rounded-full" />
@@ -79,6 +90,16 @@ export default function AuthNavbar({ user }: Readonly<AuthNavbarProps>) {
       {mobileMenuOpen && (
         <div className="border-surface-700/50 bg-surface-900/95 border-t px-6 py-4 backdrop-blur-xl md:hidden">
           <div className="flex flex-col gap-4">
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="text-brand-400 flex items-center gap-2 text-sm font-medium"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <Shield className="h-4 w-4" />
+                관리자
+              </Link>
+            )}
             {navLinks.map((link) => (
               <Link
                 key={link.href}

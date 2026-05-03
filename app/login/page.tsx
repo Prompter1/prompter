@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { ArrowLeft, Loader2, Sparkles } from 'lucide-react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/src/lib/supabase'
 import { BackgroundEffects } from '@/components/ui/BackgroundEffects'
 
@@ -27,7 +28,10 @@ const COMING_SOON_PROVIDERS = [
 ]
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
-export default function LoginPage() {
+function LoginPageContent() {
+  const searchParams = useSearchParams()
+  const nextPath = searchParams.get('next') ?? '/'
+
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -36,10 +40,13 @@ export default function LoginPage() {
     setError(null)
 
     try {
+      const callbackUrl = new URL('/auth/callback', globalThis.location.origin)
+      callbackUrl.searchParams.set('next', nextPath)
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${globalThis.location.origin}/auth/callback`,
+          redirectTo: callbackUrl.toString(),
           queryParams: { access_type: 'offline', prompt: 'consent' },
         },
       })
@@ -138,6 +145,20 @@ export default function LoginPage() {
         </p>
       </div>
     </main>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="bg-surface-900 flex min-h-screen items-center justify-center">
+          <Loader2 className="text-brand-400 h-8 w-8 animate-spin" />
+        </main>
+      }
+    >
+      <LoginPageContent />
+    </Suspense>
   )
 }
 

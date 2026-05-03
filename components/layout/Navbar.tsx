@@ -1,10 +1,11 @@
 'use client'
 
-import { Sparkles, LogOut, UserCircle } from 'lucide-react'
+import { Sparkles, LogOut, UserCircle, Shield } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/providers/auth-provider'
 import { navigationUtils } from '@/src/lib/navigation'
+import { useIsAdmin } from '@/hooks/useIsAdmin'
 
 const NAV_LINKS = [
   { label: '탐색', href: '#' },
@@ -14,6 +15,7 @@ const NAV_LINKS = [
 
 export function Navbar() {
   const { user, isLoading, signOut } = useAuth()
+  const { isAdmin } = useIsAdmin()
   const router = useRouter()
 
   return (
@@ -44,6 +46,15 @@ export function Navbar() {
             <div className="bg-surface-700 h-8 w-24 animate-pulse rounded-xl" />
           ) : user ? (
             <>
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  className="text-brand-400 hover:text-brand-300 flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium transition-colors"
+                >
+                  <Shield className="h-4 w-4" />
+                  관리자
+                </Link>
+              )}
               <button
                 onClick={() => navigationUtils.moveToMyPage(router)}
                 className="text-surface-300 flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium transition-colors hover:text-white"
