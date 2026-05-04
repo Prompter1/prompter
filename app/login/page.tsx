@@ -40,7 +40,15 @@ function LoginPageContent() {
     setError(null)
 
     try {
-      const callbackUrl = new URL('/auth/callback', globalThis.location.origin)
+      console.log('NEXT_PUBLIC_SITE_URL:', process.env.NEXT_PUBLIC_SITE_URL)
+      console.log('location.origin:', globalThis.location.origin)
+
+      const callbackUrl = new URL(
+        '/auth/callback',
+        process.env.NEXT_PUBLIC_SITE_URL || globalThis.location.origin
+      )
+
+      console.log('callbackUrl:', callbackUrl.toString())
       callbackUrl.searchParams.set('next', nextPath)
 
       const { error } = await supabase.auth.signInWithOAuth({

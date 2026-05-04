@@ -8,20 +8,22 @@ type Props = Readonly<{
   params: Promise<{ requestId: string }>
 }>
 
+// UUID v4 형식 검증
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 function isVideoPath(path: string): boolean {
   return /\.(mp4|webm)$/i.test(path)
 }
 
 export default async function AdminReviewPage({ params }: Props) {
-  const { requestId: raw } = await params
-  const id = Number.parseInt(raw, 10)
-  if (!Number.isFinite(id) || id < 1) {
-    notFound()
-  }
-  const bundle = await fetchVerificationReviewBundle(id)
-  if (!bundle) {
-    notFound()
-  }
+  const { requestId } = await params
+
+  // ✅ parseInt 없이 UUID 그대로 사용 — 형식만 검증
+  if (!UUID_REGEX.test(requestId)) notFound()
+
+  const bundle = await fetchVerificationReviewBundle(requestId)
+  if (!bundle) notFound()
 
   const { request, prompt, submitter, evidenceSignedUrls } = bundle
   const canResolve = request.status === 'PENDING'

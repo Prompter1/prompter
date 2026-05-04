@@ -2,7 +2,7 @@ import { createSupabaseServerClient } from '@/src/lib/supabase-server'
 import { ADMIN_EVIDENCE_BUCKET } from '@/src/lib/storage'
 
 export type PendingVerificationRow = {
-  id: number
+  id: string                // ✅ UUID → string
   prompt_post_id: number
   author_id: string
   status: string
@@ -58,7 +58,7 @@ export async function fetchPendingVerifications(): Promise<
 
 export type VerificationReviewBundle = {
   request: {
-    id: number
+    id: string              // ✅ UUID → string
     prompt_post_id: number
     author_id: string
     status: string
@@ -80,8 +80,10 @@ export type VerificationReviewBundle = {
   submitter: { nickname: string | null; email: string | null } | null
   evidenceSignedUrls: { path: string; url: string | null }[]
 }
+
+// ✅ requestId: number → string (UUID)
 export async function fetchVerificationReviewBundle(
-  requestId: number
+  requestId: string
 ): Promise<VerificationReviewBundle | null> {
   const supabase = await createSupabaseServerClient()
 

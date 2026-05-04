@@ -1,7 +1,8 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export default async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
+  console.log('[middleware] pathname:', request.nextUrl.pathname)
   let response = NextResponse.next({
     request: { headers: request.headers },
   })
@@ -36,26 +37,26 @@ export default async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  console.log('[middleware] user:', user?.email ?? 'null')
+
   const isProtectedRoute =
     request.nextUrl.pathname.startsWith('/prompt/write') ||
     request.nextUrl.pathname.startsWith('/profile') ||
     request.nextUrl.pathname.startsWith('/admin') // ✅ 추가
 
-  // 비로그인 유저가 보호 경로 접근 시 → 로그인 후 돌아올 수 있게 redirectTo 포함
   if (isProtectedRoute && !user) {
     const url = request.nextUrl.clone()
-    const redirectTo = request.nextUrl.pathname // ✅ 원래 경로 저장
+    // 로그인 후 원래 경로로 돌아오기 위해 redirectTo 저장
+    url.searchParams.set('next', request.nextUrl.pathname)
     url.pathname = '/login'
-    url.searchParams.set('redirectTo', redirectTo) // ✅ 쿼리로 전달
     return NextResponse.redirect(url)
   }
 
-  // 로그인한 유저가 /login 접근 시 → redirectTo가 있으면 거기로, 없으면 /
   if (request.nextUrl.pathname.startsWith('/login') && user) {
     const url = request.nextUrl.clone()
-    const redirectTo = request.nextUrl.searchParams.get('redirectTo') || '/' // ✅
+    const redirectTo = request.nextUrl.searchParams.get('next') || '/'
     url.pathname = redirectTo
-    url.searchParams.delete('redirectTo')
+    url.searchParams.delete('next')
     return NextResponse.redirect(url)
   }
 

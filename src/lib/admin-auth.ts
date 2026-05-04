@@ -26,10 +26,17 @@ export async function isMemberAdmin(
 /** 관리자가 아니면 안내 페이지로 보냅니다. (홈으로 조용히 돌려보내지 않음) */
 export async function requireAdmin() {
   const { supabase, user } = await getSessionUser()
+
+  console.log('[requireAdmin] user:', user?.email, user?.id) // 추가
+
   if (!user) {
     redirect('/login?next=/admin')
   }
+
   const admin = await isMemberAdmin(supabase, user.id)
+
+  console.log('[requireAdmin] is_admin:', admin) // 추가
+
   if (!admin) {
     redirect('/admin-forbidden')
   }

@@ -8,7 +8,7 @@ import { cn } from '@/src/lib/utils'
 export function VerificationReviewActions({
   requestId,
   canResolve,
-}: Readonly<{ requestId: number; canResolve: boolean }>) {
+}: Readonly<{ requestId: string; canResolve: boolean }>) {
   const router = useRouter()
   const [loading, setLoading] = useState<'approve' | 'reject' | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -17,7 +17,6 @@ export function VerificationReviewActions({
     setError(null)
     setLoading(action)
     try {
-      // requestId가 문자열(UUID)이므로 템플릿 리터럴에 그대로 포함됩니다.
       const res = await fetch(`/api/admin/verification/${requestId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
