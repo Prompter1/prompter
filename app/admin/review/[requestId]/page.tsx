@@ -18,7 +18,6 @@ export default async function AdminReviewPage({ params }: Props) {
   if (!Number.isFinite(id) || id < 1) {
     notFound()
   }
-
   const bundle = await fetchVerificationReviewBundle(id)
   if (!bundle) {
     notFound()
@@ -72,9 +71,7 @@ export default async function AdminReviewPage({ params }: Props) {
         />
       </div>
 
-      {!prompt ? (
-        <p className="text-surface-400 text-sm">연결된 게시물을 찾을 수 없습니다.</p>
-      ) : (
+      {prompt ? (
         <div className="grid gap-6 lg:grid-cols-2 lg:gap-8">
           <section className="border-surface-700/50 bg-surface-800/20 flex flex-col rounded-2xl border">
             <div className="border-surface-700/50 border-b px-4 py-3">
@@ -87,7 +84,9 @@ export default async function AdminReviewPage({ params }: Props) {
             </div>
             <div className="flex flex-1 flex-col gap-4 p-4">
               {evidenceSignedUrls.length === 0 ? (
-                <p className="text-surface-500 text-sm">첨부된 증빙이 없습니다.</p>
+                <p className="text-surface-500 text-sm">
+                  첨부된 증빙이 없습니다.
+                </p>
               ) : (
                 evidenceSignedUrls.map(({ path, url }) => (
                   <div
@@ -128,9 +127,7 @@ export default async function AdminReviewPage({ params }: Props) {
               <h2 className="text-surface-100 text-sm font-semibold">
                 프롬프트 본문 (대조)
               </h2>
-              <p className="text-surface-500 mt-0.5 text-xs">
-                {prompt.title}
-              </p>
+              <p className="text-surface-500 mt-0.5 text-xs">{prompt.title}</p>
             </div>
             <div className="flex flex-1 flex-col p-4">
               <div className="mb-3 flex flex-wrap gap-2">
@@ -146,7 +143,7 @@ export default async function AdminReviewPage({ params }: Props) {
                   className={
                     prompt.is_verified
                       ? 'rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs text-emerald-400'
-                      : 'rounded-full bg-surface-700/50 px-2.5 py-0.5 text-xs text-surface-400'
+                      : 'bg-surface-700/50 text-surface-400 rounded-full px-2.5 py-0.5 text-xs'
                   }
                 >
                   {prompt.is_verified ? 'Verified' : '미인증'}
@@ -157,12 +154,16 @@ export default async function AdminReviewPage({ params }: Props) {
                     : `${prompt.price.toLocaleString()}원`}
                 </span>
               </div>
-              <pre className="text-surface-200 max-h-[min(75vh,640px)] flex-1 overflow-auto rounded-xl bg-black/25 p-4 text-sm leading-relaxed whitespace-pre-wrap font-mono">
+              <pre className="text-surface-200 max-h-[min(75vh,640px)] flex-1 overflow-auto rounded-xl bg-black/25 p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap">
                 {prompt.content}
               </pre>
             </div>
           </section>
         </div>
+      ) : (
+        <p className="text-surface-400 text-sm">
+          연결된 게시물을 찾을 수 없습니다.
+        </p>
       )}
     </div>
   )

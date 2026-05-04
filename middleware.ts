@@ -1,23 +1,69 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
 
-/**
- * Supabase/Google 설정이 Site URL(/)로만 돌려보내는 경우,
- * ?code= 가 루트에 붙어 세션 교환이 스킵되는 문제를 막습니다.
- * 쿼리(code, state, next 등)는 그대로 /auth/callback 으로 전달합니다.
- */
-export function middleware(request: NextRequest) {
-  const { pathname, searchParams } = request.nextUrl
+export default async function middleware(request: NextRequest) {
+  let response = NextResponse.next({
+    request: { headers: request.headers },
+  })
 
-  if (pathname === '/' && searchParams.has('code')) {
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return request.cookies.get(name)?.value
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          request.cookies.set({ name, value, ...options })
+          response = NextResponse.next({
+            request: { headers: request.headers },
+          })
+          response.cookies.set({ name, value, ...options })
+        },
+        remove(name: string, options: CookieOptions) {
+          request.cookies.set({ name, value: '', ...options })
+          response = NextResponse.next({
+            request: { headers: request.headers },
+          })
+          response.cookies.set({ name, value: '', ...options })
+        },
+      },
+    }
+  )
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  const isProtectedRoute =
+    request.nextUrl.pathname.startsWith('/prompt/write') ||
+    request.nextUrl.pathname.startsWith('/profile') ||
+    request.nextUrl.pathname.startsWith('/admin') // ✅ 추가
+
+  // 비로그인 유저가 보호 경로 접근 시 → 로그인 후 돌아올 수 있게 redirectTo 포함
+  if (isProtectedRoute && !user) {
     const url = request.nextUrl.clone()
-    url.pathname = '/auth/callback'
+    const redirectTo = request.nextUrl.pathname // ✅ 원래 경로 저장
+    url.pathname = '/login'
+    url.searchParams.set('redirectTo', redirectTo) // ✅ 쿼리로 전달
     return NextResponse.redirect(url)
   }
 
-  return NextResponse.next()
+  // 로그인한 유저가 /login 접근 시 → redirectTo가 있으면 거기로, 없으면 /
+  if (request.nextUrl.pathname.startsWith('/login') && user) {
+    const url = request.nextUrl.clone()
+    const redirectTo = request.nextUrl.searchParams.get('redirectTo') || '/' // ✅
+    url.pathname = redirectTo
+    url.searchParams.delete('redirectTo')
+    return NextResponse.redirect(url)
+  }
+
+  return response
 }
 
 export const config = {
-  matcher: ['/'],
+  matcher: [
+    '/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)',
+  ],
 }

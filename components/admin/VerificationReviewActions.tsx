@@ -17,21 +17,23 @@ export function VerificationReviewActions({
     setError(null)
     setLoading(action)
     try {
+      // requestId가 문자열(UUID)이므로 템플릿 리터럴에 그대로 포함됩니다.
       const res = await fetch(`/api/admin/verification/${requestId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action }),
       })
+
       const data = await res.json().catch(() => ({}))
+
       if (!res.ok) {
         setError(
-          typeof data.error === 'string'
-            ? data.error
-            : '처리에 실패했습니다.'
+          typeof data.error === 'string' ? data.error : '처리에 실패했습니다.'
         )
         setLoading(null)
         return
       }
+
       router.push('/admin')
       router.refresh()
     } catch {
@@ -57,9 +59,9 @@ export function VerificationReviewActions({
           onClick={() => submit('approve')}
           className={cn(
             'inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all',
-            loading !== null
-              ? 'bg-surface-700 text-surface-500 cursor-not-allowed'
-              : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+            loading === null
+              ? 'bg-emerald-600 text-white hover:bg-emerald-500'
+              : 'bg-surface-700 text-surface-500 cursor-not-allowed'
           )}
         >
           {loading === 'approve' ? (
@@ -75,9 +77,9 @@ export function VerificationReviewActions({
           onClick={() => submit('reject')}
           className={cn(
             'inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all',
-            loading !== null
-              ? 'bg-surface-700 text-surface-500 cursor-not-allowed'
-              : 'border-surface-600 bg-surface-800 text-red-400 hover:bg-red-500/10 border'
+            loading === null
+              ? 'border-surface-600 bg-surface-800 border text-red-400 hover:bg-red-500/10'
+              : 'bg-surface-700 text-surface-500 cursor-not-allowed'
           )}
         >
           {loading === 'reject' ? (
@@ -88,9 +90,7 @@ export function VerificationReviewActions({
           반려
         </button>
       </div>
-      {error && (
-        <p className="text-sm text-red-400">{error}</p>
-      )}
+      {error && <p className="text-sm text-red-400">{error}</p>}
     </div>
   )
 }

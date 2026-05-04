@@ -80,7 +80,6 @@ export type VerificationReviewBundle = {
   submitter: { nickname: string | null; email: string | null } | null
   evidenceSignedUrls: { path: string; url: string | null }[]
 }
-
 export async function fetchVerificationReviewBundle(
   requestId: number
 ): Promise<VerificationReviewBundle | null> {
@@ -88,9 +87,7 @@ export async function fetchVerificationReviewBundle(
 
   const { data: reqRow, error: reqErr } = await supabase
     .from('verification_requests')
-    .select(
-      'id, prompt_post_id, author_id, status, evidence_paths, created_at'
-    )
+    .select('id, prompt_post_id, author_id, status, evidence_paths, created_at')
     .eq('id', requestId)
     .maybeSingle()
 

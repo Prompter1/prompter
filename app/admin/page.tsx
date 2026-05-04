@@ -17,21 +17,35 @@ export default async function AdminDashboardPage() {
       {rows.length === 0 ? (
         <div className="border-surface-700/50 bg-surface-800/30 flex flex-col items-center justify-center rounded-2xl border border-dashed py-20">
           <ClipboardList className="text-surface-600 mb-3 h-10 w-10" />
-          <p className="text-surface-400 text-sm">대기 중인 검수 요청이 없습니다.</p>
+          <p className="text-surface-400 text-sm">
+            대기 중인 검수 요청이 없습니다.
+          </p>
         </div>
       ) : (
         <div className="border-surface-700/50 overflow-hidden rounded-2xl border">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-left text-sm">
+            <table className="w-full min-w-180 text-left text-sm">
               <thead>
                 <tr className="border-surface-700/50 bg-surface-800/50 border-b">
                   <th className="text-surface-400 px-4 py-3 font-medium">ID</th>
-                  <th className="text-surface-400 px-4 py-3 font-medium">게시물</th>
-                  <th className="text-surface-400 px-4 py-3 font-medium">가격</th>
-                  <th className="text-surface-400 px-4 py-3 font-medium">작성자 ID</th>
-                  <th className="text-surface-400 px-4 py-3 font-medium">증빙 수</th>
-                  <th className="text-surface-400 px-4 py-3 font-medium">신청일</th>
-                  <th className="text-surface-400 px-4 py-3 font-medium">동작</th>
+                  <th className="text-surface-400 px-4 py-3 font-medium">
+                    게시물
+                  </th>
+                  <th className="text-surface-400 px-4 py-3 font-medium">
+                    가격
+                  </th>
+                  <th className="text-surface-400 px-4 py-3 font-medium">
+                    작성자 ID
+                  </th>
+                  <th className="text-surface-400 px-4 py-3 font-medium">
+                    증빙 수
+                  </th>
+                  <th className="text-surface-400 px-4 py-3 font-medium">
+                    신청일
+                  </th>
+                  <th className="text-surface-400 px-4 py-3 font-medium">
+                    동작
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -52,7 +66,7 @@ export default async function AdminDashboardPage() {
                       <td className="text-surface-300 px-4 py-3 font-mono text-xs">
                         #{r.id}
                       </td>
-                      <td className="max-w-[240px] px-4 py-3">
+                      <td className="max-w-60 px-4 py-3">
                         <span className="line-clamp-2 text-white">
                           {post?.title ?? '(게시물 없음)'}
                         </span>
@@ -63,16 +77,18 @@ export default async function AdminDashboardPage() {
                         )}
                       </td>
                       <td className="text-surface-200 px-4 py-3 whitespace-nowrap">
-                        {post != null
-                          ? post.price === 0
+                        {post == null
+                          ? '—'
+                          : post.price === 0
                             ? '무료'
-                            : `${post.price.toLocaleString()}원`
-                          : '—'}
+                            : `${post.price.toLocaleString()}원`}
                       </td>
                       <td className="text-surface-500 px-4 py-3 font-mono text-xs">
                         {r.author_id.slice(0, 8)}…
                       </td>
-                      <td className="text-surface-300 px-4 py-3">{evidenceCount}</td>
+                      <td className="text-surface-300 px-4 py-3">
+                        {evidenceCount}
+                      </td>
                       <td className="text-surface-400 px-4 py-3 text-xs whitespace-nowrap">
                         {created}
                       </td>
