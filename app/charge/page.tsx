@@ -43,6 +43,7 @@ export default function ChargePage() {
   const [step, setStep] = useState<'select' | 'pay'>('select')
   const [userId, setUserId] = useState<string | null>(null)
   const [loadingWidget, setLoadingWidget] = useState(false)
+  const [widgetReady, setWidgetReady] = useState(false) // ✅ 렌더링 완료 여부
 
   const paymentWidgetRef = useRef<PaymentWidgetInstance | null>(null)
   const paymentMethodsRef = useRef<ReturnType<
@@ -68,25 +69,42 @@ export default function ChargePage() {
     let cancelled = false
 
     setLoadingWidget(true)
+    setWidgetReady(false)
     ;(async () => {
-      const widget = await loadPaymentWidget(CLIENT_KEY, userId)
-      if (cancelled) return
+      try {
+        const widget = await loadPaymentWidget(CLIENT_KEY, userId)
+        if (cancelled) return
 
-      paymentWidgetRef.current = widget
+        paymentWidgetRef.current = widget
 
-      paymentMethodsRef.current = widget.renderPaymentMethods(
-        '#toss-payment-widget',
-        { value: selected.price },
-        { variantKey: 'DEFAULT' }
-      )
-      widget.renderAgreement('#toss-agreement', { variantKey: 'AGREEMENT' })
-      setLoadingWidget(false)
+        // ✅ 둘 다 await — 완전히 렌더링된 후에만 ready 처리
+        const [methods] = await Promise.all([
+          widget.renderPaymentMethods(
+            '#toss-payment-widget',
+            { value: selected.price },
+            { variantKey: 'DEFAULT' }
+          ),
+          widget.renderAgreement('#toss-agreement', {
+            variantKey: 'AGREEMENT',
+          }),
+        ])
+
+        if (cancelled) return
+        paymentMethodsRef.current = methods
+        setLoadingWidget(false)
+        setWidgetReady(true)
+      } catch (error) {
+        if (!cancelled) {
+          console.error('위젯 렌더링 실패:', error)
+          setLoadingWidget(false)
+        }
+      }
     })()
 
     return () => {
       cancelled = true
     }
-  }, [step, userId, selected.price])
+  }, [step, userId])
 
   // 금액 변경 시 위젯 업데이트
   useEffect(() => {
@@ -101,8 +119,8 @@ export default function ChargePage() {
       await paymentWidgetRef.current.requestPayment({
         orderId,
         orderName: `${(selected.points + selected.bonus).toLocaleString()}P 크레딧 충전`,
-        successUrl: `${globalThis.location.origin}/charge/success?points=${selected.points + selected.bonus}`,
-        failUrl: `${globalThis.location.origin}/charge/fail`,
+        successUrl: `${window.location.origin}/charge/success?points=${selected.points + selected.bonus}`,
+        failUrl: `${window.location.origin}/charge/fail`,
       })
     } catch (err: unknown) {
       // 사용자가 직접 취소한 경우는 조용히 처리
