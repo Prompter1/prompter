@@ -1,22 +1,24 @@
 'use client'
 
-import { Sparkles, LogOut, UserCircle, Shield } from 'lucide-react'
+import { Sparkles, LogOut, UserCircle, Shield, Menu } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '@/providers/auth-provider'
-import { navigationUtils } from '@/src/lib/navigation'
+import { navigationUtils, ROUTES } from '@/src/lib/navigation'
 import { useIsAdmin } from '@/hooks/useIsAdmin'
+import { cn } from '@/src/lib/utils'
 
 const NAV_LINKS = [
-  { label: '탐색', href: '/prompt' },
-  { label: '충전', href: '/charge' },
-  { label: '등록', href: '/upload' },
+  { label: 'Explore', href: '#' },
+  { label: 'Rankings', href: '#' },
+  { label: 'Community', href: '#' },
 ]
 
 export function Navbar() {
   const { user, isLoading, signOut } = useAuth()
   const { isAdmin } = useIsAdmin()
   const router = useRouter()
+  const pathname = usePathname()
 
   return (
     <nav className="border-border/40 bg-background/60 fixed top-0 z-50 w-full border-b backdrop-blur-2xl backdrop-saturate-150">
@@ -35,14 +37,14 @@ export function Navbar() {
         {/* Nav links */}
         <div className="hidden items-center gap-1 md:flex">
           {NAV_LINKS.map(({ label, href }) => (
-            <a
+            <Link
               key={label}
               href={href}
               className="text-muted-foreground hover:text-foreground relative px-4 py-2 text-sm font-medium transition-all duration-200"
             >
               <span className="relative z-10">{label}</span>
               <span className="bg-surface-700/0 hover:bg-surface-700/50 absolute inset-0 rounded-lg transition-colors duration-200" />
-            </a>
+            </Link>
           ))}
         </div>
 
@@ -51,7 +53,7 @@ export function Navbar() {
           {isLoading ? (
             <div className="bg-surface-700/50 h-9 w-24 animate-pulse rounded-xl" />
           ) : user ? (
-            <>
+            <div className="flex items-center gap-3">
               {isAdmin && (
                 <Link
                   href="/admin"
@@ -61,6 +63,7 @@ export function Navbar() {
                   <span className="hidden sm:inline">관리자</span>
                 </Link>
               )}
+
               <button
                 onClick={() => navigationUtils.moveToMyPage(router)}
                 className="text-muted-foreground hover:bg-surface-700/50 hover:text-foreground flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200"
@@ -76,16 +79,15 @@ export function Navbar() {
                 <LogOut className="h-4 w-4" />
                 <span className="hidden sm:inline">로그아웃</span>
               </button>
-            </>
+            </div>
           ) : (
-            <>
+            <div className="flex items-center gap-4">
               <button
                 onClick={() => navigationUtils.moveToLogin(router)}
                 className="text-muted-foreground hover:bg-surface-700/50 hover:text-foreground rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200"
               >
-                로그인
+                Sign in
               </button>
-
               <button
                 onClick={() => navigationUtils.moveToLogin(router)}
                 className="from-brand-500 to-brand-600 shadow-brand-500/25 hover:shadow-brand-500/40 relative overflow-hidden rounded-xl bg-gradient-to-r px-5 py-2 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
@@ -93,8 +95,12 @@ export function Navbar() {
                 <span className="relative z-10">시작하기</span>
                 <div className="absolute inset-0 bg-gradient-to-t from-transparent to-white/10" />
               </button>
-            </>
+            </div>
           )}
+
+          <button className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-zinc-400 md:hidden">
+            <Menu className="h-4 w-4" />
+          </button>
         </div>
       </div>
     </nav>

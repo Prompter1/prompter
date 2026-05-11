@@ -16,9 +16,12 @@
   --muted: oklch(0.2 0.01 270);
   --muted-foreground: oklch(0.55 0 0);
   --accent: oklch(0.6 0.15 280);
+
   --accent-foreground: oklch(1 0 0);
-  --destructive: oklch(0.55 0.22 25);
+  
+  --destructive: oklch(0.6 0.2 25);
   --destructive-foreground: oklch(1 0 0);
+
   --border: oklch(0.22 0.02 270);
   --input: oklch(0.15 0.02 270);
   --ring: oklch(0.7 0.18 280);
@@ -59,20 +62,28 @@
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
+
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
+
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -94,9 +105,10 @@
   --color-surface-800: var(--surface-800);
   --color-surface-900: var(--surface-900);
 
-  --radius-sm: calc(var(--radius) - 4px);
+  --radius-sm: calc(var(--radius) - 6px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
+
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 8px);
 
@@ -111,10 +123,8 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground antialiased;
-    font-feature-settings:
-      'rlig' 1,
-      'calt' 1;
+    @apply bg-background text-foreground antialiased selection:bg-primary/30 selection:text-primary-foreground;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
   }
 }
 
@@ -133,6 +143,7 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+
   }
 
   .text-gradient-subtle {

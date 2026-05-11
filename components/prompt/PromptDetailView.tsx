@@ -11,7 +11,6 @@ import {
 import type { PromptPost } from '@/types'
 import { Badge } from '@/components/ui/Badge'
 import { PromptMediaGallery } from '@/components/prompt/PromptMediaGallery'
-import { CopyPromptButton } from '@/components/prompt/CopyPromptButton'
 import { PromptContentSection } from '@/components/prompt/PromptContentSection'
 import { createSupabaseServerClient } from '@/src/lib/supabase-server'
 
