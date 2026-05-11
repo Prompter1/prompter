@@ -7,27 +7,7 @@ import {
   Shield,
   Zap,
 } from 'lucide-react'
-
-const stats = [
-  {
-    label: '등록된 프롬프트',
-    value: '12,000+',
-    icon: Sparkles,
-    color: 'text-brand-400',
-  },
-  {
-    label: '활성 사용자',
-    value: '5,000+',
-    icon: Users,
-    color: 'text-emerald-400',
-  },
-  {
-    label: '거래 완료',
-    value: '8,500+',
-    icon: TrendingUp,
-    color: 'text-amber-400',
-  },
-]
+import { fetchHeroStats } from '@/src/lib/home-queries'
 
 const features = [
   { icon: Shield, title: '검증된 품질' },
@@ -35,7 +15,36 @@ const features = [
   { icon: TrendingUp, title: '수익 창출' },
 ]
 
-export default function HeroSection() {
+function formatStat(num: number): string {
+  if (num >= 10000) return (num / 10000).toFixed(1) + '만+'
+  if (num >= 1000) return (num / 1000).toFixed(1) + 'K+'
+  return num.toLocaleString() + '+'
+}
+
+export default async function HeroSection() {
+  const { promptCount, memberCount, transactionCount } = await fetchHeroStats()
+
+  const stats = [
+    {
+      label: '등록된 프롬프트',
+      value: formatStat(promptCount),
+      icon: Sparkles,
+      color: 'text-brand-400',
+    },
+    {
+      label: '활성 사용자',
+      value: formatStat(memberCount),
+      icon: Users,
+      color: 'text-emerald-400',
+    },
+    {
+      label: '거래 완료',
+      value: formatStat(transactionCount),
+      icon: TrendingUp,
+      color: 'text-amber-400',
+    },
+  ]
+
   return (
     <section className="relative overflow-hidden px-6 pt-32 pb-20 sm:pt-40 sm:pb-28">
       {/* Background Effects */}
@@ -45,11 +54,9 @@ export default function HeroSection() {
         <div className="absolute right-0 bottom-0 h-100 w-125 rounded-full bg-pink-500/10 blur-[120px]" />
       </div>
 
-      {/* Grid Pattern */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] mask-[radial-gradient(ellipse_at_center,black_30%,transparent_70%)] bg-size-[72px_72px]" />
 
       <div className="relative mx-auto max-w-5xl text-center">
-        {/* Badge */}
         <div className="border-brand-500/30 bg-brand-500/10 mb-8 inline-flex items-center gap-2 rounded-full border px-5 py-2 backdrop-blur-sm">
           <span className="relative flex h-2 w-2">
             <span className="bg-brand-400 absolute inline-flex h-full w-full animate-ping rounded-full opacity-75" />
@@ -72,7 +79,6 @@ export default function HeroSection() {
           창출하세요.
         </p>
 
-        {/* CTA Buttons */}
         <div className="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
           <a
             href="/explore"
@@ -90,7 +96,6 @@ export default function HeroSection() {
           </a>
         </div>
 
-        {/* Features Pills */}
         <div className="mt-12 flex flex-wrap justify-center gap-3">
           {features.map((feature) => (
             <div
@@ -103,7 +108,7 @@ export default function HeroSection() {
           ))}
         </div>
 
-        {/* Stats */}
+        {/* 실시간 통계 */}
         <div className="mx-auto mt-20 max-w-3xl">
           <div className="border-surface-700/50 bg-surface-800/30 grid grid-cols-3 gap-8 rounded-3xl border p-8 backdrop-blur">
             {stats.map((stat) => (

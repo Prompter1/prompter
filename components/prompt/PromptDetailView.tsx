@@ -1,23 +1,19 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import {
-  ArrowLeft,
-  Crown,
-  ShieldCheck,
-  Tag,
-  FolderOpen,
-} from 'lucide-react'
+import { ArrowLeft, Crown, ShieldCheck, Tag, FolderOpen } from 'lucide-react'
 import type { PromptPost } from '@/types'
 import { Badge } from '@/components/ui/Badge'
 import { PromptMediaGallery } from '@/components/prompt/PromptMediaGallery'
 import { CopyPromptButton } from '@/components/prompt/CopyPromptButton'
+import { PromptContentSection } from '@/components/prompt/PromptContentSection'
+import { createSupabaseServerClient } from '@/src/lib/supabase-server'
 
 interface PromptDetailViewProps {
   post: PromptPost
   createdAt: string | null
 }
 
-export function PromptDetailView({
+export async function PromptDetailView({
   post,
   createdAt,
 }: Readonly<PromptDetailViewProps>) {
@@ -31,6 +27,39 @@ export function PromptDetailView({
     is_verified,
     result_media,
   } = post
+
+  // 로그인 유저 + 구매 여부 확인
+  const supabase = await createSupabaseServerClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  let hasPurchased = false
+  let userPoints = 0
+
+  if (user) {
+    // 구매 여부
+    const { data: tx } = await supabase
+      .from('transactions')
+      .select('id')
+      .eq('buyer_id', user.id)
+      .eq('prompt_post_id', post.id)
+      .maybeSingle()
+    hasPurchased = !!tx
+
+    // 포인트
+    const { data: member } = await supabase
+      .from('members')
+      .select('points')
+      .eq('id', user.id)
+      .single()
+    userPoints = member?.points ?? 0
+  }
+
+  // 무료 or 본인 프롬프트 or 이미 구매 → 콘텐츠 공개
+  const isFree = price === 0
+  const isOwner = user?.id === author.id
+  const canViewFull = isFree || isOwner || hasPurchased
 
   const dateLabel = createdAt
     ? new Date(createdAt).toLocaleDateString('ko-KR', {
@@ -57,11 +86,14 @@ export function PromptDetailView({
         </Link>
 
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-12">
+          {/* 왼쪽: 미디어 */}
           <div>
             <PromptMediaGallery urls={result_media} alt={title} />
           </div>
 
+          {/* 오른쪽: 상세 */}
           <div className="flex flex-col lg:sticky lg:top-24 lg:self-start">
+            {/* 배지 */}
             <div className="mb-4 flex flex-wrap items-center gap-2">
               {ai_types.map((t) => (
                 <Badge key={t}>{t}</Badge>
@@ -74,7 +106,7 @@ export function PromptDetailView({
                   </span>
                 </Badge>
               )}
-              {price === 0 ? (
+              {isFree ? (
                 <Badge variant="free">무료</Badge>
               ) : (
                 <Badge variant="paid">유료</Badge>
@@ -85,6 +117,7 @@ export function PromptDetailView({
               {title}
             </h1>
 
+            {/* 작성자 카드 */}
             <div className="border-surface-700/50 bg-surface-800/40 mb-6 flex flex-wrap items-center gap-4 rounded-2xl border p-4">
               <div className="border-surface-600 relative h-12 w-12 shrink-0 overflow-hidden rounded-full border-2">
                 <Image
@@ -101,7 +134,7 @@ export function PromptDetailView({
                     {author.nickname}
                   </span>
                   {author.is_sponsor && (
-                    <span className="text-amber-400 flex items-center gap-0.5 text-xs font-bold uppercase">
+                    <span className="flex items-center gap-0.5 text-xs font-bold text-amber-400 uppercase">
                       <Crown className="h-3 w-3" />
                       Sponsor
                     </span>
@@ -115,13 +148,14 @@ export function PromptDetailView({
               <div className="w-full shrink-0 text-right sm:w-auto">
                 <p className="text-surface-500 text-xs">가격</p>
                 <p
-                  className={`text-xl font-bold ${price === 0 ? 'text-emerald-400' : 'text-brand-400'}`}
+                  className={`text-xl font-bold ${isFree ? 'text-emerald-400' : 'text-brand-400'}`}
                 >
-                  {price === 0 ? '무료' : `${price.toLocaleString()}원`}
+                  {isFree ? '무료' : `${price.toLocaleString()}P`}
                 </p>
               </div>
             </div>
 
+            {/* 카테고리 */}
             <div className="mb-6 flex flex-wrap gap-2">
               {categories.map((c) => (
                 <span
@@ -134,19 +168,16 @@ export function PromptDetailView({
               ))}
             </div>
 
-            <CopyPromptButton text={content} className="mb-8 w-full sm:w-auto" />
-
-            <div className="border-surface-700/50 bg-surface-800/25 rounded-2xl border">
-              <div className="border-surface-700/50 flex items-center gap-2 border-b px-5 py-3">
-                <Tag className="text-surface-500 h-4 w-4" />
-                <span className="text-surface-300 text-sm font-medium">
-                  프롬프트 본문
-                </span>
-              </div>
-              <pre className="text-surface-200 max-h-[min(28rem,50vh)] overflow-auto p-5 text-sm leading-relaxed whitespace-pre-wrap font-mono">
-                {content}
-              </pre>
-            </div>
+            {/* 프롬프트 콘텐츠 (블러/해금 로직은 Client Component에서) */}
+            <PromptContentSection
+              postId={post.id}
+              title={title}
+              content={content}
+              price={price}
+              canViewFull={canViewFull}
+              isLoggedIn={!!user}
+              userPoints={userPoints}
+            />
           </div>
         </div>
       </div>
