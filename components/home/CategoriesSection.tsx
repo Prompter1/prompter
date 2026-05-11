@@ -34,49 +34,62 @@ const categories = [
 export default function CategorySection() {
   return (
     <section className="mx-auto max-w-7xl px-6 py-24">
+      {/* Section header */}
       <div className="mb-12 flex items-end justify-between">
         <div>
-          <p className="text-brand-400 mb-2 text-sm font-medium">CATEGORIES</p>
-          <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+          <p className="text-brand-400 mb-3 text-sm font-semibold tracking-wider uppercase">
+            Categories
+          </p>
+          <h2 className="text-foreground text-3xl font-bold tracking-tight sm:text-4xl">
             카테고리별 탐색
           </h2>
-          <p className="text-surface-400 mt-3">
+          <p className="text-muted-foreground mt-3">
             다양한 AI 도구에 최적화된 프롬프트를 찾아보세요
           </p>
         </div>
         <a
           href="/categories"
-          className="text-brand-400 hover:text-brand-300 hidden items-center gap-1 text-sm font-medium transition-colors sm:flex"
+          className="text-brand-400 hover:text-brand-300 hidden items-center gap-1.5 text-sm font-medium transition-colors duration-200 sm:flex"
         >
           전체 카테고리 보기 <ArrowRight className="h-4 w-4" />
         </a>
       </div>
 
+      {/* Category cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {categories.map((category) => (
+        {categories.map((category, idx) => (
           <a
             key={category.name}
             href={`/explore?category=${category.name}`}
-            className="group border-surface-700/50 bg-surface-800/30 hover:border-brand-500/30 hover:bg-surface-800/50 hover:shadow-brand-500/5 relative overflow-hidden rounded-2xl border p-6 backdrop-blur transition-all hover:shadow-lg"
+            className={`group card-premium relative overflow-hidden rounded-2xl p-6 stagger-${idx + 1}`}
+            style={{ animationFillMode: 'backwards' }}
           >
+            {/* Icon */}
             <div
-              className={`mb-4 inline-flex rounded-xl bg-linear-to-br ${category.gradient} p-3.5 shadow-lg`}
+              className={`mb-5 inline-flex rounded-xl bg-gradient-to-br ${category.gradient} p-3.5 shadow-lg transition-transform duration-300 group-hover:scale-110`}
             >
               <category.icon className="h-6 w-6 text-white" />
             </div>
-            <h3 className="text-lg font-semibold text-white">
+
+            {/* Content */}
+            <h3 className="text-foreground group-hover:text-brand-400 text-lg font-semibold transition-colors duration-200">
               {category.name}
             </h3>
-            <p className="text-surface-500 mt-1 text-sm">
+            <p className="text-muted-foreground mt-1.5 text-sm">
               {category.description}
             </p>
-            <p className="text-surface-400 mt-3 text-sm font-medium">
-              <span className="text-white">
+            <p className="text-muted-foreground mt-4 text-sm font-medium">
+              <span className="text-foreground">
                 {category.prompts.toLocaleString()}
               </span>
               개의 프롬프트
             </p>
-            <ArrowRight className="text-surface-600 group-hover:text-brand-400 absolute right-6 bottom-6 h-5 w-5 transition-all group-hover:translate-x-1" />
+
+            {/* Arrow indicator */}
+            <ArrowRight className="text-muted-foreground/40 group-hover:text-brand-400 absolute right-6 bottom-6 h-5 w-5 transition-all duration-300 group-hover:translate-x-1" />
+
+            {/* Hover gradient overlay */}
+            <div className="from-brand-500/0 to-brand-600/0 pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br opacity-0 transition-opacity duration-300 group-hover:opacity-5" />
           </a>
         ))}
       </div>

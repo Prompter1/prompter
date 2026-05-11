@@ -99,7 +99,7 @@ function TagSelector({
 
   return (
     <div>
-      <label className="text-surface-200 mb-2 block text-sm font-medium">
+      <label className="text-foreground/90 mb-2 block text-sm font-medium">
         {label}
       </label>
       <div className="flex flex-wrap gap-2">
@@ -109,10 +109,10 @@ function TagSelector({
             type="button"
             onClick={() => toggle(opt)}
             className={cn(
-              'rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
+              'rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all duration-200',
               selected.includes(opt)
-                ? 'bg-brand-500/20 border-brand-500/60 text-brand-300'
-                : 'border-surface-600 bg-surface-800 text-surface-400 hover:border-surface-500 hover:text-surface-200'
+                ? 'border-brand-500/60 bg-brand-500/15 text-brand-300'
+                : 'border-border/50 bg-surface-800/50 text-muted-foreground hover:border-border hover:text-foreground'
             )}
           >
             {opt}
@@ -129,16 +129,16 @@ function ProgressBar({
   label,
 }: Readonly<{ progress: number; label?: string }>) {
   return (
-    <div className="border-surface-700/50 bg-surface-800/60 rounded-2xl border p-5">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="text-surface-300 text-sm font-medium">
+    <div className="card-premium rounded-2xl p-5">
+      <div className="mb-3 flex items-center justify-between">
+        <span className="text-foreground/80 text-sm font-medium">
           {label ?? '처리 중...'}
         </span>
         <span className="text-brand-400 text-sm font-bold">{progress}%</span>
       </div>
-      <div className="bg-surface-700 h-1.5 w-full overflow-hidden rounded-full">
+      <div className="bg-surface-700/50 h-2 w-full overflow-hidden rounded-full">
         <div
-          className="bg-brand-500 h-full rounded-full transition-all duration-300"
+          className="from-brand-500 to-brand-400 h-full rounded-full bg-gradient-to-r transition-all duration-300"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -181,8 +181,9 @@ function MediaDropZone({
 
   return (
     <div>
-      <label className="text-surface-200 mb-2 block text-sm font-medium">
-        {title} <span className="text-surface-500 font-normal">{sizeHint}</span>
+      <label className="text-foreground/90 mb-2 block text-sm font-medium">
+        {title}{' '}
+        <span className="text-muted-foreground font-normal">{sizeHint}</span>
       </label>
 
       <div
@@ -190,20 +191,20 @@ function MediaDropZone({
         onDragOver={(e) => e.preventDefault()}
         onClick={() => !disabled && inputRef.current?.click()}
         className={cn(
-          'border-surface-600 bg-surface-800/50 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-10 transition-all',
+          'border-border/50 bg-surface-800/30 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-12 transition-all duration-200',
           disabled
             ? 'cursor-not-allowed opacity-50'
-            : 'hover:border-brand-500/50 hover:bg-surface-800 cursor-pointer',
+            : 'hover:border-brand-500/40 hover:bg-surface-800/50 cursor-pointer',
           error && 'border-red-500/50'
         )}
       >
-        <div className="bg-surface-700/50 mb-3 rounded-xl p-3">
-          <Upload className="text-surface-400 h-6 w-6" />
+        <div className="bg-surface-700/50 mb-4 rounded-xl p-3.5">
+          <Upload className="text-muted-foreground h-6 w-6" />
         </div>
-        <p className="text-surface-300 text-sm font-medium">
+        <p className="text-foreground/80 text-sm font-medium">
           클릭하거나 파일을 드래그하세요
         </p>
-        <p className="text-surface-500 mt-1 text-xs">{footnote}</p>
+        <p className="text-muted-foreground mt-1.5 text-xs">{footnote}</p>
         <input
           ref={inputRef}
           type="file"
@@ -566,30 +567,30 @@ export function UploadForm() {
       onSubmit={handleSubmit}
       className="mx-auto max-w-2xl space-y-8 px-4 py-28"
     >
-      {/* 헤더 */}
-      <div>
-        <h1 className="text-2xl font-bold text-white">프롬프트 등록</h1>
-        <p className="text-surface-400 mt-1 text-sm">
+      {/* Header */}
+      <div className="animate-fade-in">
+        <h1 className="text-foreground text-2xl font-bold">프롬프트 등록</h1>
+        <p className="text-muted-foreground mt-2 text-sm">
           {isPaidSale
             ? '유료로 판매할 프롬프트입니다. 검수 통과 후 노출 정책에 따라 게시됩니다.'
             : '무료 프롬프트를 등록하고 커뮤니티와 공유하세요.'}
         </p>
       </div>
 
-      {/* 무료 / 유료 */}
+      {/* Free / Paid toggle */}
       <div>
-        <label className="text-surface-200 mb-3 block text-sm font-medium">
+        <label className="text-foreground/90 mb-3 block text-sm font-medium">
           등록 방식
         </label>
-        <div className="border-surface-700 bg-surface-800/40 flex rounded-2xl border p-1">
+        <div className="border-border/40 bg-surface-800/30 flex rounded-2xl border p-1">
           <button
             type="button"
             onClick={() => setIsPaidSale(false)}
             className={cn(
-              'flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-medium transition-all',
+              'flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-medium transition-all duration-200',
               !isPaidSale
-                ? 'bg-brand-500 text-white shadow-lg'
-                : 'text-surface-400 hover:text-surface-200'
+                ? 'from-brand-500 to-brand-600 shadow-brand-500/20 bg-gradient-to-r text-white shadow-lg'
+                : 'text-muted-foreground hover:text-foreground'
             )}
           >
             무료 공유
@@ -598,10 +599,10 @@ export function UploadForm() {
             type="button"
             onClick={() => setIsPaidSale(true)}
             className={cn(
-              'flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-medium transition-all',
+              'flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-medium transition-all duration-200',
               isPaidSale
-                ? 'bg-brand-500 text-white shadow-lg'
-                : 'text-surface-400 hover:text-surface-200'
+                ? 'from-brand-500 to-brand-600 shadow-brand-500/20 bg-gradient-to-r text-white shadow-lg'
+                : 'text-muted-foreground hover:text-foreground'
             )}
           >
             <Banknote className="h-4 w-4" />
@@ -611,11 +612,11 @@ export function UploadForm() {
       </div>
 
       {isPaidSale && (
-        <div className="border-surface-700/50 bg-surface-800/25 space-y-4 rounded-2xl border p-5">
+        <div className="card-premium space-y-5 rounded-2xl p-6">
           <div>
             <label
               htmlFor="price"
-              className="text-surface-200 mb-2 block text-sm font-medium"
+              className="text-foreground/90 mb-2 block text-sm font-medium"
             >
               판매 가격 (원) <span className="text-red-400">*</span>
             </label>
@@ -628,11 +629,11 @@ export function UploadForm() {
               value={priceInput}
               onChange={(e) => setPriceInput(e.target.value)}
               className={cn(
-                'border-surface-600 bg-surface-800 placeholder-surface-500 focus:border-brand-500/70 w-full rounded-xl border px-4 py-3 text-sm text-white transition-colors outline-none',
+                'border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 focus:ring-brand-500/20 w-full rounded-xl border px-4 py-3 text-sm transition-all duration-200 outline-none focus:ring-1',
                 fieldErrors.price && 'border-red-500/60'
               )}
             />
-            <p className="text-surface-500 mt-1.5 text-xs">
+            <p className="text-muted-foreground mt-2 text-xs">
               {MIN_PRICE_WON.toLocaleString()}원 ~{' '}
               {MAX_PRICE_WON.toLocaleString()}원 · 숫자만 입력
             </p>
@@ -658,9 +659,9 @@ export function UploadForm() {
         </div>
       )}
 
-      {/* 제목 */}
+      {/* Title */}
       <div>
-        <label className="text-surface-200 mb-2 block text-sm font-medium">
+        <label className="text-foreground/90 mb-2 block text-sm font-medium">
           제목 <span className="text-red-400">*</span>
         </label>
         <input
@@ -670,7 +671,7 @@ export function UploadForm() {
           placeholder="프롬프트 제목을 입력하세요"
           maxLength={100}
           className={cn(
-            'border-surface-600 bg-surface-800 placeholder-surface-500 focus:border-brand-500/70 w-full rounded-xl border px-4 py-3 text-sm text-white transition-colors outline-none',
+            'border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 focus:ring-brand-500/20 w-full rounded-xl border px-4 py-3 text-sm transition-all duration-200 outline-none focus:ring-1',
             fieldErrors.title && 'border-red-500/60'
           )}
         />
@@ -687,9 +688,9 @@ export function UploadForm() {
         </div>
       </div>
 
-      {/* 프롬프트 내용 */}
+      {/* Prompt content */}
       <div>
-        <label className="text-surface-200 mb-2 block text-sm font-medium">
+        <label className="text-foreground/90 mb-2 block text-sm font-medium">
           프롬프트 내용 <span className="text-red-400">*</span>
         </label>
         <textarea
@@ -698,7 +699,7 @@ export function UploadForm() {
           placeholder="프롬프트 내용을 입력하세요. AI에 입력할 텍스트를 그대로 붙여넣어도 됩니다."
           rows={8}
           className={cn(
-            'border-surface-600 bg-surface-800 placeholder-surface-500 focus:border-brand-500/70 w-full resize-none rounded-xl border px-4 py-3 text-sm text-white transition-colors outline-none',
+            'border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 focus:ring-brand-500/20 w-full resize-none rounded-xl border px-4 py-3 text-sm transition-all duration-200 outline-none focus:ring-1',
             fieldErrors.content && 'border-red-500/60'
           )}
         />
@@ -777,15 +778,15 @@ export function UploadForm() {
         </div>
       )}
 
-      {/* 제출 버튼 */}
+      {/* Submit button */}
       <button
         type="submit"
         disabled={isBusy}
         className={cn(
-          'flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-semibold text-white transition-all',
+          'relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl py-4 text-sm font-semibold text-white transition-all duration-300',
           isBusy
-            ? 'bg-surface-700 text-surface-400 cursor-not-allowed'
-            : 'bg-brand-500 hover:bg-brand-600 hover:shadow-brand-500/20 hover:shadow-lg'
+            ? 'bg-surface-700/50 text-muted-foreground cursor-not-allowed'
+            : 'from-brand-500 to-brand-600 shadow-brand-500/20 hover:shadow-brand-500/30 bg-gradient-to-r shadow-lg hover:scale-[1.01] hover:shadow-xl active:scale-[0.99]'
         )}
       >
         {status === 'formatting' ? (
