@@ -116,7 +116,7 @@ export default async function TrendingSection() {
               )}
             </div>
             <a
-              href="/ranking"
+              href="/prompt?sort=popular"
               className="text-brand-400 hover:text-brand-300 mt-4 flex items-center justify-center gap-1 text-sm font-medium transition-colors"
             >
               전체 랭킹 보기 <ArrowRight className="h-4 w-4" />

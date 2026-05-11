@@ -18,7 +18,6 @@ function SuccessContent() {
     const paymentKey = searchParams.get('paymentKey')
     const orderId = searchParams.get('orderId')
     const amount = searchParams.get('amount')
-    const points = Number(searchParams.get('points') ?? 0)
 
     if (!paymentKey || !orderId || !amount) {
       setErrorMsg('결제 정보가 올바르지 않습니다.')
@@ -34,7 +33,6 @@ function SuccessContent() {
         paymentKey,
         orderId,
         amount: Number(amount),
-        points,
       }),
     })
       .then((res) => res.json())

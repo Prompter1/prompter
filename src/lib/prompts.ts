@@ -5,6 +5,7 @@ export interface CreatePromptInput {
   content: string
   price: number
   ai_types: string[]
+  ai_versions?: string[]
   categories: string[]
   author_id: string
   media_urls?: string[]
@@ -25,6 +26,7 @@ export async function createPromptPost(
       content: input.content,
       price: input.price,
       ai_types: input.ai_types,
+      ai_versions: input.ai_versions ?? [],
       categories: input.categories,
       author_id: input.author_id,
       media_urls: input.media_urls,

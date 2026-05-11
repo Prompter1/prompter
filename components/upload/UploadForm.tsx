@@ -24,6 +24,11 @@ import {
 import { createPromptPost } from '@/src/lib/prompts'
 import { createVerificationRequest } from '@/src/lib/verification-requests'
 import {
+  AI_TOOL_OPTIONS,
+  AI_VERSION_OPTIONS,
+  CONTENT_CATEGORY_OPTIONS,
+} from '@/src/lib/taxonomy'
+import {
   formatMediaFile,
   formatFileSize,
   TARGET_IMAGE_SIZE_MB,
@@ -43,29 +48,6 @@ function parsePriceWon(raw: string): number | null {
   return Number.isFinite(n) ? n : null
 }
 
-// ── 상수 ──────────────────────────────────────────────
-const AI_TYPE_OPTIONS = [
-  'ChatGPT',
-  'Claude',
-  'Midjourney',
-  'Stable Diffusion',
-  'DALL-E',
-  'Gemini',
-  'Runway',
-  'Sora',
-]
-
-const CATEGORY_OPTIONS = [
-  'Art',
-  'Coding',
-  'Writing',
-  'Marketing',
-  'Game',
-  'Education',
-  'Business',
-  'Other',
-]
-
 // ── 타입 ──────────────────────────────────────────────
 interface MediaPreview {
   file: File // 포매팅 완료된 최종 파일
@@ -84,18 +66,29 @@ function TagSelector({
   options,
   selected,
   onChange,
+  placeholder = '목록에 없는 항목 직접 추가',
 }: Readonly<{
   label: string
   options: string[]
   selected: string[]
   onChange: (val: string[]) => void
+  placeholder?: string
 }>) {
+  const [customValue, setCustomValue] = useState('')
+
   const toggle = (opt: string) =>
     onChange(
       selected.includes(opt)
         ? selected.filter((s) => s !== opt)
         : [...selected, opt]
     )
+
+  const addCustom = () => {
+    const value = customValue.trim()
+    if (!value) return
+    if (!selected.includes(value)) onChange([...selected, value])
+    setCustomValue('')
+  }
 
   return (
     <div>
@@ -118,6 +111,29 @@ function TagSelector({
             {opt}
           </button>
         ))}
+      </div>
+      <div className="mt-3 flex gap-2">
+        <input
+          type="text"
+          value={customValue}
+          onChange={(e) => setCustomValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              addCustom()
+            }
+          }}
+          placeholder={placeholder}
+          className="border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 focus:ring-brand-500/20 min-w-0 flex-1 rounded-xl border px-3.5 py-2 text-sm transition-all outline-none focus:ring-1"
+        />
+        <button
+          type="button"
+          onClick={addCustom}
+          className="border-border/50 bg-surface-800/70 text-surface-200 hover:border-brand-500/50 inline-flex shrink-0 items-center gap-1.5 rounded-xl border px-3.5 py-2 text-sm font-medium transition-colors hover:text-white"
+        >
+          <Plus className="h-4 w-4" />
+          추가
+        </button>
       </div>
     </div>
   )
@@ -298,6 +314,7 @@ export function UploadForm() {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [aiTypes, setAiTypes] = useState<string[]>([])
+  const [aiVersions, setAiVersions] = useState<string[]>([])
   const [categories, setCategories] = useState<string[]>([])
   const [isPaidSale, setIsPaidSale] = useState(false)
   const [priceInput, setPriceInput] = useState('')
@@ -434,6 +451,8 @@ export function UploadForm() {
     if (!content.trim()) errors.content = '프롬프트 내용을 입력해주세요.'
     if (aiTypes.length === 0)
       errors.aiTypes = 'AI 종류를 1개 이상 선택해주세요.'
+    if (aiVersions.length === 0)
+      errors.aiVersions = 'AI 버전을 1개 이상 입력하거나 선택해주세요.'
     if (categories.length === 0)
       errors.categories = '카테고리를 1개 이상 선택해주세요.'
 
@@ -509,6 +528,7 @@ export function UploadForm() {
         content: content.trim(),
         price: priceWon,
         ai_types: aiTypes,
+        ai_versions: aiVersions,
         categories,
         author_id: user.id,
         result_media: mediaPreviews.map((p, idx) => ({
@@ -715,9 +735,10 @@ export function UploadForm() {
       <div>
         <TagSelector
           label="AI 종류 *"
-          options={AI_TYPE_OPTIONS}
+          options={AI_TOOL_OPTIONS}
           selected={aiTypes}
           onChange={setAiTypes}
+          placeholder="예: Kling, Perplexity, Pika"
         />
         {fieldErrors.aiTypes && (
           <p className="mt-1.5 flex items-center gap-1 text-xs text-red-400">
@@ -727,13 +748,31 @@ export function UploadForm() {
         )}
       </div>
 
+      {/* AI 버전 */}
+      <div>
+        <TagSelector
+          label="AI 버전 *"
+          options={AI_VERSION_OPTIONS}
+          selected={aiVersions}
+          onChange={setAiVersions}
+          placeholder="예: Midjourney v6.1, Runway Gen-4"
+        />
+        {fieldErrors.aiVersions && (
+          <p className="mt-1.5 flex items-center gap-1 text-xs text-red-400">
+            <AlertCircle className="h-3.5 w-3.5" />
+            {fieldErrors.aiVersions}
+          </p>
+        )}
+      </div>
+
       {/* 카테고리 */}
       <div>
         <TagSelector
           label="카테고리 *"
-          options={CATEGORY_OPTIONS}
+          options={CONTENT_CATEGORY_OPTIONS}
           selected={categories}
           onChange={setCategories}
+          placeholder="예: 패션, 건축, 데이터 분석"
         />
         {fieldErrors.categories && (
           <p className="mt-1.5 flex items-center gap-1 text-xs text-red-400">

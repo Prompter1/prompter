@@ -119,7 +119,7 @@ export default function ChargePage() {
       await paymentWidgetRef.current.requestPayment({
         orderId,
         orderName: `${(selected.points + selected.bonus).toLocaleString()}P 크레딧 충전`,
-        successUrl: `${window.location.origin}/charge/success?points=${selected.points + selected.bonus}`,
+        successUrl: `${window.location.origin}/charge/success`,
         failUrl: `${window.location.origin}/charge/fail`,
       })
     } catch (err: unknown) {

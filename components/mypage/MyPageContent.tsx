@@ -16,6 +16,16 @@ interface MemberData {
   nickname: string
   points: number
   is_sponsor: boolean
+  total_revenue: number
+}
+
+export interface PurchaseTransaction {
+  id: number
+  prompt_post_id: number
+  amount: number
+  fee: number
+  seller_revenue: number
+  created_at: string
 }
 
 const TABS = [
@@ -31,6 +41,7 @@ export function MyPageContent() {
   const [activeTab, setActiveTab] = useState<TabType>('myPrompts')
   const [memberData, setMemberData] = useState<MemberData | null>(null)
   const [myPrompts, setMyPrompts] = useState<PromptPost[]>([])
+  const [purchases, setPurchases] = useState<PurchaseTransaction[]>([])
   const [isFetchingData, setIsFetchingData] = useState(false)
 
   useEffect(() => {
@@ -44,27 +55,36 @@ export function MyPageContent() {
     const fetchData = async () => {
       setIsFetchingData(true)
       try {
-        // 병렬로 멤버 정보 + 프롬프트 동시 조회
-        const [{ data: member }, { data: prompts }] = await Promise.all([
-          supabase
-            .from('members')
-            .select('nickname, points, is_sponsor')
-            .eq('id', user.id)
-            .single(),
-          supabase
-            .from('prompt_posts')
-            .select(
-              `
-              id, title, content, price, ai_types, categories,
+        // 병렬로 멤버 정보 + 프롬프트 + 구매 내역 동시 조회
+        const [{ data: member }, { data: prompts }, { data: txs }] =
+          await Promise.all([
+            supabase
+              .from('members')
+              .select('nickname, points, is_sponsor, total_revenue')
+              .eq('id', user.id)
+              .single(),
+            supabase
+              .from('prompt_posts')
+              .select(
+                `
+              id, title, content, price, ai_types, ai_versions, categories, view_count, sales_count,
               author:members!author_id(id, nickname, avatar_url, points, is_sponsor),is_verified, result_media
             `
-            )
-            .eq('author_id', user.id)
-            .order('created_at', { ascending: false }),
-        ])
+              )
+              .eq('author_id', user.id)
+              .order('created_at', { ascending: false }),
+            supabase
+              .from('transactions')
+              .select(
+                'id, prompt_post_id, amount, fee, seller_revenue, created_at'
+              )
+              .eq('buyer_id', user.id)
+              .order('created_at', { ascending: false }),
+          ])
 
         if (member) setMemberData(member)
         if (prompts) setMyPrompts(prompts as unknown as PromptPost[])
+        if (txs) setPurchases(txs as PurchaseTransaction[])
       } finally {
         setIsFetchingData(false)
       }
@@ -139,9 +159,15 @@ export function MyPageContent() {
           <MyPromptsTab prompts={myPrompts} isLoading={isFetchingData} />
         )}
         {activeTab === 'stats' && (
-          <StatsTab prompts={myPrompts} isLoading={isFetchingData} />
+          <StatsTab
+            prompts={myPrompts}
+            isLoading={isFetchingData}
+            totalRevenue={memberData?.total_revenue ?? 0}
+          />
         )}
-        {activeTab === 'purchases' && <PurchasesTab />}
+        {activeTab === 'purchases' && (
+          <PurchasesTab purchases={purchases} isLoading={isFetchingData} />
+        )}
       </main>
     </div>
   )

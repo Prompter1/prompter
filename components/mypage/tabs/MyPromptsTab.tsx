@@ -15,6 +15,8 @@ export function MyPromptsTab({
   prompts,
   isLoading,
 }: Readonly<MyPromptsTabProps>) {
+  const router = useRouter()
+
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -22,8 +24,6 @@ export function MyPromptsTab({
       </div>
     )
   }
-
-  const router = useRouter()
 
   if (prompts.length === 0) {
     return (

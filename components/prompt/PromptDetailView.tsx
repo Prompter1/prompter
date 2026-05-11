@@ -1,6 +1,13 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, Crown, ShieldCheck, Tag, FolderOpen } from 'lucide-react'
+import {
+  ArrowLeft,
+  Crown,
+  Eye,
+  FolderOpen,
+  ShieldCheck,
+  ShoppingBag,
+} from 'lucide-react'
 import type { PromptPost } from '@/types'
 import { Badge } from '@/components/ui/Badge'
 import { PromptMediaGallery } from '@/components/prompt/PromptMediaGallery'
@@ -22,10 +29,13 @@ export async function PromptDetailView({
     content,
     price,
     ai_types,
+    ai_versions,
     categories,
     author,
     is_verified,
     result_media,
+    view_count,
+    sales_count,
   } = post
 
   // 로그인 유저 + 구매 여부 확인
@@ -98,6 +108,11 @@ export async function PromptDetailView({
               {ai_types.map((t) => (
                 <Badge key={t}>{t}</Badge>
               ))}
+              {ai_versions.map((version) => (
+                <Badge key={version} variant="paid">
+                  {version}
+                </Badge>
+              ))}
               {is_verified && (
                 <Badge variant="verified">
                   <span className="flex items-center gap-1">
@@ -143,6 +158,14 @@ export async function PromptDetailView({
                 <div className="text-surface-500 mt-0.5 flex flex-wrap gap-x-3 gap-y-1 text-xs">
                   {dateLabel && <span>{dateLabel}</span>}
                   <span>{author.points.toLocaleString()} P</span>
+                  <span className="inline-flex items-center gap-1">
+                    <Eye className="h-3 w-3" />
+                    {(view_count ?? 0).toLocaleString()}
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <ShoppingBag className="h-3 w-3" />
+                    {(sales_count ?? 0).toLocaleString()}
+                  </span>
                 </div>
               </div>
               <div className="w-full shrink-0 text-right sm:w-auto">

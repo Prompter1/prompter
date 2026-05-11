@@ -15,7 +15,7 @@ export async function FeaturedPromptsSection() {
           title="인기 프롬프트"
           subtitle="커뮤니티에서 가장 사랑받는 프롬프트들"
           linkLabel="더 많은 프롬프트 보기"
-          linkHref="/explore"
+          linkHref="/prompt?sort=popular"
         />
 
         {prompts.length === 0 ? (

@@ -48,7 +48,7 @@ export default function CategorySection() {
           </p>
         </div>
         <a
-          href="/categories"
+          href="/prompt"
           className="text-brand-400 hover:text-brand-300 hidden items-center gap-1.5 text-sm font-medium transition-colors duration-200 sm:flex"
         >
           전체 카테고리 보기 <ArrowRight className="h-4 w-4" />
@@ -60,7 +60,7 @@ export default function CategorySection() {
         {categories.map((category, idx) => (
           <a
             key={category.name}
-            href={`/explore?category=${category.name}`}
+            href={`/prompt?ai=${encodeURIComponent(category.name)}`}
             className={`group card-premium relative overflow-hidden rounded-2xl p-6 stagger-${idx + 1}`}
             style={{ animationFillMode: 'backwards' }}
           >

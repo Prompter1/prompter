@@ -9,7 +9,7 @@ export async function fetchFeaturedPrompts(): Promise<PromptPost[]> {
     .from('prompt_posts')
     .select(
       `
-      id, title, content, price, ai_types, categories,
+      id, title, content, price, ai_types, ai_versions, categories,
       is_verified, result_media,
       author:members!author_id(id, nickname, avatar_url, points, is_sponsor)
     `
@@ -28,6 +28,7 @@ export async function fetchFeaturedPrompts(): Promise<PromptPost[]> {
     content: row.content,
     price: row.price,
     ai_types: row.ai_types ?? [],
+    ai_versions: row.ai_versions ?? [],
     categories: row.categories ?? [],
     is_verified: row.is_verified,
     result_media: normalizeMedia(row.result_media),

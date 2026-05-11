@@ -16,9 +16,9 @@ interface AuthNavbarProps {
 }
 
 const navLinks = [
-  { href: '/explore', label: '탐색' },
-  { href: '/ranking', label: '랭킹' },
-  { href: '/community', label: '커뮤니티' },
+  { href: '/prompt', label: '탐색' },
+  { href: '/prompt?sort=popular', label: '랭킹' },
+  { href: '/upload', label: '등록' },
 ]
 
 export default function AuthNavbar({ user }: Readonly<AuthNavbarProps>) {

@@ -8,9 +8,9 @@ import { navigationUtils } from '@/src/lib/navigation'
 import { useIsAdmin } from '@/hooks/useIsAdmin'
 
 const NAV_LINKS = [
-  { label: '탐색', href: '#' },
-  { label: '랭킹', href: '#' },
-  { label: '커뮤니티', href: '#' },
+  { label: '탐색', href: '/prompt' },
+  { label: '충전', href: '/charge' },
+  { label: '등록', href: '/upload' },
 ]
 
 export function Navbar() {

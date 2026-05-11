@@ -6,9 +6,10 @@ import type { PromptPost } from '@/types'
 interface StatsTabProps {
   prompts: PromptPost[]
   isLoading: boolean
+  totalRevenue: number
 }
 
-export function StatsTab({ prompts, isLoading }: StatsTabProps) {
+export function StatsTab({ prompts, isLoading, totalRevenue }: StatsTabProps) {
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -46,20 +47,19 @@ export function StatsTab({ prompts, isLoading }: StatsTabProps) {
     },
     {
       icon: TrendingUp,
-      label: '예상 총 수익',
-      value:
-        totalPotentialRevenue > 0
-          ? `${totalPotentialRevenue.toLocaleString()}원`
-          : '-',
-      sub: '판매가 합산 기준',
+      label: '누적 정산 수익',
+      value: totalRevenue > 0 ? `${totalRevenue.toLocaleString()}P` : '-',
+      sub: '수수료 공제 후',
       color: 'text-emerald-400',
       bg: 'bg-emerald-500/10',
     },
     {
       icon: Eye,
       label: '조회수',
-      value: '-',
-      sub: '준비 중',
+      value: prompts
+        .reduce((sum, prompt) => sum + (prompt.view_count ?? 0), 0)
+        .toLocaleString(),
+      sub: '내 프롬프트 전체',
       color: 'text-indigo-400',
       bg: 'bg-indigo-500/10',
     },
@@ -114,7 +114,7 @@ export function StatsTab({ prompts, isLoading }: StatsTabProps) {
                   </div>
                 </div>
                 <span className="text-sm font-bold text-white">
-                  {prompt.price.toLocaleString()}원
+                  {prompt.price.toLocaleString()}P
                 </span>
               </li>
             ))}

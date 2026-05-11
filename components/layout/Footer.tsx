@@ -3,9 +3,9 @@ import { Sparkles } from 'lucide-react'
 
 const footerLinks = {
   product: [
-    { href: '/explore', label: '탐색' },
-    { href: '/ranking', label: '랭킹' },
-    { href: '/pricing', label: '가격' },
+    { href: '/prompt', label: '탐색' },
+    { href: '/prompt?sort=popular', label: '랭킹' },
+    { href: '/charge', label: '크레딧 충전' },
   ],
   company: [
     { href: '/about', label: '회사 소개' },
