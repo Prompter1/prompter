@@ -1,39 +1,34 @@
 'use client'
 
-import { Sparkles, ShieldCheck } from 'lucide-react'
+import { Sparkles, ShieldCheck, ArrowUpRight } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { PromptPost } from '@/types'
+import { cn } from '@/src/lib/utils'
 
 interface PromptCardProps {
   prompt: PromptPost
 }
 
 export default function PromptCard({ prompt }: Readonly<PromptCardProps>) {
-  const { title, price, ai_types, author, is_verified, result_media } = prompt
-
-  // 1. 데이터가 있는지 먼저 확인
+  const { id, title, price, ai_types, author, is_verified, result_media } = prompt
+  
   const firstMediaRaw = result_media?.length > 0 ? result_media[0] : null
+  const firstMedia = typeof firstMediaRaw === 'string'
+    ? firstMediaRaw
+    : (firstMediaRaw as any)?.url || null
 
-  // 2. firstMediaRaw가 문자열인지 확인 후 처리 (객체라면 .url 같은 속성을 참조해야 할 수도 있음)
-  const firstMedia =
-    typeof firstMediaRaw === 'string'
-      ? firstMediaRaw
-      : (firstMediaRaw as any)?.url || null // 객체일 경우를 대비한 처리
-
-  // 3. 문자열일 때만 match 실행
-  const isVideo =
-    typeof firstMedia === 'string'
-      ? new RegExp(/\.(mp4|webm)$/i).exec(firstMedia)
-      : false
+  const isVideo = typeof firstMedia === 'string'
+    ? /\.(mp4|webm)$/i.test(firstMedia)
+    : false
 
   return (
     <Link
-      href={`/prompt/${prompt.id}`}
-      className="group border-surface-700/50 hover:border-brand-500/50 hover:shadow-brand-500/10 relative flex flex-col overflow-hidden rounded-2xl border bg-[#12121A] transition-all duration-300 hover:shadow-lg"
+      href={`/prompt/${id}`}
+      className="group relative flex flex-col overflow-hidden bg-[#0A0A0A] border border-white/5 transition-all duration-500 hover:border-white/20"
     >
-      {/* 썸네일 영역 (이미지 or 영상 or 플레이스홀더) */}
-      <div className="relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden bg-[#1A1A24]">
+      {/* 썸네일 영역 - 미니멀하고 고대비 스타일 */}
+      <div className="relative aspect-[16/10] w-full overflow-hidden grayscale transition-all duration-700 group-hover:grayscale-0">
         {firstMedia ? (
           isVideo ? (
             <video
@@ -42,7 +37,7 @@ export default function PromptCard({ prompt }: Readonly<PromptCardProps>) {
               loop
               muted
               playsInline
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
           ) : (
             <Image
@@ -50,51 +45,56 @@ export default function PromptCard({ prompt }: Readonly<PromptCardProps>) {
               alt={title}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
+              className="object-cover transition-transform duration-700 group-hover:scale-105"
             />
           )
         ) : (
-          // 미디어가 없을 경우 기본 플레이스홀더 아이콘
-          <Sparkles
-            className="text-surface-600/50 h-12 w-12"
-            strokeWidth={1.5}
-          />
+          <div className="flex h-full w-full items-center justify-center bg-zinc-900">
+            <Sparkles className="h-8 w-8 text-zinc-800" strokeWidth={1} />
+          </div>
         )}
+        
+        {/* 오버레이 효과 */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent opacity-40" />
       </div>
 
-      {/* 콘텐츠 영역 */}
-      <div className="flex flex-1 flex-col p-5">
-        {/* 태그 영역 (AI 타입 & 인증 마크) */}
-        <div className="mb-3 flex items-center gap-2">
-          {ai_types?.[0] && (
-            <span className="bg-surface-700/50 text-surface-300 rounded-full px-3 py-1 text-xs font-medium">
-              {ai_types[0]}
-            </span>
-          )}
-
-          {is_verified && (
-            <span className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-400">
-              <ShieldCheck className="h-3.5 w-3.5" />
-              인증됨
-            </span>
-          )}
+      {/* 콘텐츠 영역 - 타이포그래피 중심 */}
+      <div className="flex flex-1 flex-col p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {ai_types?.[0] && (
+              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-600">
+                {ai_types[0]}
+              </span>
+            )}
+            {is_verified && (
+              <div className="flex items-center gap-1 text-white">
+                <ShieldCheck className="h-3 w-3" />
+                <span className="text-[10px] font-black uppercase tracking-widest">Verified</span>
+              </div>
+            )}
+          </div>
+          <div className="h-8 w-8 rounded-full border border-white/10 flex items-center justify-center transition-all group-hover:bg-white group-hover:text-black">
+            <ArrowUpRight className="h-4 w-4" />
+          </div>
         </div>
 
-        {/* 제목 */}
-        <h3 className="text-surface-50 group-hover:text-brand-400 mb-6 line-clamp-2 text-lg font-semibold transition-colors">
+        <h3 className="mb-8 line-clamp-2 text-xl font-black tracking-tight text-white transition-colors">
           {title}
         </h3>
 
-        {/* 푸터 영역 (작성자 & 가격) */}
-        <div className="mt-auto flex items-center justify-between pt-2">
-          <span className="text-surface-500 text-sm font-medium">
-            by {author.nickname}
-          </span>
-
-          <span
-            className={`text-base font-bold ${price === 0 ? 'text-emerald-400' : 'text-brand-400'}`}
-          >
-            {price === 0 ? '무료' : `${price.toLocaleString()}원`}
+        {/* 푸터 영역 - 가격과 작성자 */}
+        <div className="mt-auto flex items-center justify-between border-t border-white/5 pt-6">
+          <div className="flex items-center gap-2">
+            <div className="h-5 w-5 rounded-full bg-zinc-800 flex items-center justify-center text-[8px] font-black text-zinc-500">
+              {author.nickname.charAt(0).toUpperCase()}
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 group-hover:text-zinc-300">
+              {author.nickname}
+            </span>
+          </div>
+          <span className="text-sm font-black tracking-tighter text-white">
+            {price === 0 ? 'FREE' : `₩${price.toLocaleString()}`}
           </span>
         </div>
       </div>
