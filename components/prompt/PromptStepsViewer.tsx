@@ -9,8 +9,11 @@ import {
   MessageSquare,
   Sparkles,
   Video,
+  Lock,
+  AlertCircle,
 } from 'lucide-react'
 import { cn } from '@/src/lib/utils'
+import { UnlockModal } from '@/components/prompt/UnlockModal'
 
 export interface PromptStep {
   id: number
@@ -33,8 +36,8 @@ function MediaGrid({
 }: Readonly<{ urls: string[]; label: string }>) {
   const [active, setActive] = useState(0)
   if (urls.length === 0) return null
-
   const current = urls[Math.min(active, urls.length - 1)]
+
   return (
     <div className="space-y-2">
       <p className="text-surface-500 text-xs font-medium tracking-wide uppercase">
@@ -93,152 +96,283 @@ function MediaGrid({
   )
 }
 
+// ── 개별 스텝의 입력 프롬프트 (해금 로직 포함) ──────────────────────────────
+function StepInputPrompt({
+  prompt,
+  unlocked,
+  price,
+  isLoggedIn,
+  onRequestUnlock,
+}: Readonly<{
+  prompt: string
+  unlocked: boolean
+  price: number
+  isLoggedIn: boolean
+  onRequestUnlock: () => void
+}>) {
+  // 전체 프롬프트의 15% 미리보기 (최소 10자, 최대 200자)
+  const previewLength = Math.min(
+    Math.max(Math.floor(prompt.length * 0.15), 10),
+    200
+  )
+  const previewText = prompt.slice(0, previewLength)
+
+  return (
+    <div>
+      <p className="text-surface-500 mb-2 flex items-center gap-1.5 text-xs font-medium tracking-wide uppercase">
+        <MessageSquare className="h-3.5 w-3.5" />
+        입력 프롬프트
+      </p>
+
+      <div className="border-surface-700/50 relative overflow-hidden rounded-xl border">
+        {unlocked ? (
+          <pre className="text-surface-200 bg-surface-900/50 max-h-48 overflow-auto p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap">
+            {prompt}
+          </pre>
+        ) : (
+          <>
+            <div className="bg-surface-900/50 select-none">
+              {/* 미리보기 — 선명하게 */}
+              <pre className="text-surface-200 p-4 pb-0 font-mono text-sm leading-relaxed whitespace-pre-wrap">
+                {previewText}
+              </pre>
+              {/* 블러 텍스트 — 뒷 내용을 뭉개서 보여줌 */}
+              <pre
+                className="text-surface-200 px-4 pt-1 pb-4 font-mono text-sm leading-relaxed whitespace-pre-wrap select-none"
+                style={{
+                  filter: 'blur(4px)',
+                  userSelect: 'none',
+                  pointerEvents: 'none',
+                }}
+              >
+                {prompt.slice(previewLength, previewLength + 300)}
+              </pre>
+            </div>
+            {/* 해금 영역 */}
+            <div className="border-surface-700/40 bg-surface-800/70 flex flex-col items-center gap-2.5 border-t px-4 py-4 text-center backdrop-blur-sm">
+              <div className="bg-surface-700/50 flex h-9 w-9 items-center justify-center rounded-xl">
+                <Lock className="text-surface-300 h-4 w-4" />
+              </div>
+              <div>
+                <p className="text-surface-300 text-xs font-medium">
+                  유료 프롬프트입니다
+                </p>
+                <p className="text-surface-500 mt-0.5 text-[11px]">
+                  {price.toLocaleString()}P로 전체 내용을 확인하세요
+                </p>
+              </div>
+              {isLoggedIn ? (
+                <button
+                  type="button"
+                  onClick={onRequestUnlock}
+                  className="bg-brand-500 hover:bg-brand-400 flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold text-white transition-colors"
+                >
+                  <Lock className="h-3.5 w-3.5" />
+                  {price.toLocaleString()}P로 해금하기
+                </button>
+              ) : (
+                <a
+                  href="/login"
+                  className="bg-brand-500 hover:bg-brand-400 flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold text-white transition-colors"
+                >
+                  로그인 후 구매하기
+                </a>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── PromptStepsViewer ─────────────────────────────────────────────────────────
 export function PromptStepsViewer({
   steps,
-}: Readonly<{ steps: PromptStep[] }>) {
+  price,
+  canViewFull,
+  isLoggedIn,
+  postId,
+  title,
+  userPoints,
+}: Readonly<{
+  steps: PromptStep[]
+  price: number
+  canViewFull: boolean
+  isLoggedIn: boolean
+  postId: number
+  title: string
+  userPoints: number
+}>) {
   const [activeStep, setActiveStep] = useState(0)
+  const [unlocked, setUnlocked] = useState(canViewFull)
+  const [showModal, setShowModal] = useState(false)
 
   if (steps.length === 0) return null
 
   const step = steps[activeStep]
+  const isFree = price === 0
+  const showLock = !isFree && !unlocked
 
   return (
-    <div className="border-surface-700/50 bg-surface-800/25 rounded-2xl border">
-      {/* 헤더 + 탭 */}
-      <div className="border-surface-700/50 border-b px-5 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sparkles className="text-brand-400 h-4 w-4" />
-            <span className="text-surface-300 text-sm font-medium">
-              AI 활용 단계
-            </span>
-            <span className="text-surface-500 text-xs">
-              ({steps.length}단계)
-            </span>
-          </div>
-          {steps.length > 1 && (
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => setActiveStep(Math.max(0, activeStep - 1))}
-                disabled={activeStep === 0}
-                className="text-surface-400 hover:text-surface-200 rounded p-1 transition-colors disabled:opacity-30"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <span className="text-surface-400 text-xs">
-                {activeStep + 1} / {steps.length}
+    <>
+      <div className="border-surface-700/50 bg-surface-800/25 rounded-2xl border">
+        {/* 헤더 */}
+        <div className="border-surface-700/50 border-b px-5 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="text-brand-400 h-4 w-4" />
+              <span className="text-surface-300 text-sm font-medium">
+                AI 활용 단계
               </span>
-              <button
-                type="button"
-                onClick={() =>
-                  setActiveStep(Math.min(steps.length - 1, activeStep + 1))
-                }
-                disabled={activeStep === steps.length - 1}
-                className="text-surface-400 hover:text-surface-200 rounded p-1 transition-colors disabled:opacity-30"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
+              <span className="text-surface-500 text-xs">
+                ({steps.length}단계)
+              </span>
+            </div>
+            {steps.length > 1 && (
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setActiveStep(Math.max(0, activeStep - 1))}
+                  disabled={activeStep === 0}
+                  className="text-surface-400 hover:text-surface-200 rounded p-1 transition-colors disabled:opacity-30"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <span className="text-surface-400 text-xs">
+                  {activeStep + 1} / {steps.length}
+                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setActiveStep(Math.min(steps.length - 1, activeStep + 1))
+                  }
+                  disabled={activeStep === steps.length - 1}
+                  className="text-surface-400 hover:text-surface-200 rounded p-1 transition-colors disabled:opacity-30"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+          </div>
+
+          {steps.length > 1 && (
+            <div className="mt-3 flex gap-1.5 overflow-x-auto pb-0.5">
+              {steps.map((s, idx) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setActiveStep(idx)}
+                  className={cn(
+                    'shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
+                    activeStep === idx
+                      ? 'bg-brand-500 text-white'
+                      : 'bg-surface-700/50 text-surface-400 hover:bg-surface-700 hover:text-surface-200'
+                  )}
+                >
+                  STEP {idx + 1}
+                  {s.ai_type && (
+                    <span className="ml-1 opacity-70">· {s.ai_type}</span>
+                  )}
+                </button>
+              ))}
             </div>
           )}
         </div>
 
-        {/* 스텝 탭 */}
+        {/* 스텝 내용 */}
+        <div className="space-y-5 p-5">
+          {/* AI 정보 */}
+          <div className="flex flex-wrap gap-2">
+            {step.ai_type && (
+              <span className="border-brand-500/30 bg-brand-500/10 text-brand-300 rounded-full border px-3 py-1 text-xs font-semibold">
+                {step.ai_type}
+              </span>
+            )}
+            {step.ai_version && (
+              <span className="border-surface-600 bg-surface-700/50 text-surface-300 rounded-full border px-3 py-1 text-xs font-semibold">
+                {step.ai_version}
+              </span>
+            )}
+          </div>
+
+          {/* 입력 미디어 */}
+          {step.input_media.length > 0 && (
+            <MediaGrid urls={step.input_media} label="입력 미디어" />
+          )}
+
+          {/* 입력 프롬프트 — 해금 로직 포함 */}
+          {step.input_prompt && (
+            <StepInputPrompt
+              prompt={step.input_prompt}
+              unlocked={unlocked}
+              price={price}
+              isLoggedIn={isLoggedIn}
+              onRequestUnlock={() => setShowModal(true)}
+            />
+          )}
+
+          {/* 결과 텍스트 — 해금 후 공개 */}
+          {step.output_text &&
+            (unlocked ? (
+              <div>
+                <p className="text-surface-500 mb-2 flex items-center gap-1.5 text-xs font-medium tracking-wide uppercase">
+                  <FileText className="h-3.5 w-3.5" />
+                  결과 텍스트
+                </p>
+                <pre className="text-surface-200 bg-surface-900/50 max-h-48 overflow-auto rounded-xl p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap">
+                  {step.output_text}
+                </pre>
+              </div>
+            ) : (
+              <div className="border-surface-700/40 bg-surface-800/40 flex items-center gap-2 rounded-xl border px-4 py-3">
+                <Lock className="text-surface-500 h-4 w-4 shrink-0" />
+                <p className="text-surface-500 text-xs">
+                  결과 텍스트는 해금 후 확인할 수 있습니다.
+                </p>
+              </div>
+            ))}
+
+          {/* 결과물 미디어 — 항상 공개 (썸네일 역할) */}
+          {step.output_media.length > 0 && (
+            <MediaGrid urls={step.output_media} label="결과물 미디어" />
+          )}
+        </div>
+
+        {/* 도트 페이지네이션 */}
         {steps.length > 1 && (
-          <div className="mt-3 flex gap-1.5 overflow-x-auto pb-0.5">
-            {steps.map((s, idx) => (
+          <div className="border-surface-700/50 flex items-center justify-center gap-1.5 border-t px-5 py-3">
+            {steps.map((_, idx) => (
               <button
-                key={s.id}
+                key={idx}
                 type="button"
                 onClick={() => setActiveStep(idx)}
                 className={cn(
-                  'shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
-                  activeStep === idx
-                    ? 'bg-brand-500 text-white'
-                    : 'bg-surface-700/50 text-surface-400 hover:bg-surface-700 hover:text-surface-200'
+                  'h-1.5 rounded-full transition-all',
+                  idx === activeStep
+                    ? 'bg-brand-500 w-5'
+                    : 'bg-surface-600 hover:bg-surface-500 w-1.5'
                 )}
-              >
-                STEP {idx + 1}
-                {s.ai_type && (
-                  <span className="ml-1 opacity-70">· {s.ai_type}</span>
-                )}
-              </button>
+              />
             ))}
           </div>
         )}
       </div>
 
-      {/* 스텝 내용 */}
-      <div className="space-y-5 p-5">
-        {/* AI 정보 */}
-        <div className="flex flex-wrap gap-2">
-          {step.ai_type && (
-            <span className="border-brand-500/30 bg-brand-500/10 text-brand-300 rounded-full border px-3 py-1 text-xs font-semibold">
-              {step.ai_type}
-            </span>
-          )}
-          {step.ai_version && (
-            <span className="border-surface-600 bg-surface-700/50 text-surface-300 rounded-full border px-3 py-1 text-xs font-semibold">
-              {step.ai_version}
-            </span>
-          )}
-        </div>
-
-        {/* 입력 미디어 */}
-        {step.input_media.length > 0 && (
-          <MediaGrid urls={step.input_media} label="입력 미디어" />
-        )}
-
-        {/* 입력 프롬프트 */}
-        {step.input_prompt && (
-          <div>
-            <p className="text-surface-500 mb-2 flex items-center gap-1.5 text-xs font-medium tracking-wide uppercase">
-              <MessageSquare className="h-3.5 w-3.5" />
-              입력 프롬프트
-            </p>
-            <pre className="text-surface-200 bg-surface-900/50 max-h-48 overflow-auto rounded-xl p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap">
-              {step.input_prompt}
-            </pre>
-          </div>
-        )}
-
-        {/* 결과 텍스트 */}
-        {step.output_text && (
-          <div>
-            <p className="text-surface-500 mb-2 flex items-center gap-1.5 text-xs font-medium tracking-wide uppercase">
-              <FileText className="h-3.5 w-3.5" />
-              결과 텍스트
-            </p>
-            <pre className="text-surface-200 bg-surface-900/50 max-h-48 overflow-auto rounded-xl p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap">
-              {step.output_text}
-            </pre>
-          </div>
-        )}
-
-        {/* 결과물 미디어 */}
-        {step.output_media.length > 0 && (
-          <MediaGrid urls={step.output_media} label="결과물 미디어" />
-        )}
-      </div>
-
-      {/* 스텝 도트 페이지네이션 */}
-      {steps.length > 1 && (
-        <div className="border-surface-700/50 flex items-center justify-center gap-1.5 border-t px-5 py-3">
-          {steps.map((_, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => setActiveStep(idx)}
-              className={cn(
-                'h-1.5 rounded-full transition-all',
-                idx === activeStep
-                  ? 'bg-brand-500 w-5'
-                  : 'bg-surface-600 hover:bg-surface-500 w-1.5'
-              )}
-            />
-          ))}
-        </div>
+      {/* 해금 모달 */}
+      {showModal && (
+        <UnlockModal
+          postId={postId}
+          title={title}
+          price={price}
+          userPoints={userPoints}
+          onClose={() => setShowModal(false)}
+          onSuccess={() => {
+            setUnlocked(true)
+            setShowModal(false)
+          }}
+        />
       )}
-    </div>
+    </>
   )
 }

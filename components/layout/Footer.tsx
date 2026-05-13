@@ -7,19 +7,17 @@ const footerLinks = {
     { href: '/prompt?sort=popular', label: '랭킹' },
     { href: '/charge', label: '크레딧 충전' },
   ],
-  company: [
-    { href: '/about', label: '회사 소개' },
-    { href: '/blog', label: '블로그' },
-    { href: '/careers', label: '채용' },
-  ],
   support: [
-    { href: '/help', label: '도움말' },
-    { href: '/contact', label: '문의하기' },
-    { href: '/faq', label: 'FAQ' },
+    { href: '/footer/info', label: '사업자 정보' },
+    { href: '/footer/faq', label: 'FAQ' },
+    { href: '/footer/contact', label: '문의하기' },
   ],
   legal: [
-    { href: '/terms', label: '이용약관' },
-    { href: '/privacy', label: '개인정보처리방침' },
+    { href: '/footer/terms', label: '이용약관' },
+    { href: '/footer/privacy', label: '개인정보처리방침' },
+    { href: '/footer/refund', label: '환불정책' },
+    { href: '/footer/seller-policy', label: '판매자 정책' },
+    { href: '/footer/delivery', label: '디지털 상품 제공 방식' },
   ],
 }
 
@@ -27,16 +25,16 @@ export default function Footer() {
   return (
     <footer className="border-border/40 bg-surface-900/80 relative border-t backdrop-blur-xl">
       {/* Subtle top gradient line */}
-      <div className="via-brand-500/30 absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent to-transparent" />
+      <div className="via-brand-500/30 absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent to-transparent" />
 
       <div className="mx-auto max-w-7xl px-6 py-16">
         <div className="grid grid-cols-2 gap-8 md:grid-cols-5 md:gap-12">
           {/* Brand column */}
           <div className="col-span-2">
             <Link href="/" className="group inline-flex items-center gap-2.5">
-              <div className="from-brand-400 via-brand-500 to-brand-600 shadow-brand-500/20 group-hover:shadow-brand-500/40 relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br shadow-lg transition-all duration-300">
+              <div className="from-brand-400 via-brand-500 to-brand-600 shadow-brand-500/20 group-hover:shadow-brand-500/40 relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-linear-to-br shadow-lg transition-all duration-300">
                 <Sparkles className="h-4 w-4 text-white" />
-                <div className="absolute inset-0 bg-gradient-to-t from-transparent to-white/20" />
+                <div className="absolute inset-0 bg-linear-to-t from-transparent to-white/20" />
               </div>
               <span className="text-foreground text-lg font-bold tracking-tight">
                 PROMPTER
@@ -67,25 +65,6 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Company links */}
-          <div>
-            <h3 className="text-foreground mb-4 text-sm font-semibold tracking-wide">
-              회사
-            </h3>
-            <ul className="space-y-3">
-              {footerLinks.company.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-muted-foreground hover:text-foreground text-sm transition-colors duration-200"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
           {/* Support links */}
           <div>
             <h3 className="text-foreground mb-4 text-sm font-semibold tracking-wide">
@@ -104,6 +83,25 @@ export default function Footer() {
               ))}
             </ul>
           </div>
+
+          {/* Legal links */}
+          <div>
+            <h3 className="text-foreground mb-4 text-sm font-semibold tracking-wide">
+              정책
+            </h3>
+            <ul className="space-y-3">
+              {footerLinks.legal.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-muted-foreground hover:text-foreground text-sm transition-colors duration-200"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
 
         {/* Bottom section */}
@@ -111,17 +109,6 @@ export default function Footer() {
           <p className="text-muted-foreground text-sm">
             © 2026 Prompter. All rights reserved.
           </p>
-          <div className="flex gap-6">
-            {footerLinks.legal.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-muted-foreground hover:text-foreground text-sm transition-colors duration-200"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
         </div>
       </div>
     </footer>

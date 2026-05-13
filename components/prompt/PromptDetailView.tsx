@@ -117,7 +117,17 @@ export async function PromptDetailView({
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-12">
           <div className="space-y-6">
             <PromptMediaGallery urls={result_media} alt={title} />
-            {steps.length > 0 && <PromptStepsViewer steps={steps} />}
+            {steps.length > 0 && (
+              <PromptStepsViewer
+                steps={steps}
+                price={price}
+                canViewFull={canViewFull}
+                isLoggedIn={!!user}
+                postId={post.id}
+                title={title}
+                userPoints={userPoints}
+              />
+            )}
           </div>
 
           <div className="flex flex-col lg:sticky lg:top-24 lg:self-start">
