@@ -14,11 +14,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const result = await fetchPromptPostById(id)
 
   if (!result) {
-    return {
-      title: '프롬프트를 찾을 수 없습니다 | PROMPTER',
-    }
+    return { title: '프롬프트를 찾을 수 없습니다 | PROMPTER' }
   }
 
+  // ✅ workflow_pages 대신 content(첫 스텝 대표 프롬프트) 사용
   const desc =
     result.post.content.length > 160
       ? `${result.post.content.slice(0, 157)}…`
@@ -34,9 +33,7 @@ export default async function PromptDetailPage({ params }: Props) {
   const { id } = await params
   const result = await fetchPromptPostById(id)
 
-  if (!result) {
-    notFound()
-  }
+  if (!result) notFound()
 
   return (
     <>

@@ -1,35 +1,54 @@
 'use client'
 
-import { Sparkles, ShieldCheck, ArrowUpRight } from 'lucide-react'
+import { Sparkles, ShieldCheck } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { PromptPost } from '@/types'
+
+// ai_type별 그라디언트 색상 매핑
+const AI_GRADIENTS: Record<string, string> = {
+  Midjourney: 'from-violet-600 via-purple-600 to-indigo-700',
+  'Stable Diffusion': 'from-pink-600 via-rose-500 to-orange-500',
+  ChatGPT: 'from-emerald-500 via-teal-500 to-cyan-600',
+  Claude: 'from-amber-500 via-orange-500 to-rose-500',
+  'LLM Agents': 'from-cyan-500 via-blue-500 to-indigo-600',
+  'Video Prompts': 'from-orange-500 via-amber-500 to-yellow-500',
+  'DALL-E': 'from-blue-500 via-indigo-500 to-violet-600',
+  Runway: 'from-fuchsia-500 via-pink-500 to-rose-500',
+  Sora: 'from-sky-500 via-blue-600 to-indigo-700',
+}
+
+function getGradient(aiTypes: string[]): string {
+  for (const t of aiTypes) {
+    if (AI_GRADIENTS[t]) return AI_GRADIENTS[t]
+  }
+  return 'from-brand-500 via-violet-500 to-indigo-600'
+}
 
 interface PromptCardProps {
   prompt: PromptPost
 }
 
 export default function PromptCard({ prompt }: Readonly<PromptCardProps>) {
-  const { id, title, price, ai_types, author, is_verified, result_media } =
-    prompt
+  const { title, price, ai_types, author, is_verified, result_media } = prompt
 
   const firstMediaRaw = result_media?.length > 0 ? result_media[0] : null
-
   const firstMedia =
     typeof firstMediaRaw === 'string'
       ? firstMediaRaw
-      : (firstMediaRaw as any)?.url || null
+      : ((firstMediaRaw as any)?.url ?? null)
 
   const isVideo =
-    typeof firstMedia === 'string' ? /\.(mp4|webm)$/i.test(firstMedia) : false
+    typeof firstMedia === 'string' && /\.(mp4|webm)$/i.test(firstMedia)
+  const gradient = getGradient(ai_types ?? [])
 
   return (
     <Link
-      href={`/prompt/${id}`}
-      className="group relative flex flex-col overflow-hidden border border-white/5 bg-[#0A0A0A] transition-all duration-500 hover:border-white/20"
+      href={`/prompt/${prompt.id}`}
+      className="group border-surface-700/50 hover:border-brand-500/50 hover:shadow-brand-500/10 relative flex flex-col overflow-hidden rounded-2xl border bg-[#12121A] transition-all duration-300 hover:shadow-lg"
     >
-      {/* 썸네일 영역 */}
-      <div className="relative aspect-16/10 w-full overflow-hidden grayscale transition-all duration-700 group-hover:grayscale-0">
+      {/* 썸네일 */}
+      <div className="relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden">
         {firstMedia ? (
           isVideo ? (
             <video
@@ -38,7 +57,7 @@ export default function PromptCard({ prompt }: Readonly<PromptCardProps>) {
               loop
               muted
               playsInline
-              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
             <Image
@@ -46,62 +65,64 @@ export default function PromptCard({ prompt }: Readonly<PromptCardProps>) {
               alt={title}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className="object-cover transition-transform duration-700 group-hover:scale-105"
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
           )
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-zinc-900">
-            <Sparkles className="h-8 w-8 text-zinc-800" strokeWidth={1} />
+          // ✅ 흑백 대신 컬러 그라디언트 플레이스홀더
+          <div
+            className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-80`}
+          >
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+              <Sparkles className="h-10 w-10 text-white/60" strokeWidth={1.5} />
+              {ai_types?.[0] && (
+                <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/80 backdrop-blur-sm">
+                  {ai_types[0]}
+                </span>
+              )}
+            </div>
+            {/* 글로우 효과 */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.1)_0%,transparent_70%)]" />
           </div>
         )}
 
-        {/* 오버레이 */}
-        <div className="absolute inset-0 bg-linear-to-t from-[#0A0A0A] via-transparent to-transparent opacity-40" />
+        {/* 가격 뱃지 — 썸네일 위 */}
+        <div className="absolute top-3 right-3">
+          <span
+            className={`rounded-full px-2.5 py-1 text-xs font-bold shadow-lg backdrop-blur-sm ${
+              price === 0
+                ? 'bg-emerald-500/80 text-white'
+                : 'bg-brand-500/80 text-white'
+            }`}
+          >
+            {price === 0 ? '무료' : `${price.toLocaleString()}P`}
+          </span>
+        </div>
       </div>
 
-      {/* 콘텐츠 영역 */}
-      <div className="flex flex-1 flex-col p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {ai_types?.[0] && (
-              <span className="text-[10px] font-black tracking-widest text-zinc-600 uppercase">
-                {ai_types[0]}
-              </span>
-            )}
-
-            {is_verified && (
-              <div className="flex items-center gap-1 text-white">
-                <ShieldCheck className="h-3 w-3" />
-                <span className="text-[10px] font-black tracking-widest uppercase">
-                  Verified
-                </span>
-              </div>
-            )}
-          </div>
-
-          <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 transition-all group-hover:bg-white group-hover:text-black">
-            <ArrowUpRight className="h-4 w-4" />
-          </div>
+      {/* 콘텐츠 */}
+      <div className="flex flex-1 flex-col p-5">
+        <div className="mb-3 flex items-center gap-2">
+          {ai_types?.[0] && (
+            <span className="bg-surface-700/50 text-surface-300 rounded-full px-3 py-1 text-xs font-medium">
+              {ai_types[0]}
+            </span>
+          )}
+          {is_verified && (
+            <span className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-400">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              인증됨
+            </span>
+          )}
         </div>
 
-        <h3 className="mb-8 line-clamp-2 text-xl font-black tracking-tight text-white transition-colors">
+        <h3 className="text-surface-50 group-hover:text-brand-400 mb-6 line-clamp-2 text-lg font-semibold transition-colors">
           {title}
         </h3>
 
-        {/* 푸터 */}
-        <div className="mt-auto flex items-center justify-between border-t border-white/5 pt-6">
-          <div className="flex items-center gap-2">
-            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-zinc-800 text-[8px] font-black text-zinc-500">
-              {author.nickname.charAt(0).toUpperCase()}
-            </div>
-
-            <span className="text-[10px] font-bold tracking-widest text-zinc-500 uppercase group-hover:text-zinc-300">
-              {author.nickname}
-            </span>
-          </div>
-
-          <span className="text-sm font-black tracking-tighter text-white">
-            {price === 0 ? 'FREE' : `₩${price.toLocaleString()}`}
+        <div className="mt-auto flex items-center justify-between pt-2">
+          <span className="text-surface-500 text-sm font-medium">
+            by {author.nickname}
           </span>
         </div>
       </div>

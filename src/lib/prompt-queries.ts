@@ -1,6 +1,5 @@
 import type { PromptPost } from '@/types'
-import { createSupabaseServerClient } from '@/src/lib/supabase-server'
-import { getRankedAiTools } from '@/src/lib/taxonomy'
+import { createSupabaseServerClient } from './supabase-server'
 
 export function normalizeResultMedia(result_media: unknown): string[] {
   if (!Array.isArray(result_media)) return []
@@ -31,8 +30,8 @@ type PromptRow = {
   is_verified: boolean
   result_media: unknown
   created_at: string | null
-  view_count?: number | null
-  sales_count?: number | null
+  view_count: number | null
+  sales_count: number | null
   author: {
     id: string
     nickname: string
@@ -40,24 +39,6 @@ type PromptRow = {
     points: number
     is_sponsor: boolean
   } | null
-}
-
-export type PromptSort = 'latest' | 'popular' | 'views'
-
-export type PromptExploreParams = {
-  q?: string
-  ai?: string
-  version?: string
-  category?: string
-  verified?: boolean
-  sort?: PromptSort
-}
-
-export type PromptExploreResult = {
-  prompts: PromptPost[]
-  aiRankings: ReturnType<typeof getRankedAiTools>
-  categories: { name: string; count: number }[]
-  versions: { name: string; count: number }[]
 }
 
 export async function fetchPromptPostById(
@@ -70,15 +51,17 @@ export async function fetchPromptPostById(
   const { data, error } = await supabase
     .from('prompt_posts')
     .select(
-      `
-      id, title, content, price, ai_types, ai_versions, categories, is_verified, result_media, created_at, view_count, sales_count,
-      author:members!author_id(id, nickname, avatar_url, points, is_sponsor)
-    `
+      `id, title, content, price, ai_types, ai_versions, categories,
+       is_verified, result_media, created_at, view_count, sales_count,
+       author:members!author_id(id, nickname, avatar_url, points, is_sponsor)`
     )
     .eq('id', id)
     .single()
 
   if (error || !data) return null
+
+  // 조회수 증가 (비동기 fire-and-forget)
+  supabase.rpc('increment_view_count', { post_id: id }).then(() => {})
 
   const row = data as unknown as PromptRow
   if (!row.author) return null
@@ -96,111 +79,101 @@ export async function fetchPromptPostById(
     result_media: normalizeResultMedia(row.result_media),
     view_count: row.view_count ?? 0,
     sales_count: row.sales_count ?? 0,
-    created_at: row.created_at,
   }
 
-  return {
-    post,
-    createdAt: row.created_at,
-  }
+  return { post, createdAt: row.created_at }
 }
 
-function countArrayValues(
-  rows: unknown[],
-  key: string
-): Record<string, number> {
-  const counts: Record<string, number> = {}
-  for (const row of rows) {
-    const value = row && typeof row === 'object' ? (row as any)[key] : null
-    if (!Array.isArray(value)) continue
-    for (const item of value) {
-      if (typeof item !== 'string' || item.trim() === '') continue
-      counts[item] = (counts[item] ?? 0) + 1
-    }
-  }
-  return counts
-}
+// ── 탐색 페이지용 ───────────────────────────────────────────────────────────
+export type PromptSort = 'latest' | 'popular' | 'views'
 
-function toCountList(counts: Record<string, number>) {
-  return Object.entries(counts)
-    .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
-}
-
-function sanitizeSearch(value: string) {
-  return value.replace(/[,%]/g, ' ').trim()
-}
-
-function mapPromptRow(row: any): PromptPost {
-  return {
-    id: row.id,
-    title: row.title,
-    content: row.content,
-    price: row.price,
-    ai_types: row.ai_types ?? [],
-    ai_versions: row.ai_versions ?? [],
-    categories: row.categories ?? [],
-    author: row.author,
-    is_verified: row.is_verified,
-    result_media: normalizeResultMedia(row.result_media),
-    view_count: row.view_count ?? 0,
-    sales_count: row.sales_count ?? 0,
-    created_at: row.created_at ?? null,
-  }
-}
-
-export async function fetchPromptExplore(
-  params: PromptExploreParams
-): Promise<PromptExploreResult> {
+export async function fetchPromptExplore({
+  q = '',
+  ai = '',
+  version = '',
+  category = '',
+  sort = 'latest',
+  verified = false,
+}: {
+  q?: string
+  ai?: string
+  version?: string
+  category?: string
+  sort?: PromptSort
+  verified?: boolean
+}): Promise<{
+  prompts: PromptPost[]
+  aiRankings: { name: string; count: number }[]
+  categories: { name: string; count: number }[]
+  versions: { name: string; count: number }[]
+}> {
   const supabase = await createSupabaseServerClient()
 
-  const { data: facetRows } = await supabase
+  let query = supabase.from('prompt_posts').select(
+    `id, title, content, price, ai_types, ai_versions, categories,
+       is_verified, result_media, view_count, sales_count,
+       author:members!author_id(id, nickname, avatar_url, points, is_sponsor)`
+  )
+
+  if (q) query = query.ilike('title', `%${q}%`)
+  if (ai) query = query.contains('ai_types', [ai])
+  if (version) query = query.contains('ai_versions', [version])
+  if (category) query = query.contains('categories', [category])
+  if (verified) query = query.eq('is_verified', true)
+
+  if (sort === 'popular')
+    query = query.order('sales_count', { ascending: false })
+  else if (sort === 'views')
+    query = query.order('view_count', { ascending: false })
+  else query = query.order('created_at', { ascending: false })
+
+  const { data, error } = await query.limit(60)
+  if (error || !data)
+    return { prompts: [], aiRankings: [], categories: [], versions: [] }
+
+  const rows = data as unknown as PromptRow[]
+
+  const prompts: PromptPost[] = rows
+    .filter((r) => r.author)
+    .map((r) => ({
+      id: r.id,
+      title: r.title,
+      content: r.content,
+      price: r.price,
+      ai_types: r.ai_types ?? [],
+      ai_versions: r.ai_versions ?? [],
+      categories: r.categories ?? [],
+      author: r.author!,
+      is_verified: r.is_verified,
+      result_media: normalizeResultMedia(r.result_media),
+      view_count: r.view_count ?? 0,
+      sales_count: r.sales_count ?? 0,
+    }))
+
+  // 필터 집계 — 전체 데이터 기준
+  const { data: allData } = await supabase
     .from('prompt_posts')
     .select('ai_types, ai_versions, categories')
 
-  const aiCounts = countArrayValues(facetRows ?? [], 'ai_types')
-  const categoryCounts = countArrayValues(facetRows ?? [], 'categories')
-  const versionCounts = countArrayValues(facetRows ?? [], 'ai_versions')
+  const aiCount: Record<string, number> = {}
+  const catCount: Record<string, number> = {}
+  const verCount: Record<string, number> = {}
 
-  let query = supabase.from('prompt_posts').select(`
-    id, title, content, price, ai_types, ai_versions, categories,
-    is_verified, result_media, created_at, view_count, sales_count,
-    author:members!author_id(id, nickname, avatar_url, points, is_sponsor)
-  `)
-
-  const search = params.q ? sanitizeSearch(params.q) : ''
-  if (search) {
-    query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%`)
-  }
-  if (params.ai) query = query.contains('ai_types', [params.ai])
-  if (params.version) query = query.contains('ai_versions', [params.version])
-  if (params.category) query = query.contains('categories', [params.category])
-  if (params.verified) query = query.eq('is_verified', true)
-
-  if (params.sort === 'popular') {
-    query = query.order('sales_count', { ascending: false })
-  } else if (params.sort === 'views') {
-    query = query.order('view_count', { ascending: false })
-  } else {
-    query = query.order('created_at', { ascending: false })
+  for (const row of allData ?? []) {
+    for (const t of row.ai_types ?? []) aiCount[t] = (aiCount[t] ?? 0) + 1
+    for (const c of row.categories ?? []) catCount[c] = (catCount[c] ?? 0) + 1
+    for (const v of row.ai_versions ?? []) verCount[v] = (verCount[v] ?? 0) + 1
   }
 
-  const { data, error } = await query.limit(48)
-
-  if (error || !data) {
-    console.error('fetchPromptExplore:', error)
-    return {
-      prompts: [],
-      aiRankings: getRankedAiTools(aiCounts),
-      categories: toCountList(categoryCounts),
-      versions: toCountList(versionCounts),
-    }
-  }
+  const toRanking = (obj: Record<string, number>) =>
+    Object.entries(obj)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
 
   return {
-    prompts: data.map(mapPromptRow),
-    aiRankings: getRankedAiTools(aiCounts),
-    categories: toCountList(categoryCounts),
-    versions: toCountList(versionCounts),
+    prompts,
+    aiRankings: toRanking(aiCount),
+    categories: toRanking(catCount),
+    versions: toRanking(verCount),
   }
 }

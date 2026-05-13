@@ -13,6 +13,10 @@ import {
   Loader2,
   Scissors,
   Banknote,
+  ChevronLeft,
+  ChevronRight,
+  Trash2,
+  FileText,
 } from 'lucide-react'
 import Image from 'next/image'
 import { useAuth } from '@/providers/auth-provider'
@@ -21,7 +25,6 @@ import {
   uploadEvidenceFile,
   isAllowedMediaType,
 } from '@/src/lib/storage'
-import { createPromptPost } from '@/src/lib/prompts'
 import { createVerificationRequest } from '@/src/lib/verification-requests'
 import {
   AI_TOOL_OPTIONS,
@@ -40,6 +43,7 @@ const MIN_PRICE_WON = 100
 const MAX_PRICE_WON = 50_000_000
 const MAX_RESULT_MEDIA_FILES = 5
 const MAX_EVIDENCE_FILES = 10
+const MAX_STEPS = 10
 
 function parsePriceWon(raw: string): number | null {
   const digits = raw.replace(/\D/g, '')
@@ -50,17 +54,38 @@ function parsePriceWon(raw: string): number | null {
 
 // ── 타입 ──────────────────────────────────────────────
 interface MediaPreview {
-  file: File // 포매팅 완료된 최종 파일
-  originalFile: File // 원본 (크기 비교용)
+  file: File
+  originalFile: File
   previewUrl: string
   type: 'image' | 'video'
   wasCompressed: boolean
   compressionRatio: number
 }
 
+// 단일 스텝 데이터
+interface StepData {
+  aiType: string
+  aiVersion: string
+  inputPrompt: string
+  inputMedia: MediaPreview[]
+  outputText: string
+  outputMedia: MediaPreview[]
+}
+
+function emptyStep(): StepData {
+  return {
+    aiType: '',
+    aiVersion: '',
+    inputPrompt: '',
+    inputMedia: [],
+    outputText: '',
+    outputMedia: [],
+  }
+}
+
 type UploadStatus = 'idle' | 'formatting' | 'uploading' | 'success' | 'error'
 
-// ── TagSelector ────────────────────────────────────────
+// ── TagSelector ─────────────────────────────────────────
 function TagSelector({
   label,
   options,
@@ -75,21 +100,18 @@ function TagSelector({
   placeholder?: string
 }>) {
   const [customValue, setCustomValue] = useState('')
-
   const toggle = (opt: string) =>
     onChange(
       selected.includes(opt)
         ? selected.filter((s) => s !== opt)
         : [...selected, opt]
     )
-
   const addCustom = () => {
     const value = customValue.trim()
     if (!value) return
     if (!selected.includes(value)) onChange([...selected, value])
     setCustomValue('')
   }
-
   return (
     <div>
       <label className="text-foreground/90 mb-2 block text-sm font-medium">
@@ -102,7 +124,7 @@ function TagSelector({
             type="button"
             onClick={() => toggle(opt)}
             className={cn(
-              'rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all duration-200',
+              'rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all',
               selected.includes(opt)
                 ? 'border-brand-500/60 bg-brand-500/15 text-brand-300'
                 : 'border-border/50 bg-surface-800/50 text-muted-foreground hover:border-border hover:text-foreground'
@@ -124,7 +146,7 @@ function TagSelector({
             }
           }}
           placeholder={placeholder}
-          className="border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 focus:ring-brand-500/20 min-w-0 flex-1 rounded-xl border px-3.5 py-2 text-sm transition-all outline-none focus:ring-1"
+          className="border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 focus:ring-brand-500/20 min-w-0 flex-1 rounded-xl border px-3.5 py-2 text-sm outline-none focus:ring-1"
         />
         <button
           type="button"
@@ -139,7 +161,7 @@ function TagSelector({
   )
 }
 
-// ── ProgressBar ────────────────────────────────────────
+// ── ProgressBar ──────────────────────────────────────────
 function ProgressBar({
   progress,
   label,
@@ -162,15 +184,15 @@ function ProgressBar({
   )
 }
 
-// ── MediaDropZone ──────────────────────────────────────
+// ── MediaDropZone ────────────────────────────────────────
 function MediaDropZone({
   previews,
   onAdd,
   onRemove,
   error,
   disabled,
-  title = '결과물 미디어',
-  sizeHint = <>(선택, 최대 5개 · {TARGET_IMAGE_SIZE_MB}MB 초과 시 자동 압축)</>,
+  title = '미디어',
+  sizeHint,
   footnote = '이미지 및 영상 → WebP 압축 / 5초 트리밍',
   maxFiles = 5,
 }: Readonly<{
@@ -184,9 +206,7 @@ function MediaDropZone({
   footnote?: string
   maxFiles?: number
 }>) {
-  const max = maxFiles
   const inputRef = useRef<HTMLInputElement>(null)
-
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault()
@@ -194,33 +214,31 @@ function MediaDropZone({
     },
     [onAdd, disabled]
   )
-
   return (
     <div>
       <label className="text-foreground/90 mb-2 block text-sm font-medium">
         {title}{' '}
         <span className="text-muted-foreground font-normal">{sizeHint}</span>
       </label>
-
       <div
         onDrop={handleDrop}
         onDragOver={(e) => e.preventDefault()}
         onClick={() => !disabled && inputRef.current?.click()}
         className={cn(
-          'border-border/50 bg-surface-800/30 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-12 transition-all duration-200',
+          'border-border/50 bg-surface-800/30 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-10 transition-all',
           disabled
             ? 'cursor-not-allowed opacity-50'
             : 'hover:border-brand-500/40 hover:bg-surface-800/50 cursor-pointer',
           error && 'border-red-500/50'
         )}
       >
-        <div className="bg-surface-700/50 mb-4 rounded-xl p-3.5">
-          <Upload className="text-muted-foreground h-6 w-6" />
+        <div className="bg-surface-700/50 mb-3 rounded-xl p-3">
+          <Upload className="text-muted-foreground h-5 w-5" />
         </div>
         <p className="text-foreground/80 text-sm font-medium">
           클릭하거나 파일을 드래그하세요
         </p>
-        <p className="text-muted-foreground mt-1.5 text-xs">{footnote}</p>
+        <p className="text-muted-foreground mt-1 text-xs">{footnote}</p>
         <input
           ref={inputRef}
           type="file"
@@ -230,16 +248,14 @@ function MediaDropZone({
           onChange={(e) => e.target.files && onAdd(e.target.files)}
         />
       </div>
-
       {error && (
         <p className="mt-1.5 flex items-center gap-1 text-xs text-red-400">
           <AlertCircle className="h-3.5 w-3.5" />
           {error}
         </p>
       )}
-
       {previews.length > 0 && (
-        <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-5">
+        <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
           {previews.map((p, idx) => (
             <div
               key={idx}
@@ -254,14 +270,12 @@ function MediaDropZone({
                 />
               ) : (
                 <div className="flex h-full flex-col items-center justify-center gap-1">
-                  <Video className="text-surface-400 h-6 w-6" />
-                  <span className="text-surface-500 px-1 text-center text-[10px] leading-tight">
+                  <Video className="text-surface-400 h-5 w-5" />
+                  <span className="text-surface-500 px-1 text-center text-[10px]">
                     {p.file.name}
                   </span>
                 </div>
               )}
-
-              {/* 압축 뱃지 */}
               {p.wasCompressed && (
                 <div className="absolute bottom-1 left-1 flex items-center gap-0.5 rounded-full bg-black/70 px-1.5 py-0.5">
                   <Scissors className="h-2.5 w-2.5 text-emerald-400" />
@@ -270,14 +284,11 @@ function MediaDropZone({
                   </span>
                 </div>
               )}
-
-              {/* 파일 크기 */}
               <div className="absolute top-1 left-1 rounded-full bg-black/60 px-1.5 py-0.5">
                 <span className="text-[9px] text-white">
                   {formatFileSize(p.file.size)}
                 </span>
               </div>
-
               <button
                 type="button"
                 onClick={(e) => {
@@ -290,8 +301,7 @@ function MediaDropZone({
               </button>
             </div>
           ))}
-
-          {previews.length < max && !disabled && (
+          {previews.length < maxFiles && !disabled && (
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
@@ -306,27 +316,153 @@ function MediaDropZone({
   )
 }
 
-// ── UploadForm (메인) ──────────────────────────────────
+// ── StepEditor ────────────────────────────────────────────
+function StepEditor({
+  step,
+  stepIndex,
+  totalSteps,
+  onChange,
+  onAddMedia,
+  onRemoveMedia,
+  disabled,
+}: Readonly<{
+  step: StepData
+  stepIndex: number
+  totalSteps: number
+  onChange: (field: keyof StepData, value: string) => void
+  onAddMedia: (kind: 'input' | 'output', files: FileList) => void
+  onRemoveMedia: (kind: 'input' | 'output', idx: number) => void
+  disabled: boolean
+}>) {
+  return (
+    <div className="space-y-5">
+      {/* AI 종류 + 버전 */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="text-foreground/90 mb-2 block text-sm font-medium">
+            AI 종류 <span className="text-red-400">*</span>
+          </label>
+          <input
+            type="text"
+            list={`ai-type-list-${stepIndex}`}
+            value={step.aiType}
+            onChange={(e) => onChange('aiType', e.target.value)}
+            placeholder="예: Midjourney"
+            className="border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 focus:ring-brand-500/20 w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:ring-1"
+          />
+          <datalist id={`ai-type-list-${stepIndex}`}>
+            {AI_TOOL_OPTIONS.map((opt) => (
+              <option key={opt} value={opt} />
+            ))}
+          </datalist>
+        </div>
+        <div>
+          <label className="text-foreground/90 mb-2 block text-sm font-medium">
+            AI 버전 <span className="text-red-400">*</span>
+          </label>
+          <input
+            type="text"
+            list={`ai-version-list-${stepIndex}`}
+            value={step.aiVersion}
+            onChange={(e) => onChange('aiVersion', e.target.value)}
+            placeholder="예: v6.1"
+            className="border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 focus:ring-brand-500/20 w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:ring-1"
+          />
+          <datalist id={`ai-version-list-${stepIndex}`}>
+            {AI_VERSION_OPTIONS.map((opt) => (
+              <option key={opt} value={opt} />
+            ))}
+          </datalist>
+        </div>
+      </div>
+
+      {/* 입력 프롬프트 */}
+      <div>
+        <label className="text-foreground/90 mb-2 block text-sm font-medium">
+          입력 프롬프트 <span className="text-red-400">*</span>
+        </label>
+        <textarea
+          value={step.inputPrompt}
+          onChange={(e) => onChange('inputPrompt', e.target.value)}
+          placeholder="AI에 입력한 프롬프트를 그대로 붙여넣으세요"
+          rows={5}
+          className="border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 focus:ring-brand-500/20 w-full resize-none rounded-xl border px-3.5 py-3 text-sm outline-none focus:ring-1"
+        />
+      </div>
+
+      {/* 입력 미디어 */}
+      <MediaDropZone
+        previews={step.inputMedia}
+        onAdd={(files) => onAddMedia('input', files)}
+        onRemove={(idx) => onRemoveMedia('input', idx)}
+        disabled={disabled}
+        title="입력 미디어"
+        sizeHint={<>(선택 · 이미지/영상을 AI에 넣었다면 첨부)</>}
+        maxFiles={MAX_RESULT_MEDIA_FILES}
+      />
+
+      {/* 결과 텍스트 */}
+      <div>
+        <label className="text-foreground/90 mb-2 flex items-center gap-1.5 text-sm font-medium">
+          <FileText className="text-surface-400 h-4 w-4" />
+          결과 텍스트{' '}
+          <span className="text-muted-foreground font-normal">(선택)</span>
+        </label>
+        <textarea
+          value={step.outputText}
+          onChange={(e) => onChange('outputText', e.target.value)}
+          placeholder="AI가 출력한 텍스트 결과물을 붙여넣으세요 (선택)"
+          rows={4}
+          className="border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 focus:ring-brand-500/20 w-full resize-none rounded-xl border px-3.5 py-3 text-sm outline-none focus:ring-1"
+        />
+      </div>
+
+      {/* 결과물 미디어 */}
+      <MediaDropZone
+        previews={step.outputMedia}
+        onAdd={(files) => onAddMedia('output', files)}
+        onRemove={(idx) => onRemoveMedia('output', idx)}
+        disabled={disabled}
+        title="결과물 미디어"
+        sizeHint={
+          <>
+            (선택 · 최대 {MAX_RESULT_MEDIA_FILES}개 · {TARGET_IMAGE_SIZE_MB}MB
+            초과 시 자동 압축)
+          </>
+        }
+        footnote="이미지 및 영상 → WebP 압축 / 5초 트리밍"
+        maxFiles={MAX_RESULT_MEDIA_FILES}
+      />
+    </div>
+  )
+}
+
+// ── UploadForm (메인) ────────────────────────────────────
 export function UploadForm() {
   const { user } = useAuth()
   const router = useRouter()
 
+  // 공통 필드
   const [title, setTitle] = useState('')
-  const [content, setContent] = useState('')
-  const [aiTypes, setAiTypes] = useState<string[]>([])
-  const [aiVersions, setAiVersions] = useState<string[]>([])
   const [categories, setCategories] = useState<string[]>([])
   const [isPaidSale, setIsPaidSale] = useState(false)
   const [priceInput, setPriceInput] = useState('')
-  const [mediaPreviews, setMediaPreviews] = useState<MediaPreview[]>([])
   const [evidencePreviews, setEvidencePreviews] = useState<MediaPreview[]>([])
-  const [mediaError, setMediaError] = useState('')
   const [evidenceError, setEvidenceError] = useState('')
+
+  // 스텝 관리
+  const [steps, setSteps] = useState<StepData[]>([emptyStep()])
+  const [activeStep, setActiveStep] = useState(0)
+
+  // 상태
   const [status, setStatus] = useState<UploadStatus>('idle')
   const [progress, setProgress] = useState(0)
   const [progressLabel, setProgressLabel] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+
+  const isBusy =
+    status === 'formatting' || status === 'uploading' || status === 'success'
 
   useEffect(() => {
     if (!isPaidSale) {
@@ -336,105 +472,128 @@ export function UploadForm() {
       })
       setEvidenceError('')
       setPriceInput('')
-      setFieldErrors((e) => {
-        const next = { ...e }
-        delete next.price
-        delete next.evidence
-        return next
-      })
     }
   }, [isPaidSale])
 
-  // ── 파일 추가 → 포매팅 → 미리보기 등록 ──
-  const handleAddFiles = useCallback(
-    async (files: FileList) => {
-      setMediaError('')
-      const remaining = MAX_RESULT_MEDIA_FILES - mediaPreviews.length
+  // ── 스텝 조작 ──
+  const addStep = () => {
+    if (steps.length >= MAX_STEPS) return
+    setSteps((prev) => [...prev, emptyStep()])
+    setActiveStep(steps.length)
+  }
+
+  const removeStep = (idx: number) => {
+    if (steps.length <= 1) return
+    setSteps((prev) => prev.filter((_, i) => i !== idx))
+    setActiveStep(Math.min(activeStep, steps.length - 2))
+  }
+
+  const updateStep = (idx: number, field: keyof StepData, value: string) => {
+    setSteps((prev) =>
+      prev.map((s, i) => (i === idx ? { ...s, [field]: value } : s))
+    )
+  }
+
+  // ── 미디어 처리 (공통) ──
+  const processMediaFiles = useCallback(
+    async (
+      files: FileList,
+      current: MediaPreview[],
+      maxFiles: number,
+      labelPrefix: string,
+      opts?: { maxTrimSeconds?: number }
+    ): Promise<MediaPreview[]> => {
+      const remaining = maxFiles - current.length
       const incoming = Array.from(files).slice(0, remaining)
+      const results: MediaPreview[] = []
 
       for (const file of incoming) {
-        if (!isAllowedMediaType(file)) {
-          setMediaError(`${file.name}: 지원하지 않는 파일 형식입니다.`)
-          continue
-        }
-
+        if (!isAllowedMediaType(file)) continue
         const isVideo = file.type.startsWith('video/')
         setStatus('formatting')
         setProgress(0)
-        setProgressLabel(`${file.name} ${isVideo ? '트리밍' : '압축'} 중...`)
+        setProgressLabel(
+          `${labelPrefix}${file.name} ${isVideo ? '트리밍' : '압축'} 중...`
+        )
 
-        const result = await formatMediaFile(file, (p) => setProgress(p))
-
+        const result = await formatMediaFile(file, (p) => setProgress(p), opts)
         setStatus('idle')
         setProgress(0)
         setProgressLabel('')
 
-        setMediaPreviews((prev) => [
-          ...prev,
-          {
-            file: result.file,
-            originalFile: file,
-            previewUrl: URL.createObjectURL(result.file),
-            type: result.file.type.startsWith('video/') ? 'video' : 'image',
-            wasCompressed: result.wasCompressed,
-            compressionRatio: result.compressionRatio,
-          },
-        ])
+        results.push({
+          file: result.file,
+          originalFile: file,
+          previewUrl: URL.createObjectURL(result.file),
+          type: result.file.type.startsWith('video/') ? 'video' : 'image',
+          wasCompressed: result.wasCompressed,
+          compressionRatio: result.compressionRatio,
+        })
       }
+      return results
     },
-    [mediaPreviews.length]
+    []
+  )
+
+  const handleAddStepMedia = useCallback(
+    async (stepIdx: number, kind: 'input' | 'output', files: FileList) => {
+      const step = steps[stepIdx]
+      const current = kind === 'input' ? step.inputMedia : step.outputMedia
+      const newPreviews = await processMediaFiles(
+        files,
+        current,
+        MAX_RESULT_MEDIA_FILES,
+        `[스텝 ${stepIdx + 1}] `
+      )
+      setSteps((prev) =>
+        prev.map((s, i) => {
+          if (i !== stepIdx) return s
+          return kind === 'input'
+            ? { ...s, inputMedia: [...s.inputMedia, ...newPreviews] }
+            : { ...s, outputMedia: [...s.outputMedia, ...newPreviews] }
+        })
+      )
+    },
+    [steps, processMediaFiles]
+  )
+
+  const handleRemoveStepMedia = useCallback(
+    (stepIdx: number, kind: 'input' | 'output', idx: number) => {
+      setSteps((prev) =>
+        prev.map((s, i) => {
+          if (i !== stepIdx) return s
+          if (kind === 'input') {
+            URL.revokeObjectURL(s.inputMedia[idx].previewUrl)
+            return {
+              ...s,
+              inputMedia: s.inputMedia.filter((_, j) => j !== idx),
+            }
+          }
+          URL.revokeObjectURL(s.outputMedia[idx].previewUrl)
+          return {
+            ...s,
+            outputMedia: s.outputMedia.filter((_, j) => j !== idx),
+          }
+        })
+      )
+    },
+    []
   )
 
   const handleAddEvidenceFiles = useCallback(
     async (files: FileList) => {
       setEvidenceError('')
-      const remaining = MAX_EVIDENCE_FILES - evidencePreviews.length
-      const incoming = Array.from(files).slice(0, remaining)
-
-      for (const file of incoming) {
-        if (!isAllowedMediaType(file)) {
-          setEvidenceError(`${file.name}: 지원하지 않는 파일 형식입니다.`)
-          continue
-        }
-
-        const isVideo = file.type.startsWith('video/')
-        setStatus('formatting')
-        setProgress(0)
-        setProgressLabel(
-          `[증빙] ${file.name} ${isVideo ? '트리밍' : '압축'} 중...`
-        )
-
-        const result = await formatMediaFile(file, (p) => setProgress(p), {
-          maxTrimSeconds: VERIFICATION_EVIDENCE_MAX_VIDEO_SEC,
-        })
-
-        setStatus('idle')
-        setProgress(0)
-        setProgressLabel('')
-
-        setEvidencePreviews((prev) => [
-          ...prev,
-          {
-            file: result.file,
-            originalFile: file,
-            previewUrl: URL.createObjectURL(result.file),
-            type: result.file.type.startsWith('video/') ? 'video' : 'image',
-            wasCompressed: result.wasCompressed,
-            compressionRatio: result.compressionRatio,
-          },
-        ])
-      }
+      const newPreviews = await processMediaFiles(
+        files,
+        evidencePreviews,
+        MAX_EVIDENCE_FILES,
+        '[증빙] ',
+        { maxTrimSeconds: VERIFICATION_EVIDENCE_MAX_VIDEO_SEC }
+      )
+      setEvidencePreviews((prev) => [...prev, ...newPreviews])
     },
-    [evidencePreviews.length]
+    [evidencePreviews, processMediaFiles]
   )
-
-  // ── 파일 제거 ──
-  const handleRemoveFile = useCallback((idx: number) => {
-    setMediaPreviews((prev) => {
-      URL.revokeObjectURL(prev[idx].previewUrl)
-      return prev.filter((_, i) => i !== idx)
-    })
-  }, [])
 
   const handleRemoveEvidence = useCallback((idx: number) => {
     setEvidencePreviews((prev) => {
@@ -448,30 +607,43 @@ export function UploadForm() {
     const errors: Record<string, string> = {}
     if (!title.trim()) errors.title = '제목을 입력해주세요.'
     if (title.length > 100) errors.title = '제목은 100자 이내로 입력해주세요.'
-    if (!content.trim()) errors.content = '프롬프트 내용을 입력해주세요.'
-    if (aiTypes.length === 0)
-      errors.aiTypes = 'AI 종류를 1개 이상 선택해주세요.'
-    if (aiVersions.length === 0)
-      errors.aiVersions = 'AI 버전을 1개 이상 입력하거나 선택해주세요.'
     if (categories.length === 0)
       errors.categories = '카테고리를 1개 이상 선택해주세요.'
 
+    for (let i = 0; i < steps.length; i++) {
+      const s = steps[i]
+      if (!s.aiType.trim())
+        errors[`step_${i}_aiType`] = `스텝 ${i + 1}: AI 종류를 입력해주세요.`
+      if (!s.aiVersion.trim())
+        errors[`step_${i}_aiVersion`] = `스텝 ${i + 1}: AI 버전을 입력해주세요.`
+      if (!s.inputPrompt.trim())
+        errors[`step_${i}_prompt`] =
+          `스텝 ${i + 1}: 입력 프롬프트를 입력해주세요.`
+    }
+
     if (isPaidSale) {
       const price = parsePriceWon(priceInput)
-      if (price == null) {
-        errors.price = '판매 가격을 입력해주세요.'
-      } else if (price < MIN_PRICE_WON) {
-        errors.price = `가격은 ${MIN_PRICE_WON.toLocaleString()}원 이상으로 설정해주세요.`
-      } else if (price > MAX_PRICE_WON) {
+      if (price == null) errors.price = '판매 가격을 입력해주세요.'
+      else if (price < MIN_PRICE_WON)
+        errors.price = `가격은 ${MIN_PRICE_WON.toLocaleString()}원 이상이어야 합니다.`
+      else if (price > MAX_PRICE_WON)
         errors.price = `가격은 ${MAX_PRICE_WON.toLocaleString()}원 이하여야 합니다.`
-      }
-      if (evidencePreviews.length === 0) {
-        errors.evidence =
-          '유료 판매 시 검수를 위해 증빙 스크린샷 또는 영상을 1개 이상 첨부해주세요.'
-      }
+      if (evidencePreviews.length === 0)
+        errors.evidence = '유료 판매 시 증빙을 1개 이상 첨부해주세요.'
     }
 
     setFieldErrors(errors)
+    // 오류 있는 첫 번째 스텝으로 이동
+    for (let i = 0; i < steps.length; i++) {
+      if (
+        errors[`step_${i}_aiType`] ||
+        errors[`step_${i}_aiVersion`] ||
+        errors[`step_${i}_prompt`]
+      ) {
+        setActiveStep(i)
+        break
+      }
+    }
     return Object.keys(errors).length === 0
   }
 
@@ -485,80 +657,131 @@ export function UploadForm() {
     setErrorMsg('')
 
     try {
-      let priceWon = 0
-      if (isPaidSale) {
-        const p = parsePriceWon(priceInput)
-        if (p == null) {
-          setStatus('idle')
-          return
-        }
-        priceWon = p
-      }
-      const mediaUrls: string[] = []
-      const resultCount = mediaPreviews.length
-      const evidenceCount = isPaidSale ? evidencePreviews.length : 0
-      const totalUploads = Math.max(resultCount + evidenceCount, 1)
+      const priceWon = isPaidSale ? (parsePriceWon(priceInput) ?? 0) : 0
+
+      // 전체 미디어 수 계산
+      const totalMediaCount =
+        steps.reduce(
+          (acc, s) => acc + s.inputMedia.length + s.outputMedia.length,
+          0
+        ) + (isPaidSale ? evidencePreviews.length : 0)
+      const totalUploads = Math.max(totalMediaCount, 1)
       let done = 0
 
       const bumpProgress = () => {
         done += 1
-        setProgress(Math.min(92, Math.round((done / totalUploads) * 92)))
+        setProgress(Math.min(90, Math.round((done / totalUploads) * 90)))
       }
 
-      for (let i = 0; i < resultCount; i++) {
-        const preview = mediaPreviews[i]
-        setProgressLabel(
-          `결과물 업로드 (${i + 1}/${resultCount}) — ${preview.file.name}`
-        )
+      // 스텝별 미디어 업로드
+      const uploadedSteps: {
+        aiType: string
+        aiVersion: string
+        inputPrompt: string
+        inputMedia: string[]
+        outputText: string
+        outputMedia: string[]
+      }[] = []
 
-        const { url } = await uploadMediaFile(preview.file, user.id, (p) => {
-          const base = (done / totalUploads) * 92
-          const slice = (1 / totalUploads) * 92
-          setProgress(Math.round(base + (p / 100) * slice))
-        })
-        mediaUrls.push(url)
-        bumpProgress()
-      }
+      for (let i = 0; i < steps.length; i++) {
+        const s = steps[i]
+        const inputUrls: string[] = []
+        const outputUrls: string[] = []
 
-      setProgressLabel('프롬프트 저장 중...')
-      setProgress(93)
-
-      const { id: postId } = await createPromptPost({
-        title: title.trim(),
-        content: content.trim(),
-        price: priceWon,
-        ai_types: aiTypes,
-        ai_versions: aiVersions,
-        categories,
-        author_id: user.id,
-        result_media: mediaPreviews.map((p, idx) => ({
-          type: p.type,
-          url: mediaUrls[idx],
-          name: p.file.name,
-        })),
-        is_verified: false,
-      })
-
-      if (isPaidSale && evidencePreviews.length > 0) {
-        const evidencePaths: string[] = []
-        for (let i = 0; i < evidencePreviews.length; i++) {
-          const preview = evidencePreviews[i]
-          setProgressLabel(
-            `증빙 업로드 (${i + 1}/${evidencePreviews.length}) — ${preview.file.name}`
-          )
-          const { path } = await uploadEvidenceFile(
-            preview.file,
-            user.id,
-            (p) => {
-              const base = (done / totalUploads) * 92
-              const slice = (1 / totalUploads) * 92
-              setProgress(Math.round(base + (p / 100) * slice))
-            }
-          )
-          evidencePaths.push(path)
+        for (const p of s.inputMedia) {
+          setProgressLabel(`스텝 ${i + 1} 입력 미디어 업로드 — ${p.file.name}`)
+          const { url } = await uploadMediaFile(p.file, user.id, (pct) => {
+            const base = (done / totalUploads) * 90
+            setProgress(
+              Math.round(base + (pct / 100) * (1 / totalUploads) * 90)
+            )
+          })
+          inputUrls.push(url)
           bumpProgress()
         }
 
+        for (const p of s.outputMedia) {
+          setProgressLabel(
+            `스텝 ${i + 1} 결과물 미디어 업로드 — ${p.file.name}`
+          )
+          const { url } = await uploadMediaFile(p.file, user.id, (pct) => {
+            const base = (done / totalUploads) * 90
+            setProgress(
+              Math.round(base + (pct / 100) * (1 / totalUploads) * 90)
+            )
+          })
+          outputUrls.push(url)
+          bumpProgress()
+        }
+
+        uploadedSteps.push({
+          aiType: s.aiType.trim(),
+          aiVersion: s.aiVersion.trim(),
+          inputPrompt: s.inputPrompt.trim(),
+          inputMedia: inputUrls,
+          outputText: s.outputText.trim(),
+          outputMedia: outputUrls,
+        })
+      }
+
+      // ai_types, ai_versions 중복 없이 수집
+      const aiTypes = [
+        ...new Set(uploadedSteps.map((s) => s.aiType).filter(Boolean)),
+      ]
+      const aiVersions = [
+        ...new Set(uploadedSteps.map((s) => s.aiVersion).filter(Boolean)),
+      ]
+
+      // 첫 스텝의 outputMedia를 대표 result_media로 사용 (카드 썸네일용)
+      const representativeMedia = uploadedSteps
+        .flatMap((s) => s.outputMedia)
+        .slice(0, 5)
+
+      setProgressLabel('프롬프트 저장 중...')
+      setProgress(91)
+
+      // Client Component에서 supabase-server 직접 사용 불가 → API Route 호출
+      const createRes = await fetch('/api/prompt/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: title.trim(),
+          content: uploadedSteps[0].inputPrompt,
+          price: priceWon,
+          ai_types: aiTypes,
+          ai_versions: aiVersions,
+          categories,
+          result_media: representativeMedia.map((url) => ({
+            type: 'image',
+            url,
+            name: '',
+          })),
+          is_verified: false,
+          steps: uploadedSteps,
+        }),
+      })
+      const createData = await createRes.json().catch(() => ({}))
+      if (!createRes.ok)
+        throw new Error(createData.error ?? '프롬프트 저장에 실패했습니다.')
+      const postId: number = createData.id
+
+      // 증빙 업로드
+      if (isPaidSale && evidencePreviews.length > 0) {
+        const evidencePaths: string[] = []
+        for (let i = 0; i < evidencePreviews.length; i++) {
+          const p = evidencePreviews[i]
+          setProgressLabel(
+            `증빙 업로드 (${i + 1}/${evidencePreviews.length}) — ${p.file.name}`
+          )
+          const { path } = await uploadEvidenceFile(p.file, user.id, (pct) => {
+            const base = (done / totalUploads) * 90
+            setProgress(
+              Math.round(base + (pct / 100) * (1 / totalUploads) * 90)
+            )
+          })
+          evidencePaths.push(path)
+          bumpProgress()
+        }
         setProgressLabel('검수 요청 등록 중...')
         setProgress(96)
         await createVerificationRequest({
@@ -579,58 +802,50 @@ export function UploadForm() {
     }
   }
 
-  const isBusy =
-    status === 'formatting' || status === 'uploading' || status === 'success'
-
   return (
     <form
       onSubmit={handleSubmit}
       className="mx-auto max-w-2xl space-y-8 px-4 py-28"
     >
-      {/* Header */}
-      <div className="animate-fade-in">
+      {/* 헤더 */}
+      <div>
         <h1 className="text-foreground text-2xl font-bold">프롬프트 등록</h1>
         <p className="text-muted-foreground mt-2 text-sm">
           {isPaidSale
-            ? '유료로 판매할 프롬프트입니다. 검수 통과 후 노출 정책에 따라 게시됩니다.'
+            ? '유료로 판매할 프롬프트입니다. 검수 통과 후 노출됩니다.'
             : '무료 프롬프트를 등록하고 커뮤니티와 공유하세요.'}
         </p>
       </div>
 
-      {/* Free / Paid toggle */}
+      {/* 무료/유료 토글 */}
       <div>
         <label className="text-foreground/90 mb-3 block text-sm font-medium">
           등록 방식
         </label>
         <div className="border-border/40 bg-surface-800/30 flex rounded-2xl border p-1">
-          <button
-            type="button"
-            onClick={() => setIsPaidSale(false)}
-            className={cn(
-              'flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-medium transition-all duration-200',
-              !isPaidSale
-                ? 'from-brand-500 to-brand-600 shadow-brand-500/20 bg-gradient-to-r text-white shadow-lg'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            무료 공유
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsPaidSale(true)}
-            className={cn(
-              'flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-medium transition-all duration-200',
-              isPaidSale
-                ? 'from-brand-500 to-brand-600 shadow-brand-500/20 bg-gradient-to-r text-white shadow-lg'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <Banknote className="h-4 w-4" />
-            유료 판매
-          </button>
+          {[
+            { label: '무료 공유', paid: false },
+            { label: '유료 판매', paid: true },
+          ].map(({ label, paid }) => (
+            <button
+              key={label}
+              type="button"
+              onClick={() => setIsPaidSale(paid)}
+              className={cn(
+                'flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-medium transition-all',
+                isPaidSale === paid
+                  ? 'from-brand-500 to-brand-600 shadow-brand-500/20 bg-gradient-to-r text-white shadow-lg'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {paid && <Banknote className="h-4 w-4" />}
+              {label}
+            </button>
+          ))}
         </div>
       </div>
 
+      {/* 유료 판매 설정 */}
       {isPaidSale && (
         <div className="card-premium space-y-5 rounded-2xl p-6">
           <div>
@@ -644,19 +859,14 @@ export function UploadForm() {
               id="price"
               type="text"
               inputMode="numeric"
-              autoComplete="off"
               placeholder={`예: ${(5000).toLocaleString()}`}
               value={priceInput}
               onChange={(e) => setPriceInput(e.target.value)}
               className={cn(
-                'border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 focus:ring-brand-500/20 w-full rounded-xl border px-4 py-3 text-sm transition-all duration-200 outline-none focus:ring-1',
+                'border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 focus:ring-brand-500/20 w-full rounded-xl border px-4 py-3 text-sm outline-none focus:ring-1',
                 fieldErrors.price && 'border-red-500/60'
               )}
             />
-            <p className="text-muted-foreground mt-2 text-xs">
-              {MIN_PRICE_WON.toLocaleString()}원 ~{' '}
-              {MAX_PRICE_WON.toLocaleString()}원 · 숫자만 입력
-            </p>
             {fieldErrors.price && (
               <p className="mt-1.5 flex items-center gap-1 text-xs text-red-400">
                 <AlertCircle className="h-3.5 w-3.5" />
@@ -664,7 +874,6 @@ export function UploadForm() {
               </p>
             )}
           </div>
-
           <MediaDropZone
             previews={evidencePreviews}
             onAdd={handleAddEvidenceFiles}
@@ -673,13 +882,13 @@ export function UploadForm() {
             disabled={isBusy}
             title="증빙 스크린샷 · 영상"
             sizeHint={<>(필수 · 검수용 · 최대 {MAX_EVIDENCE_FILES}개)</>}
-            footnote={`이미지 또는 영상 · 영상은 최대 ${VERIFICATION_EVIDENCE_MAX_VIDEO_SEC}초(초과 시 자동 트리밍)`}
+            footnote={`이미지 또는 영상 · 영상은 최대 ${VERIFICATION_EVIDENCE_MAX_VIDEO_SEC}초`}
             maxFiles={MAX_EVIDENCE_FILES}
           />
         </div>
       )}
 
-      {/* Title */}
+      {/* 제목 */}
       <div>
         <label className="text-foreground/90 mb-2 block text-sm font-medium">
           제목 <span className="text-red-400">*</span>
@@ -691,7 +900,7 @@ export function UploadForm() {
           placeholder="프롬프트 제목을 입력하세요"
           maxLength={100}
           className={cn(
-            'border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 focus:ring-brand-500/20 w-full rounded-xl border px-4 py-3 text-sm transition-all duration-200 outline-none focus:ring-1',
+            'border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 focus:ring-brand-500/20 w-full rounded-xl border px-4 py-3 text-sm outline-none focus:ring-1',
             fieldErrors.title && 'border-red-500/60'
           )}
         />
@@ -706,63 +915,6 @@ export function UploadForm() {
           )}
           <span className="text-surface-500 text-xs">{title.length}/100</span>
         </div>
-      </div>
-
-      {/* Prompt content */}
-      <div>
-        <label className="text-foreground/90 mb-2 block text-sm font-medium">
-          프롬프트 내용 <span className="text-red-400">*</span>
-        </label>
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="프롬프트 내용을 입력하세요. AI에 입력할 텍스트를 그대로 붙여넣어도 됩니다."
-          rows={8}
-          className={cn(
-            'border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 focus:ring-brand-500/20 w-full resize-none rounded-xl border px-4 py-3 text-sm transition-all duration-200 outline-none focus:ring-1',
-            fieldErrors.content && 'border-red-500/60'
-          )}
-        />
-        {fieldErrors.content && (
-          <p className="mt-1 flex items-center gap-1 text-xs text-red-400">
-            <AlertCircle className="h-3.5 w-3.5" />
-            {fieldErrors.content}
-          </p>
-        )}
-      </div>
-
-      {/* AI 종류 */}
-      <div>
-        <TagSelector
-          label="AI 종류 *"
-          options={AI_TOOL_OPTIONS}
-          selected={aiTypes}
-          onChange={setAiTypes}
-          placeholder="예: Kling, Perplexity, Pika"
-        />
-        {fieldErrors.aiTypes && (
-          <p className="mt-1.5 flex items-center gap-1 text-xs text-red-400">
-            <AlertCircle className="h-3.5 w-3.5" />
-            {fieldErrors.aiTypes}
-          </p>
-        )}
-      </div>
-
-      {/* AI 버전 */}
-      <div>
-        <TagSelector
-          label="AI 버전 *"
-          options={AI_VERSION_OPTIONS}
-          selected={aiVersions}
-          onChange={setAiVersions}
-          placeholder="예: Midjourney v6.1, Runway Gen-4"
-        />
-        {fieldErrors.aiVersions && (
-          <p className="mt-1.5 flex items-center gap-1 text-xs text-red-400">
-            <AlertCircle className="h-3.5 w-3.5" />
-            {fieldErrors.aiVersions}
-          </p>
-        )}
       </div>
 
       {/* 카테고리 */}
@@ -782,15 +934,150 @@ export function UploadForm() {
         )}
       </div>
 
-      {/* 미디어 업로드 */}
-      <MediaDropZone
-        previews={mediaPreviews}
-        onAdd={handleAddFiles}
-        onRemove={handleRemoveFile}
-        error={mediaError}
-        disabled={isBusy}
-        maxFiles={MAX_RESULT_MEDIA_FILES}
-      />
+      {/* ── 스텝 에디터 ── */}
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <label className="text-foreground/90 text-sm font-medium">
+            AI 활용 단계{' '}
+            <span className="text-muted-foreground font-normal">
+              ({steps.length}/{MAX_STEPS})
+            </span>
+          </label>
+          {steps.length < MAX_STEPS && (
+            <button
+              type="button"
+              onClick={addStep}
+              disabled={isBusy}
+              className="border-brand-500/40 text-brand-300 hover:bg-brand-500/10 inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium transition-colors"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              스텝 추가
+            </button>
+          )}
+        </div>
+
+        {/* 스텝 탭 네비게이션 */}
+        {steps.length > 1 && (
+          <div className="mb-4 flex items-center gap-2 overflow-x-auto pb-1">
+            {steps.map((_, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setActiveStep(idx)}
+                className={cn(
+                  'flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all',
+                  activeStep === idx
+                    ? 'bg-brand-500 text-white'
+                    : 'bg-surface-800/50 text-surface-300 hover:bg-surface-700'
+                )}
+              >
+                STEP {idx + 1}
+                {(fieldErrors[`step_${idx}_aiType`] ||
+                  fieldErrors[`step_${idx}_aiVersion`] ||
+                  fieldErrors[`step_${idx}_prompt`]) && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* 현재 스텝 에디터 */}
+        <div className="border-surface-700/50 bg-surface-800/20 rounded-2xl border p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {activeStep > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setActiveStep(activeStep - 1)}
+                  className="text-surface-400 hover:text-surface-200 rounded-lg p-1 transition-colors"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+              )}
+              <h3 className="text-sm font-semibold text-white">
+                STEP {activeStep + 1}
+                {steps[activeStep].aiType && (
+                  <span className="text-brand-400 ml-2 font-normal">
+                    — {steps[activeStep].aiType}
+                  </span>
+                )}
+              </h3>
+              {activeStep < steps.length - 1 && (
+                <button
+                  type="button"
+                  onClick={() => setActiveStep(activeStep + 1)}
+                  className="text-surface-400 hover:text-surface-200 rounded-lg p-1 transition-colors"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            {steps.length > 1 && (
+              <button
+                type="button"
+                onClick={() => removeStep(activeStep)}
+                className="text-surface-500 flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition-colors hover:text-red-400"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                삭제
+              </button>
+            )}
+          </div>
+
+          {/* 스텝 필드 오류 */}
+          {(fieldErrors[`step_${activeStep}_aiType`] ||
+            fieldErrors[`step_${activeStep}_aiVersion`] ||
+            fieldErrors[`step_${activeStep}_prompt`]) && (
+            <div className="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2.5">
+              {(['aiType', 'aiVersion', 'prompt'] as const).map((k) =>
+                fieldErrors[`step_${activeStep}_${k}`] ? (
+                  <p
+                    key={k}
+                    className="flex items-center gap-1 text-xs text-red-400"
+                  >
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    {fieldErrors[`step_${activeStep}_${k}`]}
+                  </p>
+                ) : null
+              )}
+            </div>
+          )}
+
+          <StepEditor
+            step={steps[activeStep]}
+            stepIndex={activeStep}
+            totalSteps={steps.length}
+            onChange={(field, value) => updateStep(activeStep, field, value)}
+            onAddMedia={(kind, files) =>
+              handleAddStepMedia(activeStep, kind, files)
+            }
+            onRemoveMedia={(kind, idx) =>
+              handleRemoveStepMedia(activeStep, kind, idx)
+            }
+            disabled={isBusy}
+          />
+        </div>
+
+        {/* 스텝 페이지네이션 표시 */}
+        {steps.length > 1 && (
+          <div className="mt-3 flex items-center justify-center gap-1.5">
+            {steps.map((_, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setActiveStep(idx)}
+                className={cn(
+                  'h-2 rounded-full transition-all',
+                  idx === activeStep
+                    ? 'bg-brand-500 w-6'
+                    : 'bg-surface-600 hover:bg-surface-500 w-2'
+                )}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* 진행률 */}
       {(status === 'formatting' || status === 'uploading') && (
@@ -811,21 +1098,22 @@ export function UploadForm() {
           <CheckCircle className="h-5 w-5 shrink-0 text-emerald-400" />
           <p className="text-sm text-emerald-400">
             {isPaidSale
-              ? '등록 완료! 검수 요청이 접수되었습니다. 마이페이지로 이동합니다...'
-              : '등록 완료! 마이페이지로 이동합니다...'}
+              ? '등록 완료! 검수 요청이 접수되었습니다.'
+              : '등록 완료!'}{' '}
+            마이페이지로 이동합니다...
           </p>
         </div>
       )}
 
-      {/* Submit button */}
+      {/* 제출 버튼 */}
       <button
         type="submit"
         disabled={isBusy}
         className={cn(
-          'relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl py-4 text-sm font-semibold text-white transition-all duration-300',
+          'relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl py-4 text-sm font-semibold text-white transition-all',
           isBusy
             ? 'bg-surface-700/50 text-muted-foreground cursor-not-allowed'
-            : 'from-brand-500 to-brand-600 shadow-brand-500/20 hover:shadow-brand-500/30 bg-gradient-to-r shadow-lg hover:scale-[1.01] hover:shadow-xl active:scale-[0.99]'
+            : 'from-brand-500 to-brand-600 shadow-brand-500/20 hover:shadow-brand-500/30 bg-gradient-to-r shadow-lg hover:scale-[1.01] hover:shadow-xl'
         )}
       >
         {status === 'formatting' ? (

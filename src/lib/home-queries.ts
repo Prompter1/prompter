@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from '@/src/lib/supabase-server'
+import { createSupabaseServerClient } from './supabase-server'
 import type { PromptPost } from '@/types'
 
 // ─── 인기 프롬프트 (sales_count 기준 상위 8개) ────────────────────────────

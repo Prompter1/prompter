@@ -12,6 +12,7 @@ import type { PromptPost } from '@/types'
 import { Badge } from '@/components/ui/Badge'
 import { PromptMediaGallery } from '@/components/prompt/PromptMediaGallery'
 import { PromptContentSection } from '@/components/prompt/PromptContentSection'
+import { PromptStepsViewer } from '@/components/prompt/PromptStepsViewer'
 import { createSupabaseServerClient } from '@/src/lib/supabase-server'
 
 interface PromptDetailViewProps {
@@ -37,7 +38,6 @@ export async function PromptDetailView({
     sales_count,
   } = post
 
-  // 로그인 유저 + 구매 여부 확인
   const supabase = await createSupabaseServerClient()
   const {
     data: { user },
@@ -47,7 +47,6 @@ export async function PromptDetailView({
   let userPoints = 0
 
   if (user) {
-    // 구매 여부
     const { data: tx } = await supabase
       .from('transactions')
       .select('id')
@@ -56,7 +55,6 @@ export async function PromptDetailView({
       .maybeSingle()
     hasPurchased = !!tx
 
-    // 포인트
     const { data: member } = await supabase
       .from('members')
       .select('points')
@@ -65,7 +63,29 @@ export async function PromptDetailView({
     userPoints = member?.points ?? 0
   }
 
-  // 무료 or 본인 프롬프트 or 이미 구매 → 콘텐츠 공개
+  const { data: stepsRaw } = await supabase
+    .from('prompt_steps')
+    .select(
+      'id, step_order, ai_type, ai_version, input_prompt, input_media, output_text, output_media'
+    )
+    .eq('prompt_post_id', post.id)
+    .order('step_order', { ascending: true })
+
+  const steps = (stepsRaw ?? []).map((s: any) => ({
+    id: s.id,
+    step_order: s.step_order,
+    ai_type: s.ai_type ?? '',
+    ai_version: s.ai_version ?? '',
+    input_prompt: s.input_prompt ?? '',
+    input_media: Array.isArray(s.input_media)
+      ? s.input_media.filter((v: unknown) => typeof v === 'string')
+      : [],
+    output_text: s.output_text ?? '',
+    output_media: Array.isArray(s.output_media)
+      ? s.output_media.filter((v: unknown) => typeof v === 'string')
+      : [],
+  }))
+
   const isFree = price === 0
   const isOwner = user?.id === author.id
   const canViewFull = isFree || isOwner || hasPurchased
@@ -95,21 +115,19 @@ export async function PromptDetailView({
         </Link>
 
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-12">
-          {/* 왼쪽: 미디어 */}
-          <div>
+          <div className="space-y-6">
             <PromptMediaGallery urls={result_media} alt={title} />
+            {steps.length > 0 && <PromptStepsViewer steps={steps} />}
           </div>
 
-          {/* 오른쪽: 상세 */}
           <div className="flex flex-col lg:sticky lg:top-24 lg:self-start">
-            {/* 배지 */}
             <div className="mb-4 flex flex-wrap items-center gap-2">
               {ai_types.map((t) => (
                 <Badge key={t}>{t}</Badge>
               ))}
-              {ai_versions.map((version) => (
-                <Badge key={version} variant="paid">
-                  {version}
+              {(ai_versions ?? []).map((v) => (
+                <Badge key={v} variant="paid">
+                  {v}
                 </Badge>
               ))}
               {is_verified && (
@@ -131,7 +149,6 @@ export async function PromptDetailView({
               {title}
             </h1>
 
-            {/* 작성자 카드 */}
             <div className="border-surface-700/50 bg-surface-800/40 mb-6 flex flex-wrap items-center gap-4 rounded-2xl border p-4">
               <div className="border-surface-600 relative h-12 w-12 shrink-0 overflow-hidden rounded-full border-2">
                 <Image
@@ -177,7 +194,6 @@ export async function PromptDetailView({
               </div>
             </div>
 
-            {/* 카테고리 */}
             <div className="mb-6 flex flex-wrap gap-2">
               {categories.map((c) => (
                 <span
@@ -190,7 +206,6 @@ export async function PromptDetailView({
               ))}
             </div>
 
-            {/* 프롬프트 콘텐츠 (블러/해금 로직은 Client Component에서) */}
             <PromptContentSection
               postId={post.id}
               title={title}

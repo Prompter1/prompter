@@ -14,17 +14,16 @@ export interface PromptPost {
   content: string
   price: number
   ai_types: string[]
-  ai_versions: string[]
+  ai_versions: string[] // ✅ 추가
   categories: string[]
   author: Member
   is_verified: boolean
   result_media: string[]
-  view_count?: number
-  sales_count?: number
-  created_at?: string | null
+  view_count?: number // ✅ 추가
+  sales_count?: number // ✅ 추가
 }
 
-// ─── Featured Prompt (lightweight, no author) ─────────────────────────────────
+// ─── Featured Prompt (lightweight, no author) ────────────────────────────────
 export interface FeaturedPrompt {
   id: number
   title: string

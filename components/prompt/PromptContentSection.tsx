@@ -34,9 +34,15 @@ export function PromptContentSection({
     setShowModal(false)
   }
 
+  // 본문의 15% 미리보기 (최소 30자, 최대 200자)
+  const previewLength = Math.min(
+    Math.max(Math.floor(content.length * 0.15), 30),
+    200
+  )
+  const previewText = content.slice(0, previewLength)
+
   return (
     <>
-      {/* 복사 버튼 — 해금된 경우만 */}
       {unlocked && (
         <CopyPromptButton
           text={unlockedText}
@@ -44,59 +50,67 @@ export function PromptContentSection({
         />
       )}
 
-      {/* 프롬프트 본문 */}
       <div className="border-surface-700/50 bg-surface-800/25 relative rounded-2xl border">
+        {/* 헤더 */}
         <div className="border-surface-700/50 flex items-center gap-2 border-b px-5 py-3">
           <Tag className="text-surface-500 h-4 w-4" />
           <span className="text-surface-300 text-sm font-medium">
-            프롬프트 본문
+            {price === 0 ? '프롬프트 본문' : '대표 프롬프트'}
           </span>
         </div>
 
-        <div className="relative">
-          {/* 실제 텍스트 */}
+        {unlocked ? (
+          /* ── 해금 후: 전체 내용 ── */
           <pre className="text-surface-200 max-h-[min(28rem,50vh)] overflow-auto p-5 font-mono text-sm leading-relaxed whitespace-pre-wrap">
-            {unlocked ? content : content.slice(0, 120) + '...'}
+            {content}
           </pre>
+        ) : (
+          /* ── 미해금: 미리보기 + 해금 영역 ── */
+          <>
+            <div className="relative">
+              <pre className="text-surface-200 p-5 font-mono text-sm leading-relaxed whitespace-pre-wrap">
+                {previewText}
+              </pre>
+              {/* 하단 페이드 */}
+              <div className="from-surface-800/0 via-surface-800/80 to-surface-800 pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-b" />
+            </div>
 
-          {/* 블러 오버레이 — 미해금 시 */}
-          {!unlocked && (
-            <div className="via-surface-900/80 to-surface-900 absolute inset-0 flex flex-col items-center justify-center rounded-b-2xl bg-gradient-to-b from-transparent">
-              <div className="flex flex-col items-center gap-3 p-6 text-center">
-                <div className="bg-surface-700/50 flex h-12 w-12 items-center justify-center rounded-2xl">
-                  <Lock className="text-surface-300 h-6 w-6" />
-                </div>
+            {/* 해금 영역 — absolute 없는 독립 블록 */}
+            <div className="border-surface-700/40 bg-surface-800/60 flex flex-col items-center gap-3 rounded-b-2xl border-t px-5 py-6 text-center backdrop-blur-sm">
+              <div className="bg-surface-700/50 flex h-11 w-11 items-center justify-center rounded-2xl">
+                <Lock className="text-surface-300 h-5 w-5" />
+              </div>
+              <div>
                 <p className="text-surface-300 text-sm font-medium">
                   유료 프롬프트입니다
                 </p>
-                <p className="text-surface-500 text-xs">
+                <p className="text-surface-500 mt-0.5 text-xs">
                   {price.toLocaleString()}P를 사용해 전체 내용을 확인하세요
                 </p>
-
-                {isLoggedIn ? (
-                  <button
-                    type="button"
-                    onClick={() => setShowModal(true)}
-                    className="bg-brand-500 hover:bg-brand-400 mt-2 flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-semibold text-white transition-colors"
-                  >
-                    <Lock className="h-4 w-4" />
-                    {price.toLocaleString()}P로 해금하기
-                  </button>
-                ) : (
-                  <a
-                    href="/login"
-                    className="bg-brand-500 hover:bg-brand-400 mt-2 flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-semibold text-white transition-colors"
-                  >
-                    로그인 후 구매하기
-                  </a>
-                )}
               </div>
+
+              {isLoggedIn ? (
+                <button
+                  type="button"
+                  onClick={() => setShowModal(true)}
+                  className="bg-brand-500 hover:bg-brand-400 flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-colors"
+                >
+                  <Lock className="h-4 w-4" />
+                  {price.toLocaleString()}P로 해금하기
+                </button>
+              ) : (
+                <a
+                  href="/login"
+                  className="bg-brand-500 hover:bg-brand-400 flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-colors"
+                >
+                  로그인 후 구매하기
+                </a>
+              )}
             </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
 
-      {/* 해금 모달 */}
       {showModal && (
         <UnlockModal
           postId={postId}

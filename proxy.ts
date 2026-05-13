@@ -2,7 +2,6 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function proxy(request: NextRequest) {
-  console.log('[middleware] pathname:', request.nextUrl.pathname)
   let response = NextResponse.next({
     request: { headers: request.headers },
   })
@@ -36,8 +35,6 @@ export async function proxy(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-
-  console.log('[middleware] user:', user?.email ?? 'null')
 
   const isProtectedRoute =
     request.nextUrl.pathname.startsWith('/prompt/write') ||
