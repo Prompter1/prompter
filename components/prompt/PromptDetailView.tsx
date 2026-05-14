@@ -98,18 +98,8 @@ export async function PromptDetailView({
         day: 'numeric',
       })
     : null
-
-  // 갤러리에 표시할 미디어: 모든 스텝의 output_media를 역순으로 모아서 마지막 것부터 보여줌
-  // 썸네일은 가장 마지막 스텝의 가장 마지막 미디어
-  const allStepOutputMedia = steps.flatMap((s) => s.output_media)
   const galleryUrls =
-    allStepOutputMedia.length > 0
-      ? // 마지막 미디어를 첫 번째(썸네일)로 배치하고 나머지는 역순 뒤에
-        [
-          allStepOutputMedia[allStepOutputMedia.length - 1],
-          ...allStepOutputMedia.slice(0, -1).reverse(),
-        ]
-      : result_media
+    result_media && result_media.length > 0 ? result_media : []
 
   return (
     <main className="bg-surface-900 relative min-h-screen pt-20 pb-20">
