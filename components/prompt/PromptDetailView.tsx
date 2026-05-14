@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/Badge'
 import { PromptMediaGallery } from '@/components/prompt/PromptMediaGallery'
 import { PromptContentSection } from '@/components/prompt/PromptContentSection'
 import { PromptStepsViewer } from '@/components/prompt/PromptStepsViewer'
+import { PromptOwnerActions } from '@/components/prompt/PromptOwnerActions'
 import { createSupabaseServerClient } from '@/src/lib/supabase-server'
 
 interface PromptDetailViewProps {
@@ -98,6 +99,18 @@ export async function PromptDetailView({
       })
     : null
 
+  // 갤러리에 표시할 미디어: 모든 스텝의 output_media를 역순으로 모아서 마지막 것부터 보여줌
+  // 썸네일은 가장 마지막 스텝의 가장 마지막 미디어
+  const allStepOutputMedia = steps.flatMap((s) => s.output_media)
+  const galleryUrls =
+    allStepOutputMedia.length > 0
+      ? // 마지막 미디어를 첫 번째(썸네일)로 배치하고 나머지는 역순 뒤에
+        [
+          allStepOutputMedia[allStepOutputMedia.length - 1],
+          ...allStepOutputMedia.slice(0, -1).reverse(),
+        ]
+      : result_media
+
   return (
     <main className="bg-surface-900 relative min-h-screen pt-20 pb-20">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -116,7 +129,7 @@ export async function PromptDetailView({
 
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-12">
           <div className="space-y-6">
-            <PromptMediaGallery urls={result_media} alt={title} />
+            <PromptMediaGallery urls={galleryUrls} alt={title} />
             {steps.length > 0 && (
               <PromptStepsViewer
                 steps={steps}
@@ -131,6 +144,13 @@ export async function PromptDetailView({
           </div>
 
           <div className="flex flex-col lg:sticky lg:top-24 lg:self-start">
+            {/* 소유자 전용 수정/삭제 버튼 */}
+            {isOwner && (
+              <div className="mb-4">
+                <PromptOwnerActions postId={post.id} title={title} />
+              </div>
+            )}
+
             <div className="mb-4 flex flex-wrap items-center gap-2">
               {ai_types.map((t) => (
                 <Badge key={t}>{t}</Badge>

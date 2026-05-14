@@ -14,7 +14,7 @@ export function CopyPromptButton({
     try {
       await navigator.clipboard.writeText(text)
       setCopied(true)
-      window.setTimeout(() => setCopied(false), 2000)
+      globalThis.setTimeout(() => setCopied(false), 2000)
     } catch {
       /* 클립보드 거부 등은 무시 */
     }
