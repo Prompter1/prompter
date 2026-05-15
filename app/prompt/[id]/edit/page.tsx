@@ -59,6 +59,7 @@ export default async function EditPromptPage({ params }: Props) {
   const initialData = {
     postId: post.id,
     title: post.title,
+    content: post.content,
     price: post.price,
     ai_types: post.ai_types ?? [],
     ai_versions: post.ai_versions ?? [],

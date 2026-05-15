@@ -348,7 +348,7 @@ function StepEditor({
             value={step.aiType}
             onChange={(e) => onChange('aiType', e.target.value)}
             placeholder="예: Midjourney"
-            className="border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 focus:ring-brand-500/20 w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:ring-1"
+            className="border-border/50 bg-surface-800/50 text-foreground border-brand-500/60 placeholder-muted-foreground focus:border-brand-500/60 focus:ring-brand-500/20 w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:ring-1"
           />
           <datalist id={`ai-type-list-${stepIndex}`}>
             {AI_TOOL_OPTIONS.map((opt) => (
@@ -366,7 +366,7 @@ function StepEditor({
             value={step.aiVersion}
             onChange={(e) => onChange('aiVersion', e.target.value)}
             placeholder="예: v6.1"
-            className="border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 focus:ring-brand-500/20 w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:ring-1"
+            className="border-brand-500/60 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 focus:ring-brand-500/20 w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:ring-1"
           />
           <datalist id={`ai-version-list-${stepIndex}`}>
             {AI_VERSION_OPTIONS.map((opt) => (
@@ -386,21 +386,28 @@ function StepEditor({
           onChange={(e) => onChange('inputPrompt', e.target.value)}
           placeholder="AI에 입력한 프롬프트를 그대로 붙여넣으세요"
           rows={5}
-          className="border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 focus:ring-brand-500/20 w-full resize-none rounded-xl border px-3.5 py-3 text-sm outline-none focus:ring-1"
+          className="border-brand-500/60 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 focus:ring-brand-500/20 w-full resize-none rounded-xl border px-3.5 py-3 text-sm outline-none focus:ring-1"
         />
       </div>
 
       {/* 입력 미디어 */}
-      <MediaDropZone
-        previews={step.inputMedia}
-        onAdd={(files) => onAddMedia('input', files)}
-        onRemove={(idx) => onRemoveMedia('input', idx)}
-        disabled={disabled}
-        title="입력 미디어"
-        sizeHint={<>(선택 · 이미지/영상을 AI에 넣었다면 첨부)</>}
-        maxFiles={MAX_RESULT_MEDIA_FILES}
-      />
 
+      <div className="space-y-2">
+        <label className="mb-2 block text-sm font-medium text-white">
+          입력 미디어
+        </label>
+        <div className="border-surface-600 bg-surface-800/30 hover:border-surface-500 rounded-2xl border p-4 transition-all">
+          <MediaDropZone
+            previews={step.inputMedia}
+            onAdd={(files) => onAddMedia('input', files)}
+            onRemove={(idx) => onRemoveMedia('input', idx)}
+            disabled={disabled}
+            title=""
+            sizeHint="선택 · 이미지/영상을 AI에 넣었다면 첨부"
+            maxFiles={MAX_RESULT_MEDIA_FILES}
+          />
+        </div>
+      </div>
       {/* 결과 텍스트 */}
       <div>
         <label className="text-foreground/90 mb-2 flex items-center gap-1.5 text-sm font-medium">
@@ -413,26 +420,33 @@ function StepEditor({
           onChange={(e) => onChange('outputText', e.target.value)}
           placeholder="AI가 출력한 텍스트 결과물을 붙여넣으세요 (선택)"
           rows={4}
-          className="border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 focus:ring-brand-500/20 w-full resize-none rounded-xl border px-3.5 py-3 text-sm outline-none focus:ring-1"
+          className="border-surface-600 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 focus:ring-brand-500/20 w-full resize-none rounded-xl border px-3.5 py-3 text-sm outline-none focus:ring-1"
         />
       </div>
 
       {/* 결과물 미디어 */}
-      <MediaDropZone
-        previews={step.outputMedia}
-        onAdd={(files) => onAddMedia('output', files)}
-        onRemove={(idx) => onRemoveMedia('output', idx)}
-        disabled={disabled}
-        title="결과물 미디어"
-        sizeHint={
-          <>
-            (선택 · 최대 {MAX_RESULT_MEDIA_FILES}개 · {TARGET_IMAGE_SIZE_MB}MB
-            초과 시 자동 압축)
-          </>
-        }
-        footnote="이미지 및 영상 → WebP 압축 / 5초 트리밍"
-        maxFiles={MAX_RESULT_MEDIA_FILES}
-      />
+      <div className="space-y-2">
+        <label className="mb-2 block text-sm font-medium text-white">
+          결과물 미디어
+        </label>
+        <div className="border-surface-600 bg-surface-800/30 hover:border-surface-500 rounded-2xl border p-4 transition-all">
+          <MediaDropZone
+            previews={step.outputMedia}
+            onAdd={(files) => onAddMedia('output', files)}
+            onRemove={(idx) => onRemoveMedia('output', idx)}
+            disabled={disabled}
+            title=""
+            sizeHint={
+              <>
+                선택 · 최대 {MAX_RESULT_MEDIA_FILES}개 · {TARGET_IMAGE_SIZE_MB}
+                MB 초과 시 자동 압축
+              </>
+            }
+            footnote="이미지 및 영상 → WebP 압축 / 5초 트리밍"
+            maxFiles={MAX_RESULT_MEDIA_FILES}
+          />
+        </div>
+      </div>
     </div>
   )
 }
@@ -444,6 +458,7 @@ export function UploadForm() {
 
   // 공통 필드
   const [title, setTitle] = useState('')
+  const [content, setContent] = useState('') // 한줄 소개 상태 추가
   const [categories, setCategories] = useState<string[]>([])
   const [isPaidSale, setIsPaidSale] = useState(false)
   const [priceInput, setPriceInput] = useState('')
@@ -746,7 +761,7 @@ export function UploadForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: title.trim(),
-          content: uploadedSteps[0].inputPrompt,
+          content: content,
           price: priceWon,
           ai_types: aiTypes,
           ai_versions: aiVersions,
@@ -805,12 +820,12 @@ export function UploadForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="mx-auto max-w-2xl space-y-8 px-4 py-28"
+      className="mx-auto max-w-6/12 space-y-8 px-4 py-28"
     >
       {/* 헤더 */}
       <div>
-        <h1 className="text-foreground text-2xl font-bold">프롬프트 등록</h1>
-        <p className="text-muted-foreground mt-2 text-sm">
+        <h1 className="text-2xl font-bold text-white">프롬프트 등록</h1>
+        <p className="text-surface-400 mt-2 text-sm">
           {isPaidSale
             ? '유료로 판매할 프롬프트입니다. 검수 통과 후 노출됩니다.'
             : '무료 프롬프트를 등록하고 커뮤니티와 공유하세요.'}
@@ -819,10 +834,10 @@ export function UploadForm() {
 
       {/* 무료/유료 토글 */}
       <div>
-        <label className="text-foreground/90 mb-3 block text-sm font-medium">
+        <label className="mb-3 block text-sm font-medium text-white">
           등록 방식
         </label>
-        <div className="border-border/40 bg-surface-800/30 flex rounded-2xl border p-1">
+        <div className="border-surface-600 bg-surface-800/50 flex rounded-2xl border p-1">
           {[
             { label: '무료 공유', paid: false },
             { label: '유료 판매', paid: true },
@@ -835,7 +850,7 @@ export function UploadForm() {
                 'flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-medium transition-all',
                 isPaidSale === paid
                   ? 'from-brand-500 to-brand-600 shadow-brand-500/20 bg-linear-to-r text-white shadow-lg'
-                  : 'text-muted-foreground hover:text-foreground'
+                  : 'text-surface-400 hover:text-white'
               )}
             >
               {paid && <Banknote className="h-4 w-4" />}
@@ -847,11 +862,11 @@ export function UploadForm() {
 
       {/* 유료 판매 설정 */}
       {isPaidSale && (
-        <div className="card-premium space-y-5 rounded-2xl p-6">
+        <div className="card-premium border-brand-500/30 bg-surface-900/40 space-y-5 rounded-2xl border p-6">
           <div>
             <label
               htmlFor="price"
-              className="text-foreground/90 mb-2 block text-sm font-medium"
+              className="mb-2 block text-sm font-medium text-white"
             >
               판매 가격 (원) <span className="text-red-400">*</span>
             </label>
@@ -863,7 +878,7 @@ export function UploadForm() {
               value={priceInput}
               onChange={(e) => setPriceInput(e.target.value)}
               className={cn(
-                'border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 focus:ring-brand-500/20 w-full rounded-xl border px-4 py-3 text-sm outline-none focus:ring-1',
+                'border-brand-500/60 bg-surface-800 placeholder-surface-500 focus:border-brand-500 focus:ring-brand-500/20 w-full rounded-xl border px-4 py-3 text-sm text-white transition-all outline-none focus:ring-2',
                 fieldErrors.price && 'border-red-500/60'
               )}
             />
@@ -890,7 +905,7 @@ export function UploadForm() {
 
       {/* 제목 */}
       <div>
-        <label className="text-foreground/90 mb-2 block text-sm font-medium">
+        <label className="mb-2 block text-sm font-medium text-white">
           제목 <span className="text-red-400">*</span>
         </label>
         <input
@@ -900,7 +915,7 @@ export function UploadForm() {
           placeholder="프롬프트 제목을 입력하세요"
           maxLength={100}
           className={cn(
-            'border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 focus:ring-brand-500/20 w-full rounded-xl border px-4 py-3 text-sm outline-none focus:ring-1',
+            'border-brand-500/60 bg-surface-800 placeholder-surface-500 focus:border-brand-500 focus:ring-brand-500/20 w-full rounded-xl border px-4 py-3 text-sm text-white transition-all outline-none focus:ring-2',
             fieldErrors.title && 'border-red-500/60'
           )}
         />
@@ -915,6 +930,21 @@ export function UploadForm() {
           )}
           <span className="text-surface-500 text-xs">{title.length}/100</span>
         </div>
+      </div>
+
+      {/* 한줄 소개 - 요청하신 흰색 및 테두리 강조 적용 */}
+      <div className="space-y-2">
+        <label className="mb-2 block text-sm font-medium text-white">
+          한줄 소개 <span className="text-red-400">*</span>
+        </label>
+        <input
+          type="text"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="프롬프트를 한 줄로 간단하게 설명해주세요 (검색 결과에 노출됩니다)"
+          className="border-brand-500/60 bg-surface-800 placeholder-surface-500 focus:border-brand-500 focus:ring-brand-500/20 w-full rounded-xl border px-4 py-3 text-sm text-white transition-all outline-none focus:ring-2"
+          required
+        />
       </div>
 
       {/* 카테고리 */}
@@ -935,11 +965,11 @@ export function UploadForm() {
       </div>
 
       {/* ── 스텝 에디터 ── */}
-      <div>
-        <div className="mb-3 flex items-center justify-between">
-          <label className="text-foreground/90 text-sm font-medium">
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-medium text-white">
             AI 활용 단계{' '}
-            <span className="text-muted-foreground font-normal">
+            <span className="text-surface-400 font-normal">
               ({steps.length}/{MAX_STEPS})
             </span>
           </label>
@@ -948,7 +978,7 @@ export function UploadForm() {
               type="button"
               onClick={addStep}
               disabled={isBusy}
-              className="border-brand-500/40 text-brand-300 hover:bg-brand-500/10 inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium transition-colors"
+              className="border-brand-500/40 text-brand-400 hover:bg-brand-500/10 inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium transition-colors"
             >
               <Plus className="h-3.5 w-3.5" />
               스텝 추가
@@ -958,17 +988,17 @@ export function UploadForm() {
 
         {/* 스텝 탭 네비게이션 */}
         {steps.length > 1 && (
-          <div className="mb-4 flex items-center gap-2 overflow-x-auto pb-1">
+          <div className="scrollbar-hide flex items-center gap-2 overflow-x-auto pb-1">
             {steps.map((_, idx) => (
               <button
                 key={idx}
                 type="button"
                 onClick={() => setActiveStep(idx)}
                 className={cn(
-                  'flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all',
+                  'flex shrink-0 items-center gap-1.5 rounded-xl border px-4 py-2 text-xs font-semibold transition-all',
                   activeStep === idx
-                    ? 'bg-brand-500 text-white'
-                    : 'bg-surface-800/50 text-surface-300 hover:bg-surface-700'
+                    ? 'bg-brand-500 border-brand-400 shadow-brand-500/20 text-white shadow-lg'
+                    : 'bg-surface-800 border-surface-600 text-surface-400 hover:border-surface-500 hover:text-white'
                 )}
               >
                 STEP {idx + 1}
@@ -983,14 +1013,14 @@ export function UploadForm() {
         )}
 
         {/* 현재 스텝 에디터 */}
-        <div className="border-surface-700/50 bg-surface-800/20 rounded-2xl border p-5">
+        <div className="border-surface-600 bg-surface-800/30 rounded-2xl border p-5 shadow-inner">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               {activeStep > 0 && (
                 <button
                   type="button"
                   onClick={() => setActiveStep(activeStep - 1)}
-                  className="text-surface-400 hover:text-surface-200 rounded-lg p-1 transition-colors"
+                  className="text-surface-400 rounded-lg p-1 transition-colors hover:text-white"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
@@ -1007,7 +1037,7 @@ export function UploadForm() {
                 <button
                   type="button"
                   onClick={() => setActiveStep(activeStep + 1)}
-                  className="text-surface-400 hover:text-surface-200 rounded-lg p-1 transition-colors"
+                  className="text-surface-400 rounded-lg p-1 transition-colors hover:text-white"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>
@@ -1068,10 +1098,10 @@ export function UploadForm() {
                 type="button"
                 onClick={() => setActiveStep(idx)}
                 className={cn(
-                  'h-2 rounded-full transition-all',
+                  'h-1.5 rounded-full transition-all',
                   idx === activeStep
                     ? 'bg-brand-500 w-6'
-                    : 'bg-surface-600 hover:bg-surface-500 w-2'
+                    : 'bg-surface-600 hover:bg-surface-500 w-1.5'
                 )}
               />
             ))}
@@ -1088,7 +1118,7 @@ export function UploadForm() {
       {status === 'error' && (
         <div className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3">
           <AlertCircle className="h-5 w-5 shrink-0 text-red-400" />
-          <p className="text-sm text-red-400">{errorMsg}</p>
+          <p className="text-sm font-medium text-red-400">{errorMsg}</p>
         </div>
       )}
 
@@ -1096,7 +1126,7 @@ export function UploadForm() {
       {status === 'success' && (
         <div className="flex items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3">
           <CheckCircle className="h-5 w-5 shrink-0 text-emerald-400" />
-          <p className="text-sm text-emerald-400">
+          <p className="text-sm font-medium text-emerald-400">
             {isPaidSale
               ? '등록 완료! 검수 요청이 접수되었습니다.'
               : '등록 완료!'}{' '}
@@ -1110,10 +1140,10 @@ export function UploadForm() {
         type="submit"
         disabled={isBusy}
         className={cn(
-          'relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl py-4 text-sm font-semibold text-white transition-all',
+          'relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl py-4 text-sm font-bold text-white transition-all',
           isBusy
-            ? 'bg-surface-700/50 text-muted-foreground cursor-not-allowed'
-            : 'from-brand-500 to-brand-600 shadow-brand-500/20 hover:shadow-brand-500/30 bg-linear-to-r shadow-lg hover:scale-[1.01] hover:shadow-xl'
+            ? 'bg-surface-700/50 text-surface-500 border-surface-600 cursor-not-allowed border'
+            : 'from-brand-500 to-brand-600 shadow-brand-500/30 hover:shadow-brand-500/40 bg-linear-to-r shadow-lg hover:scale-[1.01] hover:brightness-110'
         )}
       >
         {status === 'formatting' ? (

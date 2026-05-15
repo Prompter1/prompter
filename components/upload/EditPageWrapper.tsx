@@ -16,6 +16,7 @@ interface InitialStepData {
 interface InitialData {
   postId: number
   title: string
+  content: string
   price: number
   ai_types: string[]
   ai_versions: string[]

@@ -67,6 +67,7 @@ interface InitialStepData {
 interface InitialData {
   postId: number
   title: string
+  content: string
   price: number
   ai_types: string[]
   ai_versions: string[]
@@ -429,6 +430,7 @@ export function EditForm({
   const router = useRouter()
 
   const [title, setTitle] = useState(initialData.title)
+  const [content, setContent] = useState(initialData.content || '')
   const [categories, setCategories] = useState<string[]>(initialData.categories)
   const [steps, setSteps] = useState<StepData[]>(
     initialData.steps.length > 0
@@ -686,7 +688,7 @@ export function EditForm({
         body: JSON.stringify({
           postId: initialData.postId,
           title: title.trim(),
-          content: uploadedSteps[0].inputPrompt,
+          content: content,
           price: initialData.price,
           ai_types: aiTypes,
           ai_versions: aiVersions,
@@ -759,6 +761,19 @@ export function EditForm({
         )}
       </div>
 
+      <div className="space-y-2">
+        <label className="text-surface-200 text-sm font-medium">
+          한줄 소개
+        </label>
+        <input
+          type="text"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="한 줄 소개를 수정하세요"
+          className="border-surface-700 bg-surface-800 placeholder:text-surface-500 focus:border-brand-500 focus:ring-brand-500 w-full rounded-xl border px-4 py-3 text-sm text-white focus:ring-1 focus:outline-none"
+          required
+        />
+      </div>
       {/* 카테고리 */}
       <div>
         <TagSelector

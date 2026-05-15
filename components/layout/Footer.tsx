@@ -41,8 +41,8 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-muted-foreground mt-5 max-w-xs text-sm leading-relaxed">
-              검증된 AI 프롬프트를 거래하고 공유하는 마켓플레이스. 당신의 창작을
-              더 빠르게.
+              검증된 AI 프롬프트를 거래하고 공유하는 마켓플레이스. 당신의
+              프롬프트를 가장 가치 있는 자산으로
             </p>
           </div>
 
