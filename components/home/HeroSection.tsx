@@ -280,6 +280,7 @@ export default async function HeroSection() {
         }
 
         .hero-word-slot {
+          
           height: 1em;
         }
 

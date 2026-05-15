@@ -2,11 +2,10 @@
 
 import { Sparkles, LogOut, UserCircle, Shield, Menu } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/providers/auth-provider'
-import { navigationUtils, ROUTES } from '@/src/lib/navigation'
+import { navigationUtils } from '@/src/lib/navigation'
 import { useIsAdmin } from '@/hooks/useIsAdmin'
-import { cn } from '@/src/lib/utils'
 
 const NAV_LINKS = [
   { label: 'Explore', href: '#' },
@@ -18,16 +17,15 @@ export function Navbar() {
   const { user, isLoading, signOut } = useAuth()
   const { isAdmin } = useIsAdmin()
   const router = useRouter()
-  const pathname = usePathname()
 
   return (
     <nav className="border-border/40 bg-background/60 fixed top-0 z-50 w-full border-b backdrop-blur-2xl backdrop-saturate-150">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         {/* Logo */}
         <Link href="/" className="group flex items-center gap-2.5">
-          <div className="from-brand-400 via-brand-500 to-brand-600 shadow-brand-500/20 group-hover:shadow-brand-500/40 relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br shadow-lg transition-all duration-300 group-hover:scale-105">
+          <div className="from-brand-400 via-brand-500 to-brand-600 shadow-brand-500/20 group-hover:shadow-brand-500/40 relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-linear-to-br shadow-lg transition-all duration-300 group-hover:scale-105">
             <Sparkles className="h-5 w-5 text-white" />
-            <div className="absolute inset-0 bg-gradient-to-t from-transparent to-white/20" />
+            <div className="absolute inset-0 bg-linear-to-t from-transparent to-white/20" />
           </div>
           <span className="text-foreground text-xl font-bold tracking-tight">
             PROMPTER
@@ -90,10 +88,10 @@ export function Navbar() {
               </button>
               <button
                 onClick={() => navigationUtils.moveToLogin(router)}
-                className="from-brand-500 to-brand-600 shadow-brand-500/25 hover:shadow-brand-500/40 relative overflow-hidden rounded-xl bg-gradient-to-r px-5 py-2 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                className="from-brand-500 to-brand-600 shadow-brand-500/25 hover:shadow-brand-500/40 relative overflow-hidden rounded-xl bg-linear-to-r px-5 py-2 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
               >
                 <span className="relative z-10">시작하기</span>
-                <div className="absolute inset-0 bg-gradient-to-t from-transparent to-white/10" />
+                <div className="absolute inset-0 bg-linear-to-t from-transparent to-white/10" />
               </button>
             </div>
           )}

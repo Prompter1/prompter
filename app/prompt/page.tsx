@@ -36,6 +36,7 @@ export default async function PromptIndexPage({ searchParams }: Props) {
   const sort = (firstParam(params.sort) as PromptSort | undefined) ?? 'latest'
   const verified = firstParam(params.verified) === 'true'
 
+  // 서버에서 ai, version, verified 조건에 맞는 데이터와 '유효한 필터 목록'을 가져옵니다.
   const { prompts, aiRankings, categories, versions } =
     await fetchPromptExplore({
       q,
@@ -57,6 +58,7 @@ export default async function PromptIndexPage({ searchParams }: Props) {
     if (sort && sort !== 'latest') next.set('sort', sort)
     if (verified) next.set('verified', 'true')
 
+    // 새로운 업데이트 적용
     for (const [key, value] of Object.entries(updates)) {
       if (
         value === null ||
@@ -78,8 +80,9 @@ export default async function PromptIndexPage({ searchParams }: Props) {
     <>
       <Navbar />
       <main className="bg-surface-900 min-h-screen pt-24 pb-20 text-white">
-        <section className="border-surface-700/40 border-b px-4 py-10 sm:px-6 lg:py-14">
-          <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[minmax(0,1fr)_21rem] lg:items-end">
+        {/* 상단 검색 영역 */}
+        <section className="border-surface-700/40 border-b px-1 py-10 sm:px-6 lg:py-14">
+          <div className="mx-auto grid w-8/12 gap-8 lg:grid-cols-[minmax(0,1fr)_21rem] lg:items-end">
             <div>
               <div className="border-brand-500/25 bg-brand-500/10 text-brand-300 mb-5 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold">
                 <Sparkles className="h-3.5 w-3.5" />
@@ -88,39 +91,28 @@ export default async function PromptIndexPage({ searchParams }: Props) {
               <h1 className="text-3xl font-bold tracking-tight sm:text-5xl">
                 필요한 AI 워크플로우를 빠르게 찾기
               </h1>
-              <p className="text-surface-400 mt-4 max-w-2xl text-sm leading-6 sm:text-base">
-                AI 도구, 버전, 콘텐츠 분야, 검증 여부를 조합해 검색하세요.
-                목록에 없는 AI와 카테고리도 업로드 단계에서 바로 확장됩니다.
+              <p className="text-surface-300 mt-4 max-w-2xl text-sm leading-6 sm:text-base">
+                원하는 AI 도구와 버전을 선택하면 최적화된 프롬프트를
+                찾아드립니다.
               </p>
             </div>
 
             <form
               action="/prompt"
-              className="border-surface-700/60 bg-surface-800/50 flex rounded-2xl border p-2"
+              className="border-surface-700/60 bg-surface-800/50 flex rounded-full border p-2"
             >
-              {ai && <input type="hidden" name="ai" value={ai} />}
-              {version && (
-                <input type="hidden" name="version" value={version} />
-              )}
-              {category && (
-                <input type="hidden" name="category" value={category} />
-              )}
-              {sort !== 'latest' && (
-                <input type="hidden" name="sort" value={sort} />
-              )}
-              {verified && <input type="hidden" name="verified" value="true" />}
-              <label className="flex min-w-0 flex-1 items-center gap-2 px-3">
-                <Search className="text-surface-500 h-4 w-4 shrink-0" />
+              <label className="flex min-w-0 flex-1 items-center gap-2 px-4">
+                <Search className="text-surface-300 h-4 w-4 shrink-0" />
                 <input
                   name="q"
                   defaultValue={q}
-                  placeholder="키워드, 프롬프트 내용 검색"
-                  className="placeholder:text-surface-500 min-w-0 flex-1 bg-transparent text-sm text-white outline-none"
+                  placeholder="키워드, 프롬프트"
+                  className="placeholder:text-surface-300 min-w-0 flex-1 bg-transparent pr-[15%] text-lg text-white outline-none"
                 />
               </label>
               <button
                 type="submit"
-                className="bg-brand-500 hover:bg-brand-400 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-colors"
+                className="bg-brand-500 hover:bg-brand-400 rounded-xl px-4 py-2.5 text-lg font-semibold text-white transition-colors"
               >
                 검색
               </button>
@@ -128,67 +120,40 @@ export default async function PromptIndexPage({ searchParams }: Props) {
           </div>
         </section>
 
-        <section className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[19rem_minmax(0,1fr)]">
+        {/* 메인 콘텐츠 영역 */}
+        <section className="mx-auto grid w-8/12 gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[19rem_minmax(0,1fr)]">
           <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start">
-            <div className="border-surface-700/60 bg-surface-800/40 rounded-2xl border p-4">
-              <div className="mb-3 flex items-center gap-2">
-                <SlidersHorizontal className="text-brand-400 h-4 w-4" />
-                <h2 className="text-sm font-semibold">정렬</h2>
-              </div>
-              <div className="grid grid-cols-3 gap-2 lg:grid-cols-1">
-                {SORT_OPTIONS.map((option) => (
-                  <Link
-                    key={option.value}
-                    href={makeHref({
-                      sort: option.value === 'latest' ? null : option.value,
-                    })}
-                    className={cn(
-                      'rounded-xl px-3 py-2 text-center text-xs font-semibold transition-colors lg:text-left',
-                      sort === option.value
-                        ? 'bg-brand-500 text-white'
-                        : 'bg-surface-700/40 text-surface-300 hover:bg-surface-700'
-                    )}
-                  >
-                    {option.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
+            {/* AI 종류 선택 (Sidebar) */}
             <div className="border-surface-700/60 bg-surface-800/40 rounded-2xl border p-4">
               <div className="mb-3 flex items-center gap-2">
                 <Filter className="text-brand-400 h-4 w-4" />
-                <h2 className="text-sm font-semibold">AI 순위</h2>
+                <h2 className="text-lg font-semibold">AI 종류</h2>
               </div>
               <div className="space-y-2">
                 <Link
-                  href={makeHref({ ai: null })}
+                  href={makeHref({ ai: null, version: null })} // AI 초기화 시 버전도 초기화
                   className={cn(
-                    'flex items-center justify-between rounded-xl px-3 py-2 text-sm transition-colors',
+                    'flex items-center justify-between rounded-xl px-3 py-2 text-lg transition-colors',
                     !ai
                       ? 'bg-brand-500 text-white'
                       : 'bg-surface-700/40 text-surface-300 hover:bg-surface-700'
                   )}
                 >
                   전체 AI
-                  <ArrowUpRight className="h-3.5 w-3.5" />
                 </Link>
-                {aiRankings.slice(0, 10).map((tool, index) => (
+                {aiRankings.map((tool) => (
                   <Link
                     key={tool.name}
-                    href={makeHref({ ai: tool.name })}
+                    href={makeHref({ ai: tool.name, version: null })} // 💡 핵심: AI 종류가 바뀌면 기존 버전 필터는 해제함
                     className={cn(
-                      'flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors',
+                      'flex items-center justify-between rounded-xl px-3 py-2 text-lg transition-colors',
                       ai === tool.name
                         ? 'bg-brand-500 text-white'
                         : 'bg-surface-700/40 text-surface-300 hover:bg-surface-700'
                     )}
                   >
-                    <span className="text-surface-500 w-5 text-xs font-bold">
-                      #{index + 1}
-                    </span>
-                    <span className="min-w-0 flex-1 truncate">{tool.name}</span>
-                    <span className="text-xs opacity-70">{tool.count}</span>
+                    <span className="truncate">{tool.name}</span>
+                    <span className="text-xs opacity-60">{tool.count}</span>
                   </Link>
                 ))}
               </div>
@@ -196,49 +161,56 @@ export default async function PromptIndexPage({ searchParams }: Props) {
           </aside>
 
           <div className="min-w-0">
-            <div className="mb-5 flex flex-col gap-3">
+            {/* 상단 칩 필터 영역 */}
+            <div className="mb-5 flex flex-col gap-4">
               <div className="flex flex-wrap items-center gap-2">
+                {/* 💡 인증 버튼: 보라색(Violet) 테마 적용 */}
                 <Link
                   href={makeHref({ verified: verified ? null : true })}
                   className={cn(
-                    'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors',
+                    'inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-lg font-semibold transition-colors',
                     verified
-                      ? 'border-emerald-400/40 bg-emerald-500/15 text-emerald-300'
-                      : 'border-surface-700 bg-surface-800/50 text-surface-300 hover:border-emerald-400/40'
+                      ? 'border-violet-400/40 bg-violet-500/15 text-violet-300'
+                      : 'border-surface-700 bg-surface-800/50 text-surface-300 hover:border-violet-400/40'
                   )}
                 >
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                  인증된 게시물만
+                  <CheckCircle2 className="h-4 w-4" />
+                  인증됨
                 </Link>
 
-                {categories.slice(0, 12).map((item) => (
+                {/* 카테고리 필터 */}
+                {categories.map((item) => (
                   <Link
                     key={item.name}
                     href={makeHref({
                       category: category === item.name ? null : item.name,
                     })}
                     className={cn(
-                      'rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
+                      'rounded-full border px-4 py-2 text-lg font-medium transition-colors',
                       category === item.name
                         ? 'border-brand-400/50 bg-brand-500/15 text-brand-300'
                         : 'border-surface-700 bg-surface-800/50 text-surface-300 hover:border-surface-500'
                     )}
                   >
-                    {item.name} {item.count}
+                    {item.name}
                   </Link>
                 ))}
               </div>
 
+              {/* 💡 버전 필터: 선택된 AI가 있을 때만 혹은 해당 AI의 버전만 표시 */}
               {versions.length > 0 && (
-                <div className="flex flex-wrap items-center gap-2">
-                  {versions.slice(0, 10).map((item) => (
+                <div className="border-surface-700/40 flex flex-wrap items-center gap-2 border-t pt-4">
+                  <span className="text-surface-500 mr-2 text-sm font-medium">
+                    버전:
+                  </span>
+                  {versions.map((item) => (
                     <Link
                       key={item.name}
                       href={makeHref({
                         version: version === item.name ? null : item.name,
                       })}
                       className={cn(
-                        'rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
+                        'rounded-full border px-3 py-1.5 text-base font-medium transition-colors',
                         version === item.name
                           ? 'border-amber-400/50 bg-amber-500/15 text-amber-300'
                           : 'border-surface-700 bg-surface-800/50 text-surface-300 hover:border-surface-500'
@@ -251,25 +223,21 @@ export default async function PromptIndexPage({ searchParams }: Props) {
               )}
             </div>
 
+            {/* 결과 요약 및 리스트 */}
             <div className="mb-5 flex items-center justify-between">
-              <p className="text-surface-400 text-sm">
+              <p className="text-surface-300 text-lg">
                 총{' '}
                 <span className="font-semibold text-white">
                   {prompts.length}
                 </span>
                 개 결과
               </p>
-              {(q ||
-                ai ||
-                version ||
-                category ||
-                verified ||
-                sort !== 'latest') && (
+              {(q || ai || version || category || verified) && (
                 <Link
                   href="/prompt"
-                  className="text-surface-400 text-sm transition-colors hover:text-white"
+                  className="text-brand-400 hover:text-brand-300 text-sm font-medium underline underline-offset-4"
                 >
-                  필터 초기화
+                  필터 모두 초기화
                 </Link>
               )}
             </div>
@@ -280,13 +248,13 @@ export default async function PromptIndexPage({ searchParams }: Props) {
                 <h2 className="text-lg font-semibold text-white">
                   검색 결과가 없습니다
                 </h2>
-                <p className="text-surface-400 mt-2 max-w-md text-sm leading-6">
+                <p className="text-surface-400 mt-2 max-w-md text-lg leading-6">
                   키워드나 필터를 조금 넓혀보세요. 새로운 AI 도구나 카테고리가
                   필요하면 업로드 화면에서 직접 추가할 수 있습니다.
                 </p>
                 <Link
                   href="/upload"
-                  className="bg-brand-500 hover:bg-brand-400 mt-6 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-colors"
+                  className="bg-brand-500 hover:bg-brand-400 mt-6 rounded-xl px-5 py-2.5 text-lg font-semibold text-white transition-colors"
                 >
                   프롬프트 등록하기
                 </Link>

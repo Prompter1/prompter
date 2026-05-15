@@ -1,14 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import Image from 'next/image'
 import {
   ChevronLeft,
   ChevronRight,
   FileText,
   MessageSquare,
   Sparkles,
-  Video,
   Lock,
   AlertCircle,
 } from 'lucide-react'
@@ -26,76 +24,6 @@ export interface PromptStep {
   output_media: string[]
 }
 
-function isVideo(url: string) {
-  return /\.(mp4|webm)$/i.test(url)
-}
-
-function MediaGrid({
-  urls,
-  label,
-}: Readonly<{ urls: string[]; label: string }>) {
-  const [active, setActive] = useState(0)
-  if (urls.length === 0) return null
-  const current = urls[Math.min(active, urls.length - 1)]
-
-  return (
-    <div className="space-y-2">
-      <p className="text-surface-500 text-xs font-medium tracking-wide uppercase">
-        {label}
-      </p>
-      <div className="border-surface-700/50 bg-surface-900/40 relative aspect-video overflow-hidden rounded-xl border">
-        {isVideo(current) ? (
-          <video
-            src={current}
-            controls
-            playsInline
-            className="h-full w-full object-contain"
-          />
-        ) : (
-          <Image
-            src={current}
-            alt={label}
-            fill
-            className="object-contain"
-            sizes="600px"
-          />
-        )}
-      </div>
-      {urls.length > 1 && (
-        <div className="flex gap-1.5 overflow-x-auto pb-1">
-          {urls.map((url, idx) => (
-            <button
-              key={url}
-              type="button"
-              onClick={() => setActive(idx)}
-              className={cn(
-                'border-surface-600 relative h-12 w-16 shrink-0 overflow-hidden rounded-lg border-2 transition-all',
-                active === idx
-                  ? 'border-brand-500'
-                  : 'opacity-60 hover:opacity-90'
-              )}
-            >
-              {isVideo(url) ? (
-                <div className="bg-surface-800 flex h-full items-center justify-center">
-                  <Video className="text-surface-400 h-4 w-4" />
-                </div>
-              ) : (
-                <Image
-                  src={url}
-                  alt=""
-                  fill
-                  className="object-cover"
-                  sizes="64px"
-                />
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
 // ── 개별 스텝의 입력 프롬프트 (해금 로직 포함) ──────────────────────────────
 function StepInputPrompt({
   prompt,
@@ -110,7 +38,6 @@ function StepInputPrompt({
   isLoggedIn: boolean
   onRequestUnlock: () => void
 }>) {
-  // 전체 프롬프트의 15% 미리보기 (최소 10자, 최대 200자)
   const previewLength = Math.min(
     Math.max(Math.floor(prompt.length * 0.15), 10),
     200
@@ -132,11 +59,9 @@ function StepInputPrompt({
         ) : (
           <>
             <div className="bg-surface-900/50 select-none">
-              {/* 미리보기 — 선명하게 */}
               <pre className="text-surface-200 p-4 pb-0 font-mono text-sm leading-relaxed whitespace-pre-wrap">
                 {previewText}
               </pre>
-              {/* 블러 텍스트 — 뒷 내용을 뭉개서 보여줌 */}
               <pre
                 className="text-surface-200 px-4 pt-1 pb-4 font-mono text-sm leading-relaxed whitespace-pre-wrap select-none"
                 style={{
@@ -148,7 +73,6 @@ function StepInputPrompt({
                 {prompt.slice(previewLength, previewLength + 300)}
               </pre>
             </div>
-            {/* 해금 영역 */}
             <div className="border-surface-700/40 bg-surface-800/70 flex flex-col items-center gap-2.5 border-t px-4 py-4 text-center backdrop-blur-sm">
               <div className="bg-surface-700/50 flex h-9 w-9 items-center justify-center rounded-xl">
                 <Lock className="text-surface-300 h-4 w-4" />
@@ -195,6 +119,7 @@ export function PromptStepsViewer({
   postId,
   title,
   userPoints,
+  onStepChange,
 }: Readonly<{
   steps: PromptStep[]
   price: number
@@ -203,6 +128,8 @@ export function PromptStepsViewer({
   postId: number
   title: string
   userPoints: number
+  /** 스텝 변경 시 상단 갤러리에 표시할 미디어 URL 목록을 전달하는 콜백 */
+  onStepChange?: (outputMedia: string[], inputMedia: string[]) => void
 }>) {
   const [activeStep, setActiveStep] = useState(0)
   const [unlocked, setUnlocked] = useState(canViewFull)
@@ -212,7 +139,17 @@ export function PromptStepsViewer({
 
   const step = steps[activeStep]
   const isFree = price === 0
-  const showLock = !isFree && !unlocked
+
+  const handleStepChange = (idx: number) => {
+    setActiveStep(idx)
+    const targetStep = steps[idx]
+    // 결과물 미디어 우선, 없으면 입력 미디어
+    const mediaToShow =
+      targetStep.output_media.length > 0
+        ? targetStep.output_media
+        : targetStep.input_media
+    onStepChange?.(targetStep.output_media, targetStep.input_media)
+  }
 
   return (
     <>
@@ -233,7 +170,7 @@ export function PromptStepsViewer({
               <div className="flex items-center gap-1">
                 <button
                   type="button"
-                  onClick={() => setActiveStep(Math.max(0, activeStep - 1))}
+                  onClick={() => handleStepChange(Math.max(0, activeStep - 1))}
                   disabled={activeStep === 0}
                   className="text-surface-400 hover:text-surface-200 rounded p-1 transition-colors disabled:opacity-30"
                 >
@@ -245,7 +182,7 @@ export function PromptStepsViewer({
                 <button
                   type="button"
                   onClick={() =>
-                    setActiveStep(Math.min(steps.length - 1, activeStep + 1))
+                    handleStepChange(Math.min(steps.length - 1, activeStep + 1))
                   }
                   disabled={activeStep === steps.length - 1}
                   className="text-surface-400 hover:text-surface-200 rounded p-1 transition-colors disabled:opacity-30"
@@ -262,7 +199,7 @@ export function PromptStepsViewer({
                 <button
                   key={s.id}
                   type="button"
-                  onClick={() => setActiveStep(idx)}
+                  onClick={() => handleStepChange(idx)}
                   className={cn(
                     'shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
                     activeStep === idx
@@ -296,11 +233,6 @@ export function PromptStepsViewer({
             )}
           </div>
 
-          {/* 입력 미디어 */}
-          {step.input_media.length > 0 && (
-            <MediaGrid urls={step.input_media} label="입력 미디어" />
-          )}
-
           {/* 입력 프롬프트 — 해금 로직 포함 */}
           {step.input_prompt && (
             <StepInputPrompt
@@ -333,9 +265,14 @@ export function PromptStepsViewer({
               </div>
             ))}
 
-          {/* 결과물 미디어 — 항상 공개 (썸네일 역할) */}
-          {step.output_media.length > 0 && (
-            <MediaGrid urls={step.output_media} label="결과물 미디어" />
+          {/* 결과물 미디어 안내 문구 (미디어는 상단 갤러리에 표시됨) */}
+          {(step.output_media.length > 0 || step.input_media.length > 0) && (
+            <div className="border-surface-700/30 bg-surface-800/20 flex items-center gap-2 rounded-xl border px-4 py-2.5">
+              <Sparkles className="text-brand-400 h-3.5 w-3.5 shrink-0" />
+              <p className="text-surface-400 text-xs">
+                이 스텝의 미디어는 상단 갤러리에서 확인할 수 있습니다.
+              </p>
+            </div>
           )}
         </div>
 
@@ -346,7 +283,7 @@ export function PromptStepsViewer({
               <button
                 key={idx}
                 type="button"
-                onClick={() => setActiveStep(idx)}
+                onClick={() => handleStepChange(idx)}
                 className={cn(
                   'h-1.5 rounded-full transition-all',
                   idx === activeStep

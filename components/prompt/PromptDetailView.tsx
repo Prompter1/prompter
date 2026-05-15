@@ -10,10 +10,8 @@ import {
 } from 'lucide-react'
 import type { PromptPost } from '@/types'
 import { Badge } from '@/components/ui/Badge'
-import { PromptMediaGallery } from '@/components/prompt/PromptMediaGallery'
 import { PromptContentSection } from '@/components/prompt/PromptContentSection'
-import { PromptStepsViewer } from '@/components/prompt/PromptStepsViewer'
-import { PromptOwnerActions } from '@/components/prompt/PromptOwnerActions'
+import { PromptDetailClient } from '@/components/prompt/PromptDetailClient'
 import { createSupabaseServerClient } from '@/src/lib/supabase-server'
 
 interface PromptDetailViewProps {
@@ -98,8 +96,6 @@ export async function PromptDetailView({
         day: 'numeric',
       })
     : null
-  const galleryUrls =
-    result_media && result_media.length > 0 ? result_media : []
 
   return (
     <main className="bg-surface-900 relative min-h-screen pt-20 pb-20">
@@ -118,29 +114,21 @@ export async function PromptDetailView({
         </Link>
 
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-12">
-          <div className="space-y-6">
-            <PromptMediaGallery urls={galleryUrls} alt={title} />
-            {steps.length > 0 && (
-              <PromptStepsViewer
-                steps={steps}
-                price={price}
-                canViewFull={canViewFull}
-                isLoggedIn={!!user}
-                postId={post.id}
-                title={title}
-                userPoints={userPoints}
-              />
-            )}
-          </div>
+          {/* 왼쪽: 미디어 갤러리 + 스텝 뷰어 통합 (Client Component) */}
+          <PromptDetailClient
+            steps={steps}
+            resultMedia={result_media}
+            price={price}
+            canViewFull={canViewFull}
+            isLoggedIn={!!user}
+            postId={post.id}
+            title={title}
+            userPoints={userPoints}
+            alt={title}
+          />
 
+          {/* 오른쪽: 메타 정보 */}
           <div className="flex flex-col lg:sticky lg:top-24 lg:self-start">
-            {/* 소유자 전용 수정/삭제 버튼 */}
-            {isOwner && (
-              <div className="mb-4">
-                <PromptOwnerActions postId={post.id} title={title} />
-              </div>
-            )}
-
             <div className="mb-4 flex flex-wrap items-center gap-2">
               {ai_types.map((t) => (
                 <Badge key={t}>{t}</Badge>

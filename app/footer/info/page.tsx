@@ -1,6 +1,6 @@
 import { Navbar } from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
-import { Building2, User, Mail, FileText, MapPin, Phone } from 'lucide-react'
+import { Building2, User, Mail, FileText } from 'lucide-react'
 
 export default function InfoPage() {
   const businessDetails = [
@@ -31,7 +31,7 @@ export default function InfoPage() {
     <main className="bg-surface-900 text-surface-50 flex min-h-screen flex-col">
       <Navbar />
 
-      <section className="flex-grow px-4 py-20">
+      <section className="grow px-4 py-20">
         <div className="mx-auto max-w-3xl">
           {/* 페이지 헤더 */}
           <div className="mb-12 text-center">

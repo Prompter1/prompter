@@ -32,14 +32,17 @@ interface PromptCardProps {
 export default function PromptCard({ prompt }: Readonly<PromptCardProps>) {
   const { title, price, ai_types, author, is_verified, result_media } = prompt
 
-  const firstMediaRaw = result_media?.length > 0 ? result_media[0] : null
-  const firstMedia =
-    typeof firstMediaRaw === 'string'
-      ? firstMediaRaw
-      : ((firstMediaRaw as any)?.url ?? null)
+  // ✅ 배열의 마지막 요소를 선택하도록 수정
+  const lastMediaRaw =
+    result_media?.length > 0 ? result_media[result_media.length - 1] : null
+
+  const lastMedia =
+    typeof lastMediaRaw === 'string'
+      ? lastMediaRaw
+      : ((lastMediaRaw as any)?.url ?? null)
 
   const isVideo =
-    typeof firstMedia === 'string' && /\.(mp4|webm)$/i.test(firstMedia)
+    typeof lastMedia === 'string' && /\.(mp4|webm)$/i.test(lastMedia)
   const gradient = getGradient(ai_types ?? [])
 
   return (
@@ -48,11 +51,11 @@ export default function PromptCard({ prompt }: Readonly<PromptCardProps>) {
       className="group border-surface-700/50 hover:border-brand-500/50 hover:shadow-brand-500/10 relative flex flex-col overflow-hidden rounded-2xl border bg-[#12121A] transition-all duration-300 hover:shadow-lg"
     >
       {/* 썸네일 */}
-      <div className="relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden">
-        {firstMedia ? (
+      <div className="relative flex aspect-4/3 w-full items-center justify-center overflow-hidden">
+        {lastMedia ? (
           isVideo ? (
             <video
-              src={firstMedia}
+              src={lastMedia}
               autoPlay
               loop
               muted
@@ -61,7 +64,7 @@ export default function PromptCard({ prompt }: Readonly<PromptCardProps>) {
             />
           ) : (
             <Image
-              src={firstMedia}
+              src={lastMedia}
               alt={title}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -71,7 +74,7 @@ export default function PromptCard({ prompt }: Readonly<PromptCardProps>) {
         ) : (
           // ✅ 흑백 대신 컬러 그라디언트 플레이스홀더
           <div
-            className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-80`}
+            className={`absolute inset-0 bg-linear-to-br ${gradient} opacity-80`}
           >
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
               <Sparkles className="h-10 w-10 text-white/60" strokeWidth={1.5} />
