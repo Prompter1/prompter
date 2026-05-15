@@ -6,11 +6,12 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/providers/auth-provider'
 import { navigationUtils } from '@/src/lib/navigation'
 import { useIsAdmin } from '@/hooks/useIsAdmin'
+import Image from 'next/image'
 
 const NAV_LINKS = [
-  { label: 'Explore', href: '#' },
-  { label: 'Rankings', href: '#' },
-  { label: 'Community', href: '#' },
+  { label: '탐색', href: '/prompt' },
+  { label: '랭킹', href: '/prompt?sort=popular' },
+  { label: '등록', href: '/upload' },
 ]
 
 export function Navbar() {
@@ -22,23 +23,29 @@ export function Navbar() {
     <nav className="border-border/40 bg-background/60 fixed top-0 z-50 w-full border-b backdrop-blur-2xl backdrop-saturate-150">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         {/* Logo */}
-        <Link href="/" className="group flex items-center gap-2.5">
-          <div className="from-brand-400 via-brand-500 to-brand-600 shadow-brand-500/20 group-hover:shadow-brand-500/40 relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-linear-to-br shadow-lg transition-all duration-300 group-hover:scale-105">
-            <Sparkles className="h-5 w-5 text-white" />
-            <div className="absolute inset-0 bg-linear-to-t from-transparent to-white/20" />
+        <Link href="/" className="group flex items-center gap-3">
+          <div className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl transition-all duration-300 group-hover:scale-105">
+            <Image
+              src="/images/logo.png"
+              alt="PROMPTER Logo"
+              width={48}
+              height={48}
+              className="h-full w-full object-cover"
+              priority
+            />
           </div>
-          <span className="text-foreground text-xl font-bold tracking-tight">
+          <span className="text-foreground text-2xl font-bold tracking-tight">
             PROMPTER
           </span>
         </Link>
 
         {/* Nav links */}
-        <div className="hidden items-center gap-1 md:flex">
+        <div className="absolute top-1/2 left-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center gap-2 md:flex">
           {NAV_LINKS.map(({ label, href }) => (
             <Link
               key={label}
               href={href}
-              className="text-muted-foreground hover:text-foreground relative px-4 py-2 text-sm font-medium transition-all duration-200"
+              className="text-muted-foreground hover:text-foreground relative px-5 py-2.5 text-base font-semibold transition-all duration-200"
             >
               <span className="relative z-10">{label}</span>
               <span className="bg-surface-700/0 hover:bg-surface-700/50 absolute inset-0 rounded-lg transition-colors duration-200" />
@@ -49,7 +56,7 @@ export function Navbar() {
         {/* Auth section */}
         <div className="flex items-center gap-2">
           {isLoading ? (
-            <div className="bg-surface-700/50 h-9 w-24 animate-pulse rounded-xl" />
+            <div className="bg-surface-700/50 h-10 w-28 animate-pulse rounded-xl" />
           ) : user ? (
             <div className="flex items-center gap-3">
               {isAdmin && (
@@ -96,8 +103,8 @@ export function Navbar() {
             </div>
           )}
 
-          <button className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-zinc-400 md:hidden">
-            <Menu className="h-4 w-4" />
+          <button className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 text-zinc-400 md:hidden">
+            <Menu className="h-5 w-5" />
           </button>
         </div>
       </div>

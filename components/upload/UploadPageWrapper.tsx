@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/providers/auth-provider'
-import AuthNavbar from '@/components/layout/AuthNavbar'
+import { Navbar } from '@/components/layout/Navbar'
 import { UploadForm } from './UploadForm'
 
 export function UploadPageWrapper() {
@@ -26,7 +26,7 @@ export function UploadPageWrapper() {
 
   return (
     <>
-      <AuthNavbar user={mappedUser} />
+      <Navbar />
       <UploadForm />
     </>
   )

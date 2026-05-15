@@ -1,7 +1,7 @@
 'use client'
 
 import { useAuth } from '@/providers/auth-provider'
-import AuthNavbar from '@/components/layout/AuthNavbar'
+import { Navbar } from '@/components/layout/Navbar'
 import { EditForm } from './EditForm'
 
 interface InitialStepData {
@@ -43,7 +43,7 @@ export function EditPageWrapper({
 
   return (
     <>
-      <AuthNavbar user={mappedUser} />
+      <Navbar />
       <EditForm initialData={initialData} />
     </>
   )

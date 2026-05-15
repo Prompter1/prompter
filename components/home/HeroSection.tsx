@@ -293,13 +293,16 @@ export default async function HeroSection() {
             90deg,
             rgba(255, 255, 255, 1),
             rgba(255, 255, 255, 0.84),
-            rgba(255, 255, 255, 0.58)
-          );
+            rgba(255, 255, 255, 0.58)  
+        );
           -webkit-background-clip: text;
           background-clip: text;
           color: transparent;
           animation: wordCycle 7.2s infinite;
           will-change: opacity, transform, filter;
+          padding-top: 0.1em; 
+          margin-top: -0.1em
+          
         }
 
         .card-premium {
