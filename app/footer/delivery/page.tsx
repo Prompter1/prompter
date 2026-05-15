@@ -1,12 +1,6 @@
 import { Navbar } from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
-import {
-  Truck,
-  Copy,
-  History,
-  MonitorSmartphone,
-  AlertCircle,
-} from 'lucide-react'
+import { Truck, History, MonitorSmartphone, AlertCircle } from 'lucide-react'
 
 export default function DeliveryPage() {
   const lastUpdated = '2026. 05. 13'
@@ -15,7 +9,7 @@ export default function DeliveryPage() {
     <main className="bg-surface-900 text-surface-50 flex min-h-screen flex-col">
       <Navbar />
 
-      <section className="flex-grow px-4 py-20">
+      <section className="grow px-4 py-20">
         <div className="mx-auto max-w-4xl">
           {/* 헤더 */}
           <div className="mb-12">

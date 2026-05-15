@@ -30,9 +30,9 @@ export default function AuthNavbar({ user }: Readonly<AuthNavbarProps>) {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         {/* Logo */}
         <Link href="/" className="group flex items-center gap-2.5">
-          <div className="from-brand-400 via-brand-500 to-brand-600 shadow-brand-500/25 group-hover:shadow-brand-500/40 relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br shadow-lg transition-all duration-300 group-hover:scale-105">
+          <div className="from-brand-400 via-brand-500 to-brand-600 shadow-brand-500/25 group-hover:shadow-brand-500/40 relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-linear-to-br shadow-lg transition-all duration-300 group-hover:scale-105">
             <Sparkles className="h-5 w-5 text-white" />
-            <div className="absolute inset-0 bg-gradient-to-t from-transparent to-white/20" />
+            <div className="absolute inset-0 bg-linear-to-t from-transparent to-white/20" />
           </div>
           <span className="text-foreground text-xl font-bold tracking-tight">
             PROMPTER

@@ -1,4 +1,5 @@
 import { ArrowRight, Image as ImageIcon, Bot, Zap } from 'lucide-react'
+import Reveal from '@/components/ui/Reveal'
 
 const categories = [
   {
@@ -34,69 +35,80 @@ const categories = [
 export default function CategorySection() {
   return (
     <section className="relative mx-auto max-w-7xl px-6 py-28">
-      {/* 헤더 */}
-      <div className="mb-16 max-w-2xl">
-        <p className="text-brand-400 mb-3 text-xs font-semibold tracking-[0.25em] uppercase">
-          Categories
-        </p>
+      <Reveal variant="up" distance={18} duration={650}>
+        <div className="mb-16 max-w-2xl">
+          <p className="text-brand-400 mb-3 text-xs font-semibold tracking-[0.25em] uppercase">
+            Categories
+          </p>
 
-        <h2 className="text-foreground text-3xl font-bold tracking-tight sm:text-5xl">
-          카테고리별 탐색
-        </h2>
+          <h2 className="text-foreground text-3xl font-bold tracking-tight sm:text-5xl">
+            카테고리별 탐색
+          </h2>
 
-        <p className="text-muted-foreground mt-4 text-sm leading-relaxed sm:text-base">
-          다양한 AI 도구에 최적화된 프롬프트를 탐색하고, 당신의 워크플로우를
-          확장하세요.
-        </p>
-      </div>
+          <p className="text-muted-foreground mt-4 text-sm leading-relaxed sm:text-base">
+            다양한 AI 도구에 최적화된 프롬프트를 탐색하고, 당신의 워크플로우를
+            확장하세요.
+          </p>
+        </div>
+      </Reveal>
 
-      {/* 카드 */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {categories.map((category) => {
+        {categories.map((category, index) => {
           const Icon = category.icon
+          const variant =
+            index % 4 === 0
+              ? 'up'
+              : index % 4 === 1
+                ? 'left'
+                : index % 4 === 2
+                  ? 'right'
+                  : 'scale'
 
           return (
-            <a
+            <Reveal
               key={category.name}
-              href={`/prompt?ai=${encodeURIComponent(category.name)}`}
-              className="group hover:border-brand-500/40 relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] p-6 backdrop-blur-xl transition-all duration-300 hover:-translate-y-2 hover:bg-white/[0.04] hover:shadow-[0_20px_80px_rgba(0,0,0,0.5)]"
+              variant={variant}
+              delay={index * 90}
+              distance={24}
+              duration={720}
+              className="h-full"
             >
-              {/* glow */}
-              <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
-                <div className="from-brand-500/20 to-brand-600/20 absolute -inset-[1px] rounded-2xl bg-gradient-to-br via-transparent blur-xl" />
-              </div>
-
-              {/* 상단 라인 */}
-              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-
-              {/* 아이콘 */}
-              <div
-                className={`mb-6 inline-flex rounded-xl bg-gradient-to-br ${category.gradient} p-3.5 shadow-lg shadow-black/30 transition-all duration-300 group-hover:scale-110`}
+              <a
+                href={`/prompt?ai=${encodeURIComponent(category.name)}`}
+                className="group hover:border-brand-500/40 relative block h-full w-full overflow-hidden rounded-2xl border border-white/10 bg-white/2 p-6 backdrop-blur-xl transition-all duration-300 hover:-translate-y-2 hover:bg-white/4 hover:shadow-[0_20px_80px_rgba(0,0,0,0.5)]"
               >
-                <Icon className="h-6 w-6 text-white" />
-              </div>
+                <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
+                  <div className="from-brand-500/20 to-brand-600/20 absolute -inset-px rounded-2xl bg-linear-to-br via-transparent blur-xl" />
+                </div>
 
-              {/* 텍스트 */}
-              <h3 className="text-foreground group-hover:text-brand-300 text-lg font-semibold transition-colors">
-                {category.name}
-              </h3>
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/20 to-transparent" />
 
-              <p className="text-muted-foreground mt-2 text-sm">
-                {category.description}
-              </p>
+                <div
+                  className={`mb-6 inline-flex rounded-xl bg-linear-to-br ${category.gradient} p-3.5 shadow-lg shadow-black/30 transition-all duration-300 group-hover:scale-110`}
+                >
+                  <Icon className="h-6 w-6 text-white" />
+                </div>
 
-              {/* stats */}
-              <div className="mt-6 flex items-center justify-between">
-                <span className="text-sm font-semibold text-white">
-                  {category.prompts.toLocaleString()}
-                  <span className="text-muted-foreground ml-1 text-xs">
-                    prompts
+                <h3 className="text-foreground group-hover:text-brand-300 text-lg font-semibold transition-colors">
+                  {category.name}
+                </h3>
+
+                <p className="text-muted-foreground mt-2 text-sm">
+                  {category.description}
+                </p>
+
+                <div className="mt-6 flex items-center justify-between">
+                  <span className="text-sm font-semibold text-white">
+                    {category.prompts.toLocaleString()}
+                    <span className="text-muted-foreground ml-1 text-xs">
+                      prompts
+                    </span>
                   </span>
-                </span>
 
-                <ArrowRight className="text-muted-foreground/40 group-hover:text-brand-400 h-5 w-5 transition-all duration-300 group-hover:translate-x-1" />
-              </div>
-            </a>
+                  <ArrowRight className="text-muted-foreground/40 group-hover:text-brand-400 h-5 w-5 transition-all duration-300 group-hover:translate-x-1" />
+                </div>
+              </a>
+            </Reveal>
           )
         })}
       </div>

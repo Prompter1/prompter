@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback, useEffect, type ReactNode } from 'react'
+import { useState, useRef, useCallback, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Upload,
@@ -26,11 +26,7 @@ import {
   AI_VERSION_OPTIONS,
   CONTENT_CATEGORY_OPTIONS,
 } from '@/src/lib/taxonomy'
-import {
-  formatMediaFile,
-  formatFileSize,
-  TARGET_IMAGE_SIZE_MB,
-} from '@/src/lib/mediaFormatter'
+import { formatMediaFile, TARGET_IMAGE_SIZE_MB } from '@/src/lib/mediaFormatter'
 import { cn } from '@/src/lib/utils'
 
 const MAX_RESULT_MEDIA_FILES = 5
@@ -195,7 +191,7 @@ function ProgressBar({
       </div>
       <div className="bg-surface-700/50 h-2 w-full overflow-hidden rounded-full">
         <div
-          className="from-brand-500 to-brand-400 h-full rounded-full bg-gradient-to-r transition-all duration-300"
+          className="from-brand-500 to-brand-400 h-full rounded-full bg-linear-to-r transition-all duration-300"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -679,9 +675,7 @@ export function EditForm({
       // 마지막 스텝의 마지막 output_media를 썸네일(result_media)로
       const allOutputMedia = uploadedSteps.flatMap((s) => s.outputMedia)
       const representativeMedia =
-        allOutputMedia.length > 0
-          ? [allOutputMedia[allOutputMedia.length - 1]]
-          : []
+        allOutputMedia.length > 0 ? [allOutputMedia.at(-1)] : []
 
       setProgressLabel('저장 중...')
       setProgress(91)
@@ -938,7 +932,7 @@ export function EditForm({
             'relative flex flex-1 items-center justify-center gap-2 overflow-hidden rounded-xl py-4 text-sm font-semibold text-white transition-all',
             isBusy
               ? 'bg-surface-700/50 text-muted-foreground cursor-not-allowed'
-              : 'from-brand-500 to-brand-600 shadow-brand-500/20 bg-gradient-to-r shadow-lg hover:scale-[1.01]'
+              : 'from-brand-500 to-brand-600 shadow-brand-500/20 bg-linear-to-r shadow-lg hover:scale-[1.01]'
           )}
         >
           {status === 'formatting' || status === 'uploading' ? (

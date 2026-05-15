@@ -176,7 +176,7 @@ function ProgressBar({
       </div>
       <div className="bg-surface-700/50 h-2 w-full overflow-hidden rounded-full">
         <div
-          className="from-brand-500 to-brand-400 h-full rounded-full bg-gradient-to-r transition-all duration-300"
+          className="from-brand-500 to-brand-400 h-full rounded-full bg-linear-to-r transition-all duration-300"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -834,7 +834,7 @@ export function UploadForm() {
               className={cn(
                 'flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-medium transition-all',
                 isPaidSale === paid
-                  ? 'from-brand-500 to-brand-600 shadow-brand-500/20 bg-gradient-to-r text-white shadow-lg'
+                  ? 'from-brand-500 to-brand-600 shadow-brand-500/20 bg-linear-to-r text-white shadow-lg'
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
@@ -1113,7 +1113,7 @@ export function UploadForm() {
           'relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl py-4 text-sm font-semibold text-white transition-all',
           isBusy
             ? 'bg-surface-700/50 text-muted-foreground cursor-not-allowed'
-            : 'from-brand-500 to-brand-600 shadow-brand-500/20 hover:shadow-brand-500/30 bg-gradient-to-r shadow-lg hover:scale-[1.01] hover:shadow-xl'
+            : 'from-brand-500 to-brand-600 shadow-brand-500/20 hover:shadow-brand-500/30 bg-linear-to-r shadow-lg hover:scale-[1.01] hover:shadow-xl'
         )}
       >
         {status === 'formatting' ? (

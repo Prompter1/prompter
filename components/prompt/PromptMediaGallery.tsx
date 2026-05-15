@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Sparkles } from 'lucide-react'
 import { cn } from '@/src/lib/utils'
@@ -9,31 +9,57 @@ function isVideoUrl(url: string): boolean {
   return /\.(mp4|webm)$/i.test(url)
 }
 
+interface PromptMediaGalleryProps {
+  urls: string[]
+  alt: string
+  /** 외부에서 주입되는 현재 활성 URL 목록 (스텝 전환 시 사용). undefined면 urls 폴백 사용 */
+  activeUrls?: string[] | null
+}
+
 export function PromptMediaGallery({
   urls,
   alt,
-}: Readonly<{ urls: string[]; alt: string }>) {
+  activeUrls,
+}: Readonly<PromptMediaGalleryProps>) {
   const [active, setActive] = useState(0)
 
-  if (urls.length === 0) {
+  // activeUrls가 변경되면(스텝 전환) 인덱스 초기화
+  useEffect(() => {
+    setActive(0)
+  }, [activeUrls])
+
+  // activeUrls가 undefined/null이면 urls 폴백
+  // activeUrls가 []이면 해당 스텝에 미디어 없음 → 빈 상태 표시
+  const isControlled = activeUrls !== undefined && activeUrls !== null
+  const displayUrls = isControlled ? activeUrls : urls
+
+  if (displayUrls.length === 0) {
     return (
       <div className="border-surface-700/50 bg-surface-800/40 flex aspect-4/3 w-full items-center justify-center rounded-2xl border">
-        <Sparkles
-          className="text-surface-600/50 h-16 w-16"
-          strokeWidth={1.25}
-        />
+        <div className="flex flex-col items-center gap-3">
+          <Sparkles
+            className="text-surface-600/50 h-16 w-16"
+            strokeWidth={1.25}
+          />
+          {isControlled && (
+            <p className="text-surface-600 text-xs">
+              이 스텝에는 미디어가 없습니다
+            </p>
+          )}
+        </div>
       </div>
     )
   }
 
-  const current = urls[Math.min(active, urls.length - 1)]!
+  const current = displayUrls[Math.min(active, displayUrls.length - 1)]!
   const mainIsVideo = isVideoUrl(current)
 
   return (
     <div className="space-y-3">
+      {/* 메인 미디어 */}
       <div
         className={cn(
-          'border-surface-700/50 bg-surface-800/30 relative aspect-4/3 w-full overflow-hidden rounded-2xl border',
+          'border-surface-700/50 bg-surface-800/30 relative aspect-4/3 w-full overflow-hidden rounded-2xl border transition-all duration-300',
           mainIsVideo && 'bg-black'
         )}
       >
@@ -47,19 +73,21 @@ export function PromptMediaGallery({
           />
         ) : (
           <Image
+            key={current}
             src={current}
             alt={alt}
             fill
-            className="object-contain"
+            className="object-contain transition-opacity duration-200"
             sizes="(max-width: 1024px) 100vw, 55vw"
             priority
           />
         )}
       </div>
 
-      {urls.length > 1 && (
+      {/* 썸네일 목록 */}
+      {displayUrls.length > 1 && (
         <div className="flex gap-2 overflow-x-auto pb-1">
-          {urls.map((url, idx) => {
+          {displayUrls.map((url, idx) => {
             const thumbVideo = isVideoUrl(url)
             return (
               <button
