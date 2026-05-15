@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/src/lib/utils'
 import { UnlockModal } from '@/components/prompt/UnlockModal'
+import { CopyPromptButton } from './CopyPromptButton'
 
 export interface PromptStep {
   id: number
@@ -46,12 +47,16 @@ function StepInputPrompt({
 
   return (
     <div>
+      {unlocked && (
+        <CopyPromptButton text={prompt} className="mb-8 w-full sm:w-auto" />
+      )}
+
       <p className="text-surface-500 mb-2 flex items-center gap-1.5 text-xs font-medium tracking-wide uppercase">
         <MessageSquare className="h-3.5 w-3.5" />
         입력 프롬프트
       </p>
 
-      <div className="border-surface-700/50 relative overflow-hidden rounded-xl border">
+      <div className="relative overflow-hidden rounded-xl border border-white/20">
         {unlocked ? (
           <pre className="text-surface-200 bg-surface-900/50 max-h-48 overflow-auto p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap">
             {prompt}
@@ -73,7 +78,7 @@ function StepInputPrompt({
                 {prompt.slice(previewLength, previewLength + 300)}
               </pre>
             </div>
-            <div className="border-surface-700/40 bg-surface-800/70 flex flex-col items-center gap-2.5 border-t px-4 py-4 text-center backdrop-blur-sm">
+            <div className="bg-surface-800/70 flex flex-col items-center gap-2.5 border-t border-white/20 px-4 py-4 text-center backdrop-blur-sm">
               <div className="bg-surface-700/50 flex h-9 w-9 items-center justify-center rounded-xl">
                 <Lock className="text-surface-300 h-4 w-4" />
               </div>
@@ -153,9 +158,9 @@ export function PromptStepsViewer({
 
   return (
     <>
-      <div className="border-surface-700/50 bg-surface-800/25 rounded-2xl border">
+      <div className="bg-surface-800/25 rounded-2xl border border-white/20">
         {/* 헤더 */}
-        <div className="border-surface-700/50 border-b px-5 py-3">
+        <div className="border-b border-white/20 px-5 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Sparkles className="text-brand-400 h-4 w-4" />
@@ -257,7 +262,7 @@ export function PromptStepsViewer({
                 </pre>
               </div>
             ) : (
-              <div className="border-surface-700/40 bg-surface-800/40 flex items-center gap-2 rounded-xl border px-4 py-3">
+              <div className="bg-surface-800/40 flex items-center gap-2 rounded-xl border border-white/20 px-4 py-3">
                 <Lock className="text-surface-500 h-4 w-4 shrink-0" />
                 <p className="text-surface-500 text-xs">
                   결과 텍스트는 해금 후 확인할 수 있습니다.
@@ -267,7 +272,7 @@ export function PromptStepsViewer({
 
           {/* 결과물 미디어 안내 문구 (미디어는 상단 갤러리에 표시됨) */}
           {(step.output_media.length > 0 || step.input_media.length > 0) && (
-            <div className="border-surface-700/30 bg-surface-800/20 flex items-center gap-2 rounded-xl border px-4 py-2.5">
+            <div className="bg-surface-800/20 flex items-center gap-2 rounded-xl border border-white/20 px-4 py-2.5">
               <Sparkles className="text-brand-400 h-3.5 w-3.5 shrink-0" />
               <p className="text-surface-400 text-xs">
                 이 스텝의 미디어는 상단 갤러리에서 확인할 수 있습니다.
@@ -278,7 +283,7 @@ export function PromptStepsViewer({
 
         {/* 도트 페이지네이션 */}
         {steps.length > 1 && (
-          <div className="border-surface-700/50 flex items-center justify-center gap-1.5 border-t px-5 py-3">
+          <div className="flex items-center justify-center gap-1.5 border-t border-white/20 px-5 py-3">
             {steps.map((_, idx) => (
               <button
                 key={idx}

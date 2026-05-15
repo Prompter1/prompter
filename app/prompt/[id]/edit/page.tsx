@@ -44,11 +44,15 @@ export default async function EditPromptPage({ params }: Props) {
     aiVersion: s.ai_version ?? '',
     inputPrompt: s.input_prompt ?? '',
     inputMedia: Array.isArray(s.input_media)
-      ? s.input_media.filter((v: unknown) => typeof v === 'string')
+      ? s.input_media.filter(
+          (v: unknown) => typeof v === 'string' && v.length > 0
+        )
       : [],
     outputText: s.output_text ?? '',
     outputMedia: Array.isArray(s.output_media)
-      ? s.output_media.filter((v: unknown) => typeof v === 'string')
+      ? s.output_media.filter(
+          (v: unknown) => typeof v === 'string' && v.length > 0
+        )
       : [],
   }))
 

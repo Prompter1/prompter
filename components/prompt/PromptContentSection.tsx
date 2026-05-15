@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Tag } from 'lucide-react'
 import { CopyPromptButton } from '@/components/prompt/CopyPromptButton'
 import { UnlockModal } from '@/components/prompt/UnlockModal'
+import { steps } from 'framer-motion'
 
 interface PromptContentSectionProps {
   postId: number
@@ -38,13 +39,9 @@ export function PromptContentSection({
 
   return (
     <>
-      {unlocked && (
-        <CopyPromptButton text={content} className="mb-8 w-full sm:w-auto" />
-      )}
-
       {/* 프롬프트 한줄 소개 — 항상 공개 */}
-      <div className="border-surface-700/50 bg-surface-800/25 mb-6 rounded-2xl border">
-        <div className="border-surface-700/50 flex items-center gap-2 border-b px-5 py-3">
+      <div className="bg-surface-800/25 mb-6 rounded-2xl border border-white/20">
+        <div className="flex items-center gap-2 border-b border-white/20 px-5 py-3">
           <Tag className="text-surface-500 h-4 w-4" />
           <span className="text-surface-300 text-sm font-medium">
             프롬프트 한줄 소개

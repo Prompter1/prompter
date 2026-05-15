@@ -49,19 +49,31 @@ export default function Reveal({
   once = true,
 }: RevealProps) {
   const ref = useRef<HTMLDivElement | null>(null)
+
+  const [mounted, setMounted] = useState(false)
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    const el = ref.current
-    if (!el) return
-
     const prefersReducedMotion =
       window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false
 
     if (prefersReducedMotion) {
+      setMounted(true)
       setVisible(true)
       return
     }
+
+    // 🔥 핵심: 초기 진입 딜레이
+    const mountTimer = setTimeout(() => {
+      setMounted(true)
+    }, 120)
+
+    return () => clearTimeout(mountTimer)
+  }, [])
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el || !mounted) return
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -77,18 +89,22 @@ export default function Reveal({
 
     observer.observe(el)
     return () => observer.disconnect()
-  }, [once, threshold])
+  }, [mounted, once, threshold])
 
   const hidden = hiddenStyle(variant, distance)
+
+  const shouldShow = mounted && visible
 
   return (
     <div
       ref={ref}
       className={className}
       style={{
-        opacity: visible ? 1 : hidden.opacity,
-        transform: visible ? 'translate3d(0, 0, 0) scale(1)' : hidden.transform,
-        filter: visible ? 'blur(0px)' : (hidden.filter ?? 'none'),
+        opacity: shouldShow ? 1 : hidden.opacity,
+        transform: shouldShow
+          ? 'translate3d(0,0,0) scale(1)'
+          : hidden.transform,
+        filter: shouldShow ? 'blur(0px)' : (hidden.filter ?? 'none'),
         transitionProperty: 'opacity, transform, filter',
         transitionDuration: `${duration}ms`,
         transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',

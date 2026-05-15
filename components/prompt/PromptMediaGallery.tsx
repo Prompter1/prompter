@@ -35,7 +35,7 @@ export function PromptMediaGallery({
 
   if (displayUrls.length === 0) {
     return (
-      <div className="border-surface-700/50 bg-surface-800/40 flex aspect-4/3 w-full items-center justify-center rounded-2xl border">
+      <div className="bg-surface-800/40 flex aspect-4/3 w-full items-center justify-center rounded-2xl border border-white/20">
         <div className="flex flex-col items-center gap-3">
           <Sparkles
             className="text-surface-600/50 h-16 w-16"
@@ -59,7 +59,7 @@ export function PromptMediaGallery({
       {/* 메인 미디어 */}
       <div
         className={cn(
-          'border-surface-700/50 bg-surface-800/30 relative aspect-4/3 w-full overflow-hidden rounded-2xl border transition-all duration-300',
+          'bg-surface-800/30 relative aspect-4/3 w-full overflow-hidden rounded-2xl border border-white/20 transition-all duration-300',
           mainIsVideo && 'bg-black'
         )}
       >
@@ -95,7 +95,7 @@ export function PromptMediaGallery({
                 type="button"
                 onClick={() => setActive(idx)}
                 className={cn(
-                  'border-surface-600 relative h-16 w-20 shrink-0 overflow-hidden rounded-lg border-2 transition-all',
+                  'relative h-16 w-20 shrink-0 overflow-hidden rounded-lg border-2 border-white/20 transition-all',
                   active === idx
                     ? 'border-brand-500 ring-brand-500/30 ring-2'
                     : 'opacity-70 hover:opacity-100'
