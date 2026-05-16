@@ -31,7 +31,8 @@ export async function FeaturedPromptsSection() {
             </div>
           </Reveal>
         ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          /* 🔥 Masonry layout */
+          <div className="columns-1 gap-5 sm:columns-2 lg:columns-4">
             {prompts.map((prompt, index) => {
               const lastMedia =
                 prompt.result_media && prompt.result_media.length > 0
@@ -41,26 +42,20 @@ export async function FeaturedPromptsSection() {
               return (
                 <Reveal
                   key={prompt.id}
-                  variant={index % 2 === 0 ? 'scale' : 'up'}
-                  delay={index * 80}
-                  distance={20}
-                  duration={650}
-                  className="h-full"
+                  variant="up"
+                  delay={index * 60}
+                  duration={500}
+                  className="mb-5 break-inside-avoid"
                 >
                   <Link
                     href={`/prompt/${prompt.id}`}
-                    className="group relative flex h-full w-full flex-col overflow-hidden rounded-4xl border border-white/10 bg-white/3 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:bg-white/5 hover:shadow-[0_25px_80px_rgba(0,0,0,0.45)]"
+                    className="group relative block w-full overflow-hidden rounded-4xl border border-white/10 bg-white/3 backdrop-blur-xl transition-all duration-300 hover:bg-white/5 hover:shadow-[0_20px_60px_rgba(0,0,0,0.4)]"
                   >
-                    {/* overlay */}
-                    <div className="pointer-events-none absolute inset-0 bg-linear-to-br from-white/3 via-transparent to-white/1" />
-                    <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/15 to-transparent" />
-                    <div className="from-brand-500/0 to-brand-600/0 pointer-events-none absolute inset-0 bg-linear-to-br opacity-0 transition-opacity duration-300 group-hover:opacity-10" />
-
-                    {/* 미디어 영역 */}
-                    <div className="from-surface-800 to-surface-900 relative aspect-16/10 w-full bg-linear-to-br">
-                      {/* 인증 뱃지 (overlay) */}
+                    {/* 이미지 영역 */}
+                    <div className="relative w-full overflow-hidden">
+                      {/* 인증 뱃지 */}
                       {prompt.is_verified && (
-                        <div className="bg-surface-900/50 absolute top-0 left-3 z-10 mt-4 flex items-center rounded-full backdrop-blur-sm">
+                        <div className="bg-surface-800/60 absolute top-3 left-3 z-10 flex items-center gap-1 rounded-full px-2 py-1 backdrop-blur">
                           <Badge variant="verified">
                             <span className="flex items-center gap-1">
                               <Shield className="h-3 w-3" />
@@ -72,44 +67,49 @@ export async function FeaturedPromptsSection() {
 
                       {lastMedia ? (
                         /\.(mp4|webm)$/i.test(lastMedia) ? (
-                          <video
-                            src={lastMedia}
-                            autoPlay
-                            loop
-                            muted
-                            playsInline
-                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          />
+                          <div className="relative max-h-[320px] w-full overflow-hidden">
+                            <video
+                              src={lastMedia}
+                              autoPlay
+                              loop
+                              muted
+                              playsInline
+                              className="w-full object-cover"
+                            />
+                          </div>
                         ) : (
-                          <Image
-                            src={lastMedia}
-                            alt={prompt.title}
-                            fill
-                            sizes="(max-width: 768px) 100vw, 25vw"
-                            className="object-cover transition-transform duration-500 group-hover:scale-105"
-                          />
+                          <div className="relative max-h-[320px] w-full overflow-hidden">
+                            <Image
+                              src={lastMedia}
+                              alt={prompt.title}
+                              width={500}
+                              height={300}
+                              className="w-full object-cover"
+                            />
+                          </div>
                         )
                       ) : (
-                        <div className="flex h-full items-center justify-center">
+                        <div className="bg-surface-800 flex h-[200px] items-center justify-center">
                           <Sparkles className="text-surface-600 h-8 w-8" />
                         </div>
                       )}
+
+                      {/* 하단 그라데이션 (가독성용) */}
+                      <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-20 bg-gradient-to-t from-black/60 to-transparent" />
                     </div>
 
-                    {/* 텍스트 영역 */}
-                    <div className="flex flex-1 flex-col p-5">
-                      {/* 제목 (항상 상단) */}
-                      <h3 className="group-hover:text-brand-300 line-clamp-2 min-h-[3.5rem] font-semibold text-white transition-colors">
+                    {/* 텍스트 */}
+                    <div className="p-4">
+                      <h3 className="mb-2 line-clamp-2 text-sm font-semibold text-white">
                         {prompt.title}
                       </h3>
 
-                      {/* 작성자 / 가격 (항상 하단) */}
-                      <div className="mt-auto flex items-center justify-between gap-3 pt-4">
+                      <div className="flex items-center justify-between">
                         <span className="text-surface-300 text-xs">
                           by {prompt.author.nickname}
                         </span>
                         <span
-                          className={`text-sm font-bold ${
+                          className={`text-xs font-bold ${
                             prompt.price === 0
                               ? 'text-emerald-400'
                               : 'text-brand-400'
