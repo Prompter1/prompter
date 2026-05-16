@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/providers/auth-provider'
 import { navigationUtils } from '@/src/lib/navigation'
 import { useIsAdmin } from '@/hooks/useIsAdmin'
-import Image from 'next/image'
 
 const NAV_LINKS = [
   { label: '탐색', href: '/prompt' },
@@ -24,17 +23,7 @@ export function Navbar() {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         {/* Logo */}
         <Link href="/" className="group flex items-center gap-3">
-          <div className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl transition-all duration-300 group-hover:scale-105">
-            <Image
-              src="/images/logo.png"
-              alt="PROMPTER Logo"
-              width={48}
-              height={48}
-              className="h-full w-full object-cover"
-              priority
-            />
-          </div>
-          <span className="text-foreground text-2xl font-bold tracking-tight">
+          <span className="text-foreground font-serif text-3xl tracking-tight">
             PROMPTER
           </span>
         </Link>

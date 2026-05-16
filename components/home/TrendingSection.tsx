@@ -50,7 +50,7 @@ export default async function TrendingSection() {
                     >
                       <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.08] via-transparent to-transparent opacity-60" />
 
-                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] text-lg font-bold text-white">
+                      <span className="mx-5 flex h-11 shrink-0 items-center justify-center text-2xl font-semibold text-white/50">
                         {idx + 1}
                       </span>
 
