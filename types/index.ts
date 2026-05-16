@@ -31,3 +31,11 @@ export interface FeaturedPrompt {
   price: number
   verified: boolean
 }
+
+export interface MediaPreview {
+  file?: File
+  url: string
+  type: 'image' | 'video' | 'audio' | 'document' | 'unknown'
+  name: string
+  size?: number
+}

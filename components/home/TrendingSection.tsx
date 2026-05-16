@@ -46,9 +46,9 @@ export default async function TrendingSection() {
                   >
                     <Link
                       href={`/prompt/${prompt.id}`}
-                      className="group hover:border-brand-500/30 relative flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/[0.06] hover:shadow-[0_10px_40px_rgba(0,0,0,0.4)]"
+                      className="group hover:border-brand-500/30 relative flex items-center gap-4 rounded-2xl border border-white/10 bg-white/4 p-4 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/6 hover:shadow-[0_10px_40px_rgba(0,0,0,0.4)]"
                     >
-                      <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.08] via-transparent to-transparent opacity-60" />
+                      <div className="pointer-events-none absolute inset-0 rounded-2xl bg-linear-to-br from-white/8 via-transparent to-transparent opacity-60" />
 
                       <span className="mx-5 flex h-11 shrink-0 items-center justify-center text-2xl font-semibold text-white/50">
                         {idx + 1}
@@ -96,7 +96,7 @@ export default async function TrendingSection() {
               </h2>
             </div>
 
-            <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl">
+            <div className="rounded-4xl border border-white/10 bg-white/4 p-4 backdrop-blur-xl">
               <div className="space-y-3">
                 {topCreators.length === 0 ? (
                   <p className="text-surface-300 text-sm">데이터가 없습니다.</p>
@@ -109,7 +109,7 @@ export default async function TrendingSection() {
                       distance={12}
                       duration={600}
                     >
-                      <div className="group flex items-center gap-3 rounded-2xl p-2 transition-all duration-300 hover:bg-white/[0.06]">
+                      <div className="group flex items-center gap-3 rounded-2xl p-2 transition-all duration-300 hover:bg-white/6">
                         <span
                           className={`text-sm font-bold ${
                             idx === 0
@@ -152,7 +152,7 @@ export default async function TrendingSection() {
               </div>
 
               <a
-                href="/prompt?sort=popular"
+                href="/ranking"
                 className="text-brand-400 hover:text-brand-300 mt-5 flex items-center justify-center gap-1 text-sm font-medium transition-colors"
               >
                 전체 랭킹 보기 <ArrowRight className="h-4 w-4" />

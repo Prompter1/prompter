@@ -9,7 +9,7 @@ function extractPathFromUrl(url: string) {
     // /storage/v1/object/public/prompt-media/{authorId}/{file}
     const parts = u.pathname.split('/')
 
-    const publicIndex = parts.findIndex((p) => p === 'public')
+    const publicIndex = parts.indexOf('public')
     const bucket = parts[publicIndex + 1] // prompt-media
 
     if (bucket !== 'prompt-media') return null

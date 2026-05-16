@@ -77,7 +77,10 @@ function DeleteConfirmModal({
   )
 }
 
-export function PromptOwnerActions({ postId, title }: PromptOwnerActionsProps) {
+export function PromptOwnerActions({
+  postId,
+  title,
+}: Readonly<PromptOwnerActionsProps>) {
   const router = useRouter()
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)

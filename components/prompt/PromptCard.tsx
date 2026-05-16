@@ -1,11 +1,11 @@
 'use client'
 
-import { Sparkles, ShieldCheck } from 'lucide-react'
+import { Sparkles, ShieldCheck, ShieldAlert } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation' // 1. useRouter 임포트 추가
 import type { PromptPost } from '@/types'
 
-// ai_type별 그라디언트 색상 매핑
 const AI_GRADIENTS: Record<string, string> = {
   Midjourney: 'from-violet-600 via-purple-600 to-indigo-700',
   'Stable Diffusion': 'from-pink-600 via-rose-500 to-orange-500',
@@ -26,36 +26,63 @@ function getGradient(aiTypes: string[]): string {
 }
 
 interface PromptCardProps {
-  prompt: PromptPost
+  prompt: PromptPost & { is_adult?: boolean }
 }
 
 export default function PromptCard({ prompt }: Readonly<PromptCardProps>) {
+  const router = useRouter() // 2. 라우터 인스턴스 생성
   const { title, price, ai_types, author, is_verified, result_media } = prompt
+  const isAdult = Boolean((prompt as any).is_adult)
 
-  // ✅ 배열의 마지막 요소를 선택하도록 수정
-  const lastMediaRaw =
-    result_media?.length > 0 ? result_media[result_media.length - 1] : null
-
-  const lastMedia =
-    typeof lastMediaRaw === 'string'
-      ? lastMediaRaw
-      : ((lastMediaRaw as any)?.url ?? null)
+  const firstMediaRaw = result_media?.length > 0 ? result_media[0] : null
+  const firstMedia =
+    typeof firstMediaRaw === 'string'
+      ? firstMediaRaw
+      : ((firstMediaRaw as any)?.url ?? null)
 
   const isVideo =
-    typeof lastMedia === 'string' && /\.(mp4|webm)$/i.test(lastMedia)
+    typeof firstMedia === 'string' && /\.(mp4|webm)$/i.test(firstMedia)
   const gradient = getGradient(ai_types ?? [])
 
   return (
-    <Link
-      href={`/prompt/${prompt.id}`}
-      className="group border-surface-700/50 hover:border-brand-500/50 hover:shadow-brand-500/10 relative flex flex-col overflow-hidden rounded-2xl border bg-[#12121A] transition-all duration-300 hover:shadow-lg"
+    // 3. ❌ 기존 <Link href=...> 태그를 지우고, ⭕ 아래와 같이 div 태그와 onClick 함수로 교체합니다.
+    <div
+      onClick={() => router.push(`/prompt/${prompt.id}`)}
+      className="group border-surface-700/50 hover:border-brand-500/50 hover:shadow-brand-500/10 relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border bg-[#12121A] transition-all duration-300 hover:shadow-lg"
     >
       {/* 썸네일 */}
       <div className="relative flex aspect-4/3 w-full items-center justify-center overflow-hidden">
-        {lastMedia ? (
-          isVideo ? (
+        {firstMedia ? (
+          isAdult ? (
+            <div className="relative h-full w-full">
+              {isVideo ? (
+                <video
+                  src={firstMedia}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="h-full w-full object-cover"
+                  style={{ filter: 'blur(20px)', transform: 'scale(1.1)' }}
+                />
+              ) : (
+                <Image
+                  src={firstMedia}
+                  alt={title}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                  className="object-cover"
+                  style={{ filter: 'blur(20px)', transform: 'scale(1.1)' }}
+                />
+              )}
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/40">
+                <ShieldAlert className="h-8 w-8 text-red-400" />
+                <span className="text-xs font-bold text-white">19+</span>
+              </div>
+            </div>
+          ) : isVideo ? (
             <video
-              src={lastMedia}
+              src={firstMedia}
               autoPlay
               loop
               muted
@@ -64,7 +91,7 @@ export default function PromptCard({ prompt }: Readonly<PromptCardProps>) {
             />
           ) : (
             <Image
-              src={lastMedia}
+              src={firstMedia}
               alt={title}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -72,7 +99,6 @@ export default function PromptCard({ prompt }: Readonly<PromptCardProps>) {
             />
           )
         ) : (
-          // ✅ 흑백 대신 컬러 그라디언트 플레이스홀더
           <div
             className={`absolute inset-0 bg-linear-to-br ${gradient} opacity-80`}
           >
@@ -84,13 +110,16 @@ export default function PromptCard({ prompt }: Readonly<PromptCardProps>) {
                 </span>
               )}
             </div>
-            {/* 글로우 효과 */}
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.1)_0%,transparent_70%)]" />
           </div>
         )}
 
-        {/* 가격 뱃지 — 썸네일 위 */}
-        <div className="absolute top-3 right-3">
+        {/* 배지 영역 */}
+        <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
+          {isAdult && (
+            <span className="rounded-full border border-red-500/40 bg-red-500/80 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
+              19+
+            </span>
+          )}
           <span
             className={`rounded-full px-2.5 py-1 text-xs font-bold shadow-lg backdrop-blur-sm ${
               price === 0
@@ -105,7 +134,7 @@ export default function PromptCard({ prompt }: Readonly<PromptCardProps>) {
 
       {/* 콘텐츠 */}
       <div className="flex flex-1 flex-col p-5">
-        <div className="mb-3 flex items-center gap-2">
+        <div className="mb-3 flex flex-wrap items-center gap-2">
           {ai_types?.[0] && (
             <span className="bg-surface-700/50 text-surface-300 rounded-full px-3 py-1 text-xs font-medium">
               {ai_types[0]}
@@ -124,11 +153,18 @@ export default function PromptCard({ prompt }: Readonly<PromptCardProps>) {
         </h3>
 
         <div className="mt-auto flex items-center justify-between pt-2">
-          <span className="text-surface-500 text-sm font-medium">
+          {/* 4. 내부 작성자 링크를 유지하되, 클릭 이벤트 버블링을 확실하게 막아줍니다. */}
+          <Link
+            href={`/user/${author.id}`}
+            onClick={(e) => {
+              e.stopPropagation() // 카드가 중복 클릭되어 상세페이지로 넘어가는 현상을 차단합니다.
+            }}
+            className="text-surface-500 hover:text-brand-400 relative z-10 text-sm font-medium transition-colors"
+          >
             by {author.nickname}
-          </span>
+          </Link>
         </div>
       </div>
-    </Link>
+    </div>
   )
 }

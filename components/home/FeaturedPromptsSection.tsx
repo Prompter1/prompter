@@ -36,7 +36,7 @@ export async function FeaturedPromptsSection() {
             {prompts.map((prompt, index) => {
               const lastMedia =
                 prompt.result_media && prompt.result_media.length > 0
-                  ? prompt.result_media[prompt.result_media.length - 1]
+                  ? prompt.result_media.at(-1)
                   : null
 
               return (
@@ -67,7 +67,7 @@ export async function FeaturedPromptsSection() {
 
                       {lastMedia ? (
                         /\.(mp4|webm)$/i.test(lastMedia) ? (
-                          <div className="relative max-h-[320px] w-full overflow-hidden">
+                          <div className="relative max-h-80 w-full overflow-hidden">
                             <video
                               src={lastMedia}
                               autoPlay
@@ -78,7 +78,7 @@ export async function FeaturedPromptsSection() {
                             />
                           </div>
                         ) : (
-                          <div className="relative max-h-[320px] w-full overflow-hidden">
+                          <div className="relative max-h-80 w-full overflow-hidden">
                             <Image
                               src={lastMedia}
                               alt={prompt.title}
@@ -89,13 +89,13 @@ export async function FeaturedPromptsSection() {
                           </div>
                         )
                       ) : (
-                        <div className="bg-surface-800 flex h-[200px] items-center justify-center">
+                        <div className="bg-surface-800 flex h-50 items-center justify-center">
                           <Sparkles className="text-surface-600 h-8 w-8" />
                         </div>
                       )}
 
                       {/* 하단 그라데이션 (가독성용) */}
-                      <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-20 bg-gradient-to-t from-black/60 to-transparent" />
+                      <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-20 bg-linear-to-t from-black/60 to-transparent" />
                     </div>
 
                     {/* 텍스트 */}

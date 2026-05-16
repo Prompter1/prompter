@@ -2,9 +2,7 @@
 
 import { useState } from 'react'
 import { Tag } from 'lucide-react'
-import { CopyPromptButton } from '@/components/prompt/CopyPromptButton'
 import { UnlockModal } from '@/components/prompt/UnlockModal'
-import { steps } from 'framer-motion'
 
 interface PromptContentSectionProps {
   postId: number
@@ -28,7 +26,7 @@ export function PromptContentSection({
   userPoints,
   onUnlocked,
 }: Readonly<PromptContentSectionProps>) {
-  const [unlocked, setUnlocked] = useState(canViewFull)
+  const [, setUnlocked] = useState(canViewFull)
   const [showModal, setShowModal] = useState(false)
 
   function handleSuccess() {

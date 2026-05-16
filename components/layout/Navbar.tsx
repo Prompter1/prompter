@@ -1,6 +1,6 @@
 'use client'
 
-import { Sparkles, LogOut, UserCircle, Shield, Menu } from 'lucide-react'
+import { LogOut, UserCircle, Shield, Menu } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/providers/auth-provider'
@@ -9,7 +9,7 @@ import { useIsAdmin } from '@/hooks/useIsAdmin'
 
 const NAV_LINKS = [
   { label: '탐색', href: '/prompt' },
-  { label: '랭킹', href: '/prompt?sort=popular' },
+  { label: '랭킹', href: '/ranking' },
   { label: '등록', href: '/upload' },
 ]
 

@@ -18,12 +18,6 @@ export function UploadPageWrapper() {
 
   if (isLoading || !user) return null
 
-  const mappedUser = {
-    ...user,
-    nickname: user.user_metadata?.full_name || '사용자',
-    avatar_url: user.user_metadata?.avatar_url || '/images/default-avatar.png',
-  }
-
   return (
     <>
       <Navbar />

@@ -35,12 +35,6 @@ export function EditPageWrapper({
 
   if (!user) return null
 
-  const mappedUser = {
-    ...user,
-    nickname: user.user_metadata?.full_name || '사용자',
-    avatar_url: user.user_metadata?.avatar_url || '/images/default-avatar.png',
-  }
-
   return (
     <>
       <Navbar />

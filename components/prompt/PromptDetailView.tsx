@@ -7,16 +7,18 @@ import {
   FolderOpen,
   ShieldCheck,
   ShoppingBag,
+  ShieldAlert,
 } from 'lucide-react'
 import type { PromptPost } from '@/types'
 import { Badge } from '@/components/ui/Badge'
+import { PromptMediaGallery } from '@/components/prompt/PromptMediaGallery'
 import { PromptContentSection } from '@/components/prompt/PromptContentSection'
-import { PromptDetailClient } from '@/components/prompt/PromptDetailClient'
-import { PromptOwnerActions } from '@/components/prompt/PromptOwnerActions'
+import { PromptStepsViewer } from '@/components/prompt/PromptStepsViewer'
+import { AdultContentGate } from '@/components/ui/AdultContentGate'
 import { createSupabaseServerClient } from '@/src/lib/supabase-server'
 
 interface PromptDetailViewProps {
-  post: PromptPost
+  post: PromptPost & { is_adult?: boolean }
   createdAt: string | null
 }
 
@@ -38,6 +40,8 @@ export async function PromptDetailView({
     sales_count,
   } = post
 
+  const isAdult = Boolean((post as any).is_adult)
+
   const supabase = await createSupabaseServerClient()
   const {
     data: { user },
@@ -45,22 +49,26 @@ export async function PromptDetailView({
 
   let hasPurchased = false
   let userPoints = 0
+  let isAdultVerified = false
 
   if (user) {
-    const { data: tx } = await supabase
-      .from('transactions')
-      .select('id')
-      .eq('buyer_id', user.id)
-      .eq('prompt_post_id', post.id)
-      .maybeSingle()
-    hasPurchased = !!tx
+    const [txRes, memberRes] = await Promise.all([
+      supabase
+        .from('transactions')
+        .select('id')
+        .eq('buyer_id', user.id)
+        .eq('prompt_post_id', post.id)
+        .maybeSingle(),
+      supabase
+        .from('members')
+        .select('points, adult_verified')
+        .eq('id', user.id)
+        .single(),
+    ])
 
-    const { data: member } = await supabase
-      .from('members')
-      .select('points')
-      .eq('id', user.id)
-      .single()
-    userPoints = member?.points ?? 0
+    hasPurchased = !!txRes.data
+    userPoints = memberRes.data?.points ?? 0
+    isAdultVerified = Boolean(memberRes.data?.adult_verified)
   }
 
   const { data: stepsRaw } = await supabase
@@ -101,8 +109,8 @@ export async function PromptDetailView({
   return (
     <main className="bg-surface-900 relative min-h-screen pt-20 pb-20">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="bg-brand-500/10 animate-blob absolute -top-40 right-0 h-[500px] w-[500px] rounded-full blur-[140px]" />
-        <div className="animate-blob animation-delay-2000 absolute bottom-0 left-0 h-[400px] w-[400px] rounded-full bg-indigo-500/10 blur-[120px]" />
+        <div className="bg-brand-500/10 absolute -top-32 right-0 h-80 w-80 rounded-full blur-[100px]" />
+        <div className="absolute bottom-0 left-0 h-64 w-64 rounded-full bg-indigo-500/5 blur-[90px]" />
       </div>
 
       <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
@@ -115,17 +123,28 @@ export async function PromptDetailView({
         </Link>
 
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-12">
-          <PromptDetailClient
-            steps={steps}
-            resultMedia={result_media}
-            price={price}
-            canViewFull={canViewFull}
-            isLoggedIn={!!user}
-            postId={post.id}
-            title={title}
-            userPoints={userPoints}
-            alt={title}
-          />
+          <div className="space-y-6">
+            {/* 미디어 갤러리 — 성인 컨텐츠면 게이트 적용 */}
+            <AdultContentGate
+              isAdult={isAdult}
+              isLoggedIn={!!user}
+              isAdultVerified={isAdultVerified}
+            >
+              <PromptMediaGallery urls={result_media} alt={title} />
+            </AdultContentGate>
+
+            {steps.length > 0 && (
+              <PromptStepsViewer
+                steps={steps}
+                price={price}
+                canViewFull={canViewFull}
+                isLoggedIn={!!user}
+                postId={post.id}
+                title={title}
+                userPoints={userPoints}
+              />
+            )}
+          </div>
 
           <div className="flex flex-col lg:sticky lg:top-24 lg:self-start">
             <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -145,6 +164,13 @@ export async function PromptDetailView({
                   </span>
                 </Badge>
               )}
+              {/* 성인 배지 */}
+              {isAdult && (
+                <span className="flex items-center gap-1 rounded-full border border-red-500/30 bg-red-500/15 px-2.5 py-0.5 text-xs font-semibold text-red-400">
+                  <ShieldAlert className="h-3 w-3" />
+                  19+
+                </span>
+              )}
               {isFree ? (
                 <Badge variant="free">무료</Badge>
               ) : (
@@ -152,11 +178,11 @@ export async function PromptDetailView({
               )}
             </div>
 
-            <h1 className="text-surface-50 mb-4 border-white/20 text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
+            <h1 className="text-surface-50 mb-4 text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
               {title}
             </h1>
 
-            <div className="bg-surface-800/40 mb-6 flex flex-wrap items-center gap-4 rounded-2xl border border-white/20 p-4">
+            <div className="border-surface-700/50 bg-surface-800/40 mb-6 flex flex-wrap items-center gap-4 rounded-2xl border p-4">
               <div className="border-surface-600 relative h-12 w-12 shrink-0 overflow-hidden rounded-full border-2">
                 <Image
                   src={author.avatar_url || '/images/default-avatar.png'}
@@ -166,12 +192,14 @@ export async function PromptDetailView({
                   sizes="48px"
                 />
               </div>
-
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-white">
+                  <Link
+                    href={`/user/${author.id}`}
+                    className="hover:text-brand-400 font-semibold text-white transition-colors"
+                  >
                     {author.nickname}
-                  </span>
+                  </Link>
                   {author.is_sponsor && (
                     <span className="flex items-center gap-0.5 text-xs font-bold text-amber-400 uppercase">
                       <Crown className="h-3 w-3" />
@@ -179,7 +207,6 @@ export async function PromptDetailView({
                     </span>
                   )}
                 </div>
-
                 <div className="text-surface-500 mt-0.5 flex flex-wrap gap-x-3 gap-y-1 text-xs">
                   {dateLabel && <span>{dateLabel}</span>}
                   <span>{author.points.toLocaleString()} P</span>
@@ -193,7 +220,6 @@ export async function PromptDetailView({
                   </span>
                 </div>
               </div>
-
               <div className="w-full shrink-0 text-right sm:w-auto">
                 <p className="text-surface-500 text-xs">가격</p>
                 <p
@@ -204,17 +230,11 @@ export async function PromptDetailView({
               </div>
             </div>
 
-            {isOwner && (
-              <div className="mb-6">
-                <PromptOwnerActions postId={post.id} title={title} />
-              </div>
-            )}
-
             <div className="mb-6 flex flex-wrap gap-2">
               {categories.map((c) => (
                 <span
                   key={c}
-                  className="text-surface-400 border-surface-700/80 bg-surface-800/60 inline-flex items-center gap-1.5 rounded-full border border-white/20 px-3 py-1 text-xs"
+                  className="text-surface-400 border-surface-700/80 bg-surface-800/60 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs"
                 >
                   <FolderOpen className="h-3 w-3" />
                   {c}

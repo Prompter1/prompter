@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Zap, X, Loader2, ShieldCheck, AlertCircle } from 'lucide-react'
+import { useToast } from '@/components/ui/Toast'
 
 interface UnlockModalProps {
   postId: number
@@ -22,6 +23,7 @@ export function UnlockModal({
   onSuccess,
 }: Readonly<UnlockModalProps>) {
   const router = useRouter()
+  const { success, error: toastError } = useToast()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -39,11 +41,14 @@ export function UnlockModal({
     const data = await res.json().catch(() => ({}))
 
     if (!res.ok) {
-      setError(data.error ?? '구매에 실패했습니다.')
+      const msg = data.error ?? '구매에 실패했습니다.'
+      setError(msg)
+      toastError('구매 실패', msg)
       setLoading(false)
       return
     }
 
+    success('구매 완료!', `"${title}" 프롬프트가 해금되었습니다.`)
     onSuccess()
     router.refresh()
   }

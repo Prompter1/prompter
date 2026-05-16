@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback, type ReactNode } from 'react'
+import { useState, useRef, useCallback, type ReactNode, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Upload,
@@ -15,18 +15,13 @@ import {
   ChevronLeft,
   ChevronRight,
   Trash2,
-  FileText,
   ArrowLeft,
 } from 'lucide-react'
 import Image from 'next/image'
 import { useAuth } from '@/providers/auth-provider'
 import { uploadMediaFile, isAllowedMediaType } from '@/src/lib/storage'
-import {
-  AI_TOOL_OPTIONS,
-  AI_VERSION_OPTIONS,
-  CONTENT_CATEGORY_OPTIONS,
-} from '@/src/lib/taxonomy'
-import { formatMediaFile, TARGET_IMAGE_SIZE_MB } from '@/src/lib/mediaFormatter'
+import { AI_TOOL_OPTIONS, CONTENT_CATEGORY_OPTIONS } from '@/src/lib/taxonomy'
+import { formatMediaFile } from '@/src/lib/mediaFormatter'
 import { cn } from '@/src/lib/utils'
 
 const MAX_RESULT_MEDIA_FILES = 5
@@ -309,6 +304,17 @@ function MediaDropZone({
   )
 }
 
+async function fetchVersionsByAi(ai: string): Promise<string[]> {
+  if (!ai.trim()) return []
+  const res = await fetch(
+    `/api/ai-versions?ai=${encodeURIComponent(ai.trim())}`,
+    { cache: 'no-store' }
+  )
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) return []
+  return Array.isArray(data.versions) ? data.versions : []
+}
+
 // ── StepEditor ────────────────────────────────────────────
 function StepEditor({
   step,
@@ -325,47 +331,110 @@ function StepEditor({
   onRemoveMedia: (kind: 'input' | 'output', idx: number) => void
   disabled: boolean
 }>) {
+  const [versionOptions, setVersionOptions] = useState<string[]>([])
+  const [loadingVersions, setLoadingVersions] = useState(false)
+
+  // 🔥 AI 변경 시 버전 목록 fetch
+  useEffect(() => {
+    let cancelled = false
+
+    const fetchVersions = async () => {
+      const ai = step.aiType.trim()
+
+      if (!ai) {
+        setVersionOptions([])
+        return
+      }
+
+      setLoadingVersions(true)
+
+      try {
+        const res = await fetch(
+          `/api/ai-versions?ai=${encodeURIComponent(ai)}`,
+          { cache: 'no-store' }
+        )
+
+        const data = await res.json().catch(() => ({}))
+
+        if (!cancelled) {
+          setVersionOptions(Array.isArray(data.versions) ? data.versions : [])
+        }
+      } catch {
+        if (!cancelled) setVersionOptions([])
+      } finally {
+        if (!cancelled) setLoadingVersions(false)
+      }
+    }
+
+    fetchVersions()
+
+    return () => {
+      cancelled = true
+    }
+  }, [step.aiType])
+
+  // 🔥 AI 바뀌면 기존 버전 초기화
+  useEffect(() => {
+    onChange('aiVersion', '')
+  }, [step.aiType])
+
   return (
     <div className="space-y-5">
+      {/* AI 종류 + 버전 */}
       <div className="grid grid-cols-2 gap-4">
+        {/* AI 종류 */}
         <div>
           <label className="text-foreground/90 mb-2 block text-sm font-medium">
             AI 종류 <span className="text-red-400">*</span>
           </label>
+
           <input
             type="text"
             list={`ai-type-list-${stepIndex}`}
             value={step.aiType}
             onChange={(e) => onChange('aiType', e.target.value)}
-            placeholder="예: Midjourney"
+            placeholder="예: ChatGPT, Midjourney"
             className="border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none"
           />
+
           <datalist id={`ai-type-list-${stepIndex}`}>
             {AI_TOOL_OPTIONS.map((opt) => (
               <option key={opt} value={opt} />
             ))}
           </datalist>
         </div>
+
+        {/* AI 버전 */}
         <div>
           <label className="text-foreground/90 mb-2 block text-sm font-medium">
             AI 버전 <span className="text-red-400">*</span>
           </label>
+
           <input
             type="text"
             list={`ai-version-list-${stepIndex}`}
             value={step.aiVersion}
             onChange={(e) => onChange('aiVersion', e.target.value)}
-            placeholder="예: v6.1"
-            className="border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none"
+            placeholder={
+              step.aiType
+                ? loadingVersions
+                  ? '버전 불러오는 중...'
+                  : '해당 AI 버전 선택'
+                : 'AI 종류 먼저 선택'
+            }
+            disabled={!step.aiType.trim()}
+            className="border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none disabled:opacity-50"
           />
+
           <datalist id={`ai-version-list-${stepIndex}`}>
-            {AI_VERSION_OPTIONS.map((opt) => (
-              <option key={opt} value={opt} />
+            {versionOptions.map((v) => (
+              <option key={v} value={v} />
             ))}
           </datalist>
         </div>
       </div>
 
+      {/* 입력 프롬프트 */}
       <div>
         <label className="text-foreground/90 mb-2 block text-sm font-medium">
           입력 프롬프트 <span className="text-red-400">*</span>
@@ -373,50 +442,44 @@ function StepEditor({
         <textarea
           value={step.inputPrompt}
           onChange={(e) => onChange('inputPrompt', e.target.value)}
-          placeholder="AI에 입력한 프롬프트를 그대로 붙여넣으세요"
           rows={5}
-          className="border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 w-full resize-none rounded-xl border px-3.5 py-3 text-sm outline-none"
+          placeholder="AI에 입력한 프롬프트"
+          className="border-border/50 bg-surface-800/50 text-foreground w-full resize-none rounded-xl border px-3.5 py-3 text-sm outline-none"
         />
       </div>
 
+      {/* 입력 미디어 */}
       <MediaDropZone
         items={step.inputMedia}
         onAdd={(files) => onAddMedia('input', files)}
         onRemove={(idx) => onRemoveMedia('input', idx)}
         disabled={disabled}
         title="입력 미디어"
-        sizeHint={<>(선택)</>}
-        maxFiles={MAX_RESULT_MEDIA_FILES}
+        maxFiles={5}
       />
 
+      {/* 결과 텍스트 */}
       <div>
-        <label className="text-foreground/90 mb-2 flex items-center gap-1.5 text-sm font-medium">
-          <FileText className="text-surface-400 h-4 w-4" />
-          결과 텍스트{' '}
-          <span className="text-muted-foreground font-normal">(선택)</span>
+        <label className="text-foreground/90 mb-2 text-sm font-medium">
+          결과 텍스트 (선택)
         </label>
         <textarea
           value={step.outputText}
           onChange={(e) => onChange('outputText', e.target.value)}
-          placeholder="AI가 출력한 텍스트 결과물 (선택)"
           rows={4}
-          className="border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 w-full resize-none rounded-xl border px-3.5 py-3 text-sm outline-none"
+          placeholder="AI 출력 결과"
+          className="border-border/50 bg-surface-800/50 text-foreground w-full resize-none rounded-xl border px-3.5 py-3 text-sm outline-none"
         />
       </div>
 
+      {/* 결과 미디어 */}
       <MediaDropZone
         items={step.outputMedia}
         onAdd={(files) => onAddMedia('output', files)}
         onRemove={(idx) => onRemoveMedia('output', idx)}
         disabled={disabled}
         title="결과물 미디어"
-        sizeHint={
-          <>
-            (선택 · 최대 {MAX_RESULT_MEDIA_FILES}개 · {TARGET_IMAGE_SIZE_MB}MB
-            초과 시 자동 압축)
-          </>
-        }
-        maxFiles={MAX_RESULT_MEDIA_FILES}
+        maxFiles={5}
       />
     </div>
   )

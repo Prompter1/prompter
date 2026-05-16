@@ -51,7 +51,7 @@ export function PromptMediaGallery({
     )
   }
 
-  const current = displayUrls[Math.min(active, displayUrls.length - 1)]!
+  const current = displayUrls[Math.min(active, displayUrls.length - 1)]
   const mainIsVideo = isVideoUrl(current)
 
   return (

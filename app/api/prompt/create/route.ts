@@ -11,6 +11,7 @@ export async function POST(req: Request) {
     categories: string[]
     result_media: { type: string; url: string; name: string }[]
     is_verified: boolean
+    is_adult: boolean
     steps: {
       aiType: string
       aiVersion: string
@@ -46,6 +47,7 @@ export async function POST(req: Request) {
       author_id: user.id,
       result_media: body.result_media,
       is_verified: body.is_verified,
+      is_adult: Boolean(body.is_adult),
     })
     .select('id')
     .single()
@@ -57,6 +59,7 @@ export async function POST(req: Request) {
     )
   }
 
+  // prompt_steps 삽입
   if (body.steps?.length > 0) {
     const { error: stepsErr } = await supabase.from('prompt_steps').insert(
       body.steps.map((s, idx) => ({
@@ -71,6 +74,30 @@ export async function POST(req: Request) {
       }))
     )
     if (stepsErr) console.error('prompt_steps insert error:', stepsErr)
+  }
+
+  // AI 버전 카탈로그 자동 등록 (새 AI/버전 조합이면 upsert)
+  const versionPairs = body.steps
+    .filter((s) => s.aiType && s.aiVersion)
+    .map((s) => ({
+      ai_name: s.aiType.trim(),
+      version_name: s.aiVersion.trim(),
+    }))
+
+  // 중복 제거
+  const uniquePairs = Array.from(
+    new Map(
+      versionPairs.map((p) => [`${p.ai_name}|${p.version_name}`, p])
+    ).values()
+  )
+
+  if (uniquePairs.length > 0) {
+    await supabase
+      .from('ai_version_catalog')
+      .upsert(uniquePairs, { onConflict: 'ai_name,version_name' })
+      .then(({ error }) => {
+        if (error) console.error('ai_version_catalog upsert error:', error)
+      })
   }
 
   return NextResponse.json({ id: post.id })
