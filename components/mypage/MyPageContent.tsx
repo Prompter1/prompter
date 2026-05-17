@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { FileText, BarChart2, ShoppingBag, Sparkles } from 'lucide-react'
 import { useAuth } from '@/providers/auth-provider'
@@ -10,6 +10,7 @@ import { MyPromptsTab } from '@/components/mypage/tabs/MyPromptsTab'
 import { StatsTab } from '@/components/mypage/tabs/StatsTab'
 import { PurchasesTab } from '@/components/mypage/tabs/PurchasesTab'
 import type { PromptPost } from '@/types'
+
 type TabType = 'myPrompts' | 'stats' | 'purchases'
 
 interface MemberData {
@@ -42,57 +43,82 @@ export function MyPageContent() {
   const [memberData, setMemberData] = useState<MemberData | null>(null)
   const [myPrompts, setMyPrompts] = useState<PromptPost[]>([])
   const [purchases, setPurchases] = useState<PurchaseTransaction[]>([])
-  const [isFetchingData, setIsFetchingData] = useState(false)
 
+  // 탭별 로딩/완료 상태 분리 — 불필요한 중복 요청 방지
+  const [loadedTabs, setLoadedTabs] = useState<Set<TabType>>(new Set())
+  const [loadingTab, setLoadingTab] = useState<TabType | null>(null)
+
+  // ── 초기 로드: 프로필 + 내 프롬프트만 ──────────────────────────────────
   useEffect(() => {
     if (!isLoading && !user) {
       router.replace('/login')
       return
     }
-
     if (!user) return
+    if (loadedTabs.has('myPrompts')) return
 
-    const fetchData = async () => {
-      setIsFetchingData(true)
+    let cancelled = false
+
+    const fetchInitial = async () => {
+      setLoadingTab('myPrompts')
       try {
-        // 병렬로 멤버 정보 + 프롬프트 + 구매 내역 동시 조회
-        const [{ data: member }, { data: prompts }, { data: txs }] =
-          await Promise.all([
-            supabase
-              .from('members')
-              .select('nickname, points, is_sponsor, total_revenue')
-              .eq('id', user.id)
-              .single(),
-            supabase
-              .from('prompt_posts')
-              .select(
-                `
-              id, title, content, price, ai_types, ai_versions, categories, view_count, sales_count,
-              author:members!author_id(id, nickname, avatar_url, points, is_sponsor),is_verified, result_media
-            `
-              )
-              .eq('author_id', user.id)
-              .order('created_at', { ascending: false }),
-            supabase
-              .from('transactions')
-              .select(
-                'id, prompt_post_id, amount, fee, seller_revenue, created_at'
-              )
-              .eq('buyer_id', user.id)
-              .order('created_at', { ascending: false }),
-          ])
+        const [{ data: member }, { data: prompts }] = await Promise.all([
+          supabase
+            .from('members')
+            .select('nickname, points, is_sponsor, total_revenue')
+            .eq('id', user.id)
+            .single(),
+          supabase
+            .from('prompt_posts')
+            .select(
+              `id, title, content, price, ai_types, ai_versions, categories,
+               view_count, sales_count, is_verified, result_media,
+               author:members!author_id(id, nickname, avatar_url, points, is_sponsor)`
+            )
+            .eq('author_id', user.id)
+            .order('created_at', { ascending: false }),
+        ])
 
+        if (cancelled) return
         if (member) setMemberData(member)
-        if (prompts) setMyPrompts(prompts as unknown as PromptPost[])
-        if (txs) setPurchases(txs as PurchaseTransaction[])
+        setMyPrompts((prompts as unknown as PromptPost[]) ?? [])
+        setLoadedTabs((prev) => new Set(prev).add('myPrompts'))
       } finally {
-        setIsFetchingData(false)
+        if (!cancelled) setLoadingTab(null)
       }
     }
 
-    fetchData()
-  }, [user, isLoading, router])
+    fetchInitial()
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, isLoading])
 
+  // ── 구매 내역: 탭 첫 진입 시 1회만 로드 ────────────────────────────────
+  const fetchPurchases = useCallback(async () => {
+    if (!user || loadedTabs.has('purchases')) return
+    setLoadingTab('purchases')
+    try {
+      const { data: txs } = await supabase
+        .from('transactions')
+        .select('id, prompt_post_id, amount, fee, seller_revenue, created_at')
+        .eq('buyer_id', user.id)
+        .order('created_at', { ascending: false })
+
+      setPurchases((txs as PurchaseTransaction[]) ?? [])
+      setLoadedTabs((prev) => new Set(prev).add('purchases'))
+    } finally {
+      setLoadingTab(null)
+    }
+  }, [user, loadedTabs])
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab)
+    if (tab === 'purchases') fetchPurchases()
+  }
+
+  // ── 로딩 스피너 ─────────────────────────────────────────────────────────
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -108,6 +134,7 @@ export function MyPageContent() {
 
   if (!user) return null
 
+  // ProfileCard가 기대하는 개별 props로 분해
   const avatarUrl = user.user_metadata?.avatar_url as string | undefined
   const fullName =
     memberData?.nickname ||
@@ -123,7 +150,7 @@ export function MyPageContent() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-28">
-      {/* 프로필 카드 */}
+      {/* ProfileCard — 기존 props 구조 그대로 유지 */}
       <ProfileCard
         fullName={fullName}
         email={email}
@@ -140,12 +167,14 @@ export function MyPageContent() {
         {TABS.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 border-b-2 px-6 py-4 text-sm font-medium whitespace-nowrap transition-colors ${
+            type="button"
+            onClick={() => handleTabChange(tab.id)}
+            className={[
+              'flex items-center gap-2 border-b-2 px-6 py-4 text-sm font-medium whitespace-nowrap transition-colors',
               activeTab === tab.id
                 ? 'border-brand-400 text-brand-400'
-                : 'text-surface-400 hover:text-surface-200 border-transparent'
-            }`}
+                : 'text-surface-400 hover:text-surface-200 border-transparent',
+            ].join(' ')}
           >
             <tab.icon className="h-4 w-4" />
             {tab.label}
@@ -153,20 +182,27 @@ export function MyPageContent() {
         ))}
       </div>
 
-      {/* 탭 컨텐츠 */}
+      {/* 탭 콘텐츠 */}
       <main className="min-h-64">
         {activeTab === 'myPrompts' && (
-          <MyPromptsTab prompts={myPrompts} isLoading={isFetchingData} />
+          <MyPromptsTab
+            prompts={myPrompts}
+            isLoading={loadingTab === 'myPrompts'}
+          />
         )}
         {activeTab === 'stats' && (
+          // StatsTab 기존 props: prompts, isLoading, totalRevenue
           <StatsTab
             prompts={myPrompts}
-            isLoading={isFetchingData}
+            isLoading={loadingTab === 'stats'}
             totalRevenue={memberData?.total_revenue ?? 0}
           />
         )}
         {activeTab === 'purchases' && (
-          <PurchasesTab purchases={purchases} isLoading={isFetchingData} />
+          <PurchasesTab
+            purchases={purchases}
+            isLoading={loadingTab === 'purchases'}
+          />
         )}
       </main>
     </div>
