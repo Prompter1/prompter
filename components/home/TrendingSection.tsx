@@ -134,9 +134,11 @@ export default async function TrendingSection() {
 
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5">
-                            <span className="truncate font-medium text-white">
-                              {creator.name}
-                            </span>
+                            <Link href={`/user/${creator.id}`}>
+                              <span className="truncate font-medium text-white">
+                                {creator.name}
+                              </span>
+                            </Link>
                             {creator.isSponsor && (
                               <Crown className="h-3.5 w-3.5 text-amber-400" />
                             )}

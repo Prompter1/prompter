@@ -68,7 +68,7 @@ export default function SellerPolicyPage() {
                     기본 플랫폼 중개 수수료
                   </span>
                   <span className="text-brand-400 text-lg font-bold">
-                    결제 금액의 10%
+                    결제 금액의 15%
                   </span>
                 </div>
                 <p className="text-surface-400 text-xs">

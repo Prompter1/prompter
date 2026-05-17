@@ -1,9 +1,9 @@
 'use client'
 
-import { Sparkles, ShieldCheck, ShieldAlert } from 'lucide-react'
+import { Sparkles, ShieldCheck, ShieldAlert, Lock } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation' // 1. useRouter 임포트 추가
+import { useRouter } from 'next/navigation'
 import type { PromptPost } from '@/types'
 
 const AI_GRADIENTS: Record<string, string> = {
@@ -27,12 +27,23 @@ function getGradient(aiTypes: string[]): string {
 
 interface PromptCardProps {
   prompt: PromptPost & { is_adult?: boolean }
+  /** 현재 로그인 유저의 성인인증 여부 (서버에서 내려줌) */
+  isAdultVerified?: boolean
+  /** 현재 로그인 여부 */
+  isLoggedIn?: boolean
 }
 
-export default function PromptCard({ prompt }: Readonly<PromptCardProps>) {
-  const router = useRouter() // 2. 라우터 인스턴스 생성
+export default function PromptCard({
+  prompt,
+  isAdultVerified = false,
+  isLoggedIn = false,
+}: Readonly<PromptCardProps>) {
+  const router = useRouter()
   const { title, price, ai_types, author, is_verified, result_media } = prompt
   const isAdult = Boolean((prompt as any).is_adult)
+
+  // 성인 컨텐츠인데 미인증이면 블러
+  const shouldBlur = isAdult && !isAdultVerified
 
   const firstMediaRaw = result_media?.length > 0 ? result_media[0] : null
   const firstMedia =
@@ -45,7 +56,6 @@ export default function PromptCard({ prompt }: Readonly<PromptCardProps>) {
   const gradient = getGradient(ai_types ?? [])
 
   return (
-    // 3. ❌ 기존 <Link href=...> 태그를 지우고, ⭕ 아래와 같이 div 태그와 onClick 함수로 교체합니다.
     <div
       onClick={() => router.push(`/prompt/${prompt.id}`)}
       className="group border-surface-700/50 hover:border-brand-500/50 hover:shadow-brand-500/10 relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border bg-[#12121A] transition-all duration-300 hover:shadow-lg"
@@ -53,51 +63,55 @@ export default function PromptCard({ prompt }: Readonly<PromptCardProps>) {
       {/* 썸네일 */}
       <div className="relative flex aspect-4/3 w-full items-center justify-center overflow-hidden">
         {firstMedia ? (
-          isAdult ? (
-            <div className="relative h-full w-full">
-              {isVideo ? (
-                <video
-                  src={firstMedia}
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="h-full w-full object-cover"
-                  style={{ filter: 'blur(20px)', transform: 'scale(1.1)' }}
-                />
-              ) : (
-                <Image
-                  src={firstMedia}
-                  alt={title}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                  className="object-cover"
-                  style={{ filter: 'blur(20px)', transform: 'scale(1.1)' }}
-                />
-              )}
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/40">
+          <div className="relative h-full w-full">
+            {/* 미디어 (블러 적용 가능) */}
+            {isVideo ? (
+              <video
+                src={firstMedia}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                style={
+                  shouldBlur
+                    ? { filter: 'blur(24px)', transform: 'scale(1.12)' }
+                    : undefined
+                }
+              />
+            ) : (
+              <Image
+                src={firstMedia}
+                alt={title}
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                style={
+                  shouldBlur
+                    ? { filter: 'blur(24px)', transform: 'scale(1.12)' }
+                    : undefined
+                }
+              />
+            )}
+
+            {/* 성인 컨텐츠 블러 오버레이 */}
+            {shouldBlur && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40">
                 <ShieldAlert className="h-8 w-8 text-red-400" />
                 <span className="text-xs font-bold text-white">19+</span>
+                {isLoggedIn ? (
+                  <span className="rounded-full bg-red-500/80 px-2.5 py-1 text-[10px] font-semibold text-white">
+                    성인인증 필요
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 rounded-full bg-black/60 px-2.5 py-1 text-[10px] font-semibold text-white">
+                    <Lock className="h-3 w-3" />
+                    로그인 후 인증
+                  </span>
+                )}
               </div>
-            </div>
-          ) : isVideo ? (
-            <video
-              src={firstMedia}
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
-          ) : (
-            <Image
-              src={firstMedia}
-              alt={title}
-              fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
-            />
-          )
+            )}
+          </div>
         ) : (
           <div
             className={`absolute inset-0 bg-linear-to-br ${gradient} opacity-80`}
@@ -153,12 +167,9 @@ export default function PromptCard({ prompt }: Readonly<PromptCardProps>) {
         </h3>
 
         <div className="mt-auto flex items-center justify-between pt-2">
-          {/* 4. 내부 작성자 링크를 유지하되, 클릭 이벤트 버블링을 확실하게 막아줍니다. */}
           <Link
             href={`/user/${author.id}`}
-            onClick={(e) => {
-              e.stopPropagation() // 카드가 중복 클릭되어 상세페이지로 넘어가는 현상을 차단합니다.
-            }}
+            onClick={(e) => e.stopPropagation()}
             className="text-surface-500 hover:text-brand-400 relative z-10 text-sm font-medium transition-colors"
           >
             by {author.nickname}

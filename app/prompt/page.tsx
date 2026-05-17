@@ -37,9 +37,28 @@ export default async function PromptIndexPage({ searchParams }: Props) {
   const sort = (firstParam(params.sort) as PromptSort | undefined) ?? 'latest'
   const verified = firstParam(params.verified) === 'true'
 
-  const [exploreData, supabase] = await Promise.all([
+  const supabase = await createSupabaseServerClient()
+
+  // 현재 로그인 유저 + 성인인증 여부 조회
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  let isAdultVerified = false
+  let isLoggedIn = false
+
+  if (user) {
+    isLoggedIn = true
+    const { data: member } = await supabase
+      .from('members')
+      .select('adult_verified')
+      .eq('id', user.id)
+      .maybeSingle()
+    isAdultVerified = Boolean(member?.adult_verified)
+  }
+
+  const [exploreData] = await Promise.all([
     fetchPromptExplore({ q, ai, version, category, sort, verified }),
-    createSupabaseServerClient(),
   ])
 
   const { prompts, aiRankings, categories } = exploreData
@@ -55,10 +74,9 @@ export default async function PromptIndexPage({ searchParams }: Props) {
 
     filteredVersions = (versionRows ?? []).map((r) => ({
       name: r.version_name,
-      count: 0, // 카탈로그 기반이라 count 생략
+      count: 0,
     }))
   } else {
-    // AI 미선택 시 탐색 결과 기반 버전 목록 표시
     filteredVersions = exploreData.versions
   }
 
@@ -247,7 +265,6 @@ export default async function PromptIndexPage({ searchParams }: Props) {
                 ))}
               </div>
 
-              {/* AI 버전 필터 — AI 선택 시 해당 AI 버전만 표시 */}
               {filteredVersions.length > 0 && (
                 <div className="flex flex-wrap items-center gap-2">
                   {ai && (
@@ -323,7 +340,12 @@ export default async function PromptIndexPage({ searchParams }: Props) {
             ) : (
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
                 {prompts.map((prompt) => (
-                  <PromptCard key={prompt.id} prompt={prompt} />
+                  <PromptCard
+                    key={prompt.id}
+                    prompt={prompt}
+                    isLoggedIn={isLoggedIn}
+                    isAdultVerified={isAdultVerified}
+                  />
                 ))}
               </div>
             )}

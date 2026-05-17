@@ -15,6 +15,7 @@ import { PromptMediaGallery } from '@/components/prompt/PromptMediaGallery'
 import { PromptContentSection } from '@/components/prompt/PromptContentSection'
 import { PromptStepsViewer } from '@/components/prompt/PromptStepsViewer'
 import { AdultContentGate } from '@/components/ui/AdultContentGate'
+import { PromptOwnerActions } from '@/components/prompt/PromptOwnerActions'
 import { createSupabaseServerClient } from '@/src/lib/supabase-server'
 
 interface PromptDetailViewProps {
@@ -98,6 +99,9 @@ export async function PromptDetailView({
   const isOwner = user?.id === author.id
   const canViewFull = isFree || isOwner || hasPurchased
 
+  // 성인 컨텐츠인데 미인증이면 콘텐츠 전체를 차단
+  const isAdultBlocked = isAdult && !isAdultVerified
+
   const dateLabel = createdAt
     ? new Date(createdAt).toLocaleDateString('ko-KR', {
         year: 'numeric',
@@ -123,6 +127,7 @@ export async function PromptDetailView({
         </Link>
 
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-12">
+          {/* 좌측: 미디어 + 스텝 */}
           <div className="space-y-6">
             {/* 미디어 갤러리 — 성인 컨텐츠면 게이트 적용 */}
             <AdultContentGate
@@ -133,20 +138,29 @@ export async function PromptDetailView({
               <PromptMediaGallery urls={result_media} alt={title} />
             </AdultContentGate>
 
+            {/* 스텝 뷰어 — 성인 컨텐츠면 동일하게 게이트 적용 */}
             {steps.length > 0 && (
-              <PromptStepsViewer
-                steps={steps}
-                price={price}
-                canViewFull={canViewFull}
+              <AdultContentGate
+                isAdult={isAdult}
                 isLoggedIn={!!user}
-                postId={post.id}
-                title={title}
-                userPoints={userPoints}
-              />
+                isAdultVerified={isAdultVerified}
+              >
+                <PromptStepsViewer
+                  steps={steps}
+                  price={price}
+                  canViewFull={canViewFull}
+                  isLoggedIn={!!user}
+                  postId={post.id}
+                  title={title}
+                  userPoints={userPoints}
+                />
+              </AdultContentGate>
             )}
           </div>
 
+          {/* 우측: 메타 정보 */}
           <div className="flex flex-col lg:sticky lg:top-24 lg:self-start">
+            {/* 배지 행 */}
             <div className="mb-4 flex flex-wrap items-center gap-2">
               {ai_types.map((t) => (
                 <Badge key={t}>{t}</Badge>
@@ -164,7 +178,6 @@ export async function PromptDetailView({
                   </span>
                 </Badge>
               )}
-              {/* 성인 배지 */}
               {isAdult && (
                 <span className="flex items-center gap-1 rounded-full border border-red-500/30 bg-red-500/15 px-2.5 py-0.5 text-xs font-semibold text-red-400">
                   <ShieldAlert className="h-3 w-3" />
@@ -182,6 +195,7 @@ export async function PromptDetailView({
               {title}
             </h1>
 
+            {/* 작성자 카드 */}
             <div className="border-surface-700/50 bg-surface-800/40 mb-6 flex flex-wrap items-center gap-4 rounded-2xl border p-4">
               <div className="border-surface-600 relative h-12 w-12 shrink-0 overflow-hidden rounded-full border-2">
                 <Image
@@ -230,6 +244,7 @@ export async function PromptDetailView({
               </div>
             </div>
 
+            {/* 카테고리 */}
             <div className="mb-6 flex flex-wrap gap-2">
               {categories.map((c) => (
                 <span
@@ -242,6 +257,14 @@ export async function PromptDetailView({
               ))}
             </div>
 
+            {/* 오너 액션 (수정/삭제) */}
+            {isOwner && (
+              <div className="mb-6">
+                <PromptOwnerActions postId={post.id} title={title} />
+              </div>
+            )}
+
+            {/* 한줄 소개 — 성인 컨텐츠여도 항상 공개 */}
             <PromptContentSection
               postId={post.id}
               title={title}
@@ -251,6 +274,29 @@ export async function PromptDetailView({
               isLoggedIn={!!user}
               userPoints={userPoints}
             />
+
+            {/* 성인 컨텐츠 안내 박스 */}
+            {isAdultBlocked && (
+              <div className="mt-4 flex items-start gap-3 rounded-2xl border border-red-500/20 bg-red-500/10 p-4">
+                <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-red-400" />
+                <div>
+                  <p className="text-sm font-semibold text-red-300">
+                    성인 인증이 필요합니다
+                  </p>
+                  <p className="text-surface-400 mt-1 text-xs">
+                    이 게시물은 만 19세 이상만 열람 가능합니다.
+                    {!user && (
+                      <Link
+                        href="/login"
+                        className="text-brand-400 ml-1 hover:underline"
+                      >
+                        로그인 후 인증하세요.
+                      </Link>
+                    )}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

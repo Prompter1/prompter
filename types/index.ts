@@ -14,13 +14,14 @@ export interface PromptPost {
   content: string
   price: number
   ai_types: string[]
-  ai_versions: string[] // ✅ 추가
+  ai_versions: string[]
   categories: string[]
   author: Member
   is_verified: boolean
   result_media: string[]
-  view_count?: number // ✅ 추가
-  sales_count?: number // ✅ 추가
+  view_count?: number
+  sales_count?: number
+  is_adult?: boolean
 }
 
 // ─── Featured Prompt (lightweight, no author) ────────────────────────────────

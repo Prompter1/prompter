@@ -138,11 +138,11 @@ export default function FAQPage() {
               원하시는 답변을 찾지 못하셨나요?
             </p>
             <a
-              href="mailto:chaalsdn0217@naver.com"
+              href="/footer/contact"
               className="bg-brand-500 hover:bg-brand-400 inline-flex items-center gap-2 rounded-full px-8 py-3 font-semibold text-white transition-colors"
             >
               <MailIcon className="h-4 w-4" />
-              1:1 이메일 문의하기
+              문의하기
             </a>
           </div>
         </div>

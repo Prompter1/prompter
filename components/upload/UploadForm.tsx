@@ -16,6 +16,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Trash2,
+  ShieldAlert,
+  Info,
 } from 'lucide-react'
 import Image from 'next/image'
 import { useAuth } from '@/providers/auth-provider'
@@ -56,7 +58,6 @@ interface MediaPreview {
   compressionRatio: number
 }
 
-// 단일 스텝 데이터
 interface StepData {
   aiType: string
   aiVersion: string
@@ -78,6 +79,88 @@ function emptyStep(): StepData {
 }
 
 type UploadStatus = 'idle' | 'formatting' | 'uploading' | 'success' | 'error'
+
+// ── AdultContentToggle ───────────────────────────────
+function AdultContentToggle({
+  checked,
+  onChange,
+  disabled,
+}: Readonly<{
+  checked: boolean
+  onChange: (val: boolean) => void
+  disabled?: boolean
+}>) {
+  return (
+    <div
+      className={cn(
+        'rounded-2xl border p-5 transition-all',
+        checked
+          ? 'border-red-500/40 bg-red-500/5'
+          : 'border-surface-700/50 bg-surface-800/30'
+      )}
+    >
+      <div className="flex items-start gap-4">
+        <div
+          className={cn(
+            'mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
+            checked ? 'bg-red-500/20' : 'bg-surface-700/50'
+          )}
+        >
+          <ShieldAlert
+            className={cn(
+              'h-5 w-5',
+              checked ? 'text-red-400' : 'text-surface-400'
+            )}
+          />
+        </div>
+
+        <div className="flex-1">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-white">
+                성인 컨텐츠 (19+)
+              </p>
+              <p className="text-surface-400 mt-0.5 text-xs">
+                성인용 이미지·영상·프롬프트를 포함하는 경우 체크하세요.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              role="switch"
+              aria-checked={checked}
+              disabled={disabled}
+              onClick={() => onChange(!checked)}
+              className={cn(
+                'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none',
+                checked ? 'bg-red-500' : 'bg-surface-600',
+                disabled && 'cursor-not-allowed opacity-50'
+              )}
+            >
+              <span
+                className={cn(
+                  'inline-block h-4 w-4 rounded-full bg-white shadow transition-transform',
+                  checked ? 'translate-x-6' : 'translate-x-1'
+                )}
+              />
+            </button>
+          </div>
+
+          {checked && (
+            <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/10 p-3">
+              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-400" />
+              <p className="text-xs leading-relaxed text-amber-200">
+                성인 컨텐츠로 표시된 게시물의 결과물 미디어는 미인증 사용자에게
+                블러 처리되며, 만 19세 이상 인증 후 열람 가능합니다. 허위
+                표시·미표시 시 계정이 제재될 수 있습니다.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 // ── TagSelector ─────────────────────────────────────────
 function TagSelector({
@@ -310,17 +393,6 @@ function MediaDropZone({
   )
 }
 
-async function fetchVersionsByAi(ai: string): Promise<string[]> {
-  if (!ai.trim()) return []
-  const res = await fetch(
-    `/api/ai-versions?ai=${encodeURIComponent(ai.trim())}`,
-    { cache: 'no-store' }
-  )
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) return []
-  return Array.isArray(data.versions) ? data.versions : []
-}
-
 // ── StepEditor ────────────────────────────────────────────
 function StepEditor({
   step,
@@ -340,60 +412,46 @@ function StepEditor({
   const [versionOptions, setVersionOptions] = useState<string[]>([])
   const [loadingVersions, setLoadingVersions] = useState(false)
 
-  // 🔥 AI 변경 시 버전 목록 fetch
   useEffect(() => {
     let cancelled = false
-
     const fetchVersions = async () => {
       const ai = step.aiType.trim()
-
       if (!ai) {
         setVersionOptions([])
         return
       }
-
       setLoadingVersions(true)
-
       try {
         const res = await fetch(
           `/api/ai-versions?ai=${encodeURIComponent(ai)}`,
           { cache: 'no-store' }
         )
-
         const data = await res.json().catch(() => ({}))
-
-        if (!cancelled) {
+        if (!cancelled)
           setVersionOptions(Array.isArray(data.versions) ? data.versions : [])
-        }
       } catch {
         if (!cancelled) setVersionOptions([])
       } finally {
         if (!cancelled) setLoadingVersions(false)
       }
     }
-
     fetchVersions()
-
     return () => {
       cancelled = true
     }
   }, [step.aiType])
 
-  // 🔥 AI 바뀌면 기존 버전 초기화
   useEffect(() => {
     onChange('aiVersion', '')
   }, [step.aiType])
 
   return (
     <div className="space-y-5">
-      {/* AI 종류 + 버전 */}
       <div className="grid grid-cols-2 gap-4">
-        {/* AI 종류 */}
         <div>
           <label className="text-foreground/90 mb-2 block text-sm font-medium">
             AI 종류 <span className="text-red-400">*</span>
           </label>
-
           <input
             type="text"
             list={`ai-type-list-${stepIndex}`}
@@ -402,7 +460,6 @@ function StepEditor({
             placeholder="예: ChatGPT, Midjourney"
             className="border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none"
           />
-
           <datalist id={`ai-type-list-${stepIndex}`}>
             {AI_TOOL_OPTIONS.map((opt) => (
               <option key={opt} value={opt} />
@@ -410,12 +467,10 @@ function StepEditor({
           </datalist>
         </div>
 
-        {/* AI 버전 */}
         <div>
           <label className="text-foreground/90 mb-2 block text-sm font-medium">
             AI 버전 <span className="text-red-400">*</span>
           </label>
-
           <input
             type="text"
             list={`ai-version-list-${stepIndex}`}
@@ -431,7 +486,6 @@ function StepEditor({
             disabled={!step.aiType.trim()}
             className="border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none disabled:opacity-50"
           />
-
           <datalist id={`ai-version-list-${stepIndex}`}>
             {versionOptions.map((v) => (
               <option key={v} value={v} />
@@ -440,7 +494,6 @@ function StepEditor({
         </div>
       </div>
 
-      {/* 입력 프롬프트 */}
       <div>
         <label className="text-foreground/90 mb-2 block text-sm font-medium">
           입력 프롬프트 <span className="text-red-400">*</span>
@@ -454,7 +507,6 @@ function StepEditor({
         />
       </div>
 
-      {/* 입력 미디어 */}
       <MediaDropZone
         previews={step.inputMedia}
         onAdd={(files) => onAddMedia('input', files)}
@@ -464,7 +516,6 @@ function StepEditor({
         maxFiles={5}
       />
 
-      {/* 결과 텍스트 */}
       <div>
         <label className="text-foreground/90 mb-2 text-sm font-medium">
           결과 텍스트 (선택)
@@ -478,7 +529,6 @@ function StepEditor({
         />
       </div>
 
-      {/* 결과 미디어 */}
       <MediaDropZone
         previews={step.outputMedia}
         onAdd={(files) => onAddMedia('output', files)}
@@ -496,20 +546,18 @@ export function UploadForm() {
   const { user } = useAuth()
   const router = useRouter()
 
-  // 공통 필드
   const [title, setTitle] = useState('')
-  const [content, setContent] = useState('') // 한줄 소개 상태 추가
+  const [content, setContent] = useState('')
   const [categories, setCategories] = useState<string[]>([])
   const [isPaidSale, setIsPaidSale] = useState(false)
   const [priceInput, setPriceInput] = useState('')
   const [evidencePreviews, setEvidencePreviews] = useState<MediaPreview[]>([])
   const [evidenceError, setEvidenceError] = useState('')
+  const [isAdult, setIsAdult] = useState(false) // ✅ 성인 컨텐츠 토글
 
-  // 스텝 관리
   const [steps, setSteps] = useState<StepData[]>([emptyStep()])
   const [activeStep, setActiveStep] = useState(0)
 
-  // 상태
   const [status, setStatus] = useState<UploadStatus>('idle')
   const [progress, setProgress] = useState(0)
   const [progressLabel, setProgressLabel] = useState('')
@@ -530,7 +578,6 @@ export function UploadForm() {
     }
   }, [isPaidSale])
 
-  // ── 스텝 조작 ──
   const addStep = () => {
     if (steps.length >= MAX_STEPS) return
     setSteps((prev) => [...prev, emptyStep()])
@@ -549,7 +596,6 @@ export function UploadForm() {
     )
   }
 
-  // ── 미디어 처리 (공통) ──
   const processMediaFiles = useCallback(
     async (
       files: FileList,
@@ -657,7 +703,6 @@ export function UploadForm() {
     })
   }, [])
 
-  // ── 유효성 검사 ──
   const validate = () => {
     const errors: Record<string, string> = {}
     if (!title.trim()) errors.title = '제목을 입력해주세요.'
@@ -688,7 +733,6 @@ export function UploadForm() {
     }
 
     setFieldErrors(errors)
-    // 오류 있는 첫 번째 스텝으로 이동
     for (let i = 0; i < steps.length; i++) {
       if (
         errors[`step_${i}_aiType`] ||
@@ -702,7 +746,6 @@ export function UploadForm() {
     return Object.keys(errors).length === 0
   }
 
-  // ── 제출 ──
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user || !validate()) return
@@ -714,7 +757,6 @@ export function UploadForm() {
     try {
       const priceWon = isPaidSale ? (parsePriceWon(priceInput) ?? 0) : 0
 
-      // 전체 미디어 수 계산
       const totalMediaCount =
         steps.reduce(
           (acc, s) => acc + s.inputMedia.length + s.outputMedia.length,
@@ -728,7 +770,6 @@ export function UploadForm() {
         setProgress(Math.min(90, Math.round((done / totalUploads) * 90)))
       }
 
-      // 스텝별 미디어 업로드
       const uploadedSteps: {
         aiType: string
         aiVersion: string
@@ -745,12 +786,7 @@ export function UploadForm() {
 
         for (const p of s.inputMedia) {
           setProgressLabel(`스텝 ${i + 1} 입력 미디어 업로드 — ${p.file.name}`)
-          const { url } = await uploadMediaFile(p.file, user.id, (pct) => {
-            const base = (done / totalUploads) * 90
-            setProgress(
-              Math.round(base + (pct / 100) * (1 / totalUploads) * 90)
-            )
-          })
+          const { url } = await uploadMediaFile(p.file, user.id)
           inputUrls.push(url)
           bumpProgress()
         }
@@ -759,12 +795,7 @@ export function UploadForm() {
           setProgressLabel(
             `스텝 ${i + 1} 결과물 미디어 업로드 — ${p.file.name}`
           )
-          const { url } = await uploadMediaFile(p.file, user.id, (pct) => {
-            const base = (done / totalUploads) * 90
-            setProgress(
-              Math.round(base + (pct / 100) * (1 / totalUploads) * 90)
-            )
-          })
+          const { url } = await uploadMediaFile(p.file, user.id)
           outputUrls.push(url)
           bumpProgress()
         }
@@ -779,15 +810,12 @@ export function UploadForm() {
         })
       }
 
-      // ai_types, ai_versions 중복 없이 수집
       const aiTypes = [
         ...new Set(uploadedSteps.map((s) => s.aiType).filter(Boolean)),
       ]
       const aiVersions = [
         ...new Set(uploadedSteps.map((s) => s.aiVersion).filter(Boolean)),
       ]
-
-      // 첫 스텝의 outputMedia를 대표 result_media로 사용 (카드 썸네일용)
       const representativeMedia = uploadedSteps
         .flatMap((s) => s.outputMedia)
         .slice(0, 5)
@@ -795,7 +823,6 @@ export function UploadForm() {
       setProgressLabel('프롬프트 저장 중...')
       setProgress(91)
 
-      // Client Component에서 supabase-server 직접 사용 불가 → API Route 호출
       const createRes = await fetch('/api/prompt/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -812,6 +839,7 @@ export function UploadForm() {
             name: '',
           })),
           is_verified: false,
+          is_adult: isAdult, // ✅ 성인 컨텐츠 여부 전송
           steps: uploadedSteps,
         }),
       })
@@ -820,7 +848,6 @@ export function UploadForm() {
         throw new Error(createData.error ?? '프롬프트 저장에 실패했습니다.')
       const postId: number = createData.id
 
-      // 증빙 업로드
       if (isPaidSale && evidencePreviews.length > 0) {
         const evidencePaths: string[] = []
         for (let i = 0; i < evidencePreviews.length; i++) {
@@ -828,12 +855,7 @@ export function UploadForm() {
           setProgressLabel(
             `증빙 업로드 (${i + 1}/${evidencePreviews.length}) — ${p.file.name}`
           )
-          const { path } = await uploadEvidenceFile(p.file, user.id, (pct) => {
-            const base = (done / totalUploads) * 90
-            setProgress(
-              Math.round(base + (pct / 100) * (1 / totalUploads) * 90)
-            )
-          })
+          const { path } = await uploadEvidenceFile(p.file, user.id)
           evidencePaths.push(path)
           bumpProgress()
         }
@@ -972,7 +994,7 @@ export function UploadForm() {
         </div>
       </div>
 
-      {/* 한줄 소개 - 요청하신 흰색 및 테두리 강조 적용 */}
+      {/* 한줄 소개 */}
       <div className="space-y-2">
         <label className="mb-2 block text-sm font-medium text-white">
           한줄 소개 <span className="text-red-400">*</span>
@@ -1004,7 +1026,14 @@ export function UploadForm() {
         )}
       </div>
 
-      {/* ── 스텝 에디터 ── */}
+      {/* ✅ 성인 컨텐츠 토글 */}
+      <AdultContentToggle
+        checked={isAdult}
+        onChange={setIsAdult}
+        disabled={isBusy}
+      />
+
+      {/* 스텝 에디터 */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <label className="text-sm font-medium text-white">
@@ -1026,7 +1055,6 @@ export function UploadForm() {
           )}
         </div>
 
-        {/* 스텝 탭 네비게이션 */}
         {steps.length > 1 && (
           <div className="scrollbar-hide flex items-center gap-2 overflow-x-auto pb-1">
             {steps.map((_, idx) => (
@@ -1052,7 +1080,6 @@ export function UploadForm() {
           </div>
         )}
 
-        {/* 현재 스텝 에디터 */}
         <div className="border-surface-600 bg-surface-800/30 rounded-2xl border p-5 shadow-inner">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -1095,7 +1122,6 @@ export function UploadForm() {
             )}
           </div>
 
-          {/* 스텝 필드 오류 */}
           {(fieldErrors[`step_${activeStep}_aiType`] ||
             fieldErrors[`step_${activeStep}_aiVersion`] ||
             fieldErrors[`step_${activeStep}_prompt`]) && (
@@ -1128,7 +1154,6 @@ export function UploadForm() {
           />
         </div>
 
-        {/* 스텝 페이지네이션 표시 */}
         {steps.length > 1 && (
           <div className="mt-3 flex items-center justify-center gap-1.5">
             {steps.map((_, idx) => (

@@ -2,7 +2,9 @@ import { createSupabaseServerClient } from './supabase-server'
 import type { PromptPost } from '@/types'
 
 // ─── 인기 프롬프트 (sales_count 기준 상위 8개) ────────────────────────────
-export async function fetchFeaturedPrompts(): Promise<PromptPost[]> {
+export async function fetchFeaturedPrompts(): Promise<
+  (PromptPost & { is_adult?: boolean })[]
+> {
   const supabase = await createSupabaseServerClient()
 
   const { data, error } = await supabase
@@ -10,7 +12,7 @@ export async function fetchFeaturedPrompts(): Promise<PromptPost[]> {
     .select(
       `
       id, title, content, price, ai_types, ai_versions, categories,
-      is_verified, result_media,
+      is_verified, is_adult, result_media,
       author:members!author_id(id, nickname, avatar_url, points, is_sponsor)
     `
     )
@@ -31,12 +33,13 @@ export async function fetchFeaturedPrompts(): Promise<PromptPost[]> {
     ai_versions: row.ai_versions ?? [],
     categories: row.categories ?? [],
     is_verified: row.is_verified,
+    is_adult: Boolean(row.is_adult),
     result_media: normalizeMedia(row.result_media),
     author: row.author,
   }))
 }
 
-// ─── 급상승 프롬프트 (view_count 최근 증가 기준 — 여기서는 view_count 상위) ──
+// ─── 급상승 프롬프트 (view_count 상위) ──
 export async function fetchTrendingPrompts(): Promise<
   {
     id: number
@@ -92,7 +95,6 @@ export async function fetchTopCreators(): Promise<
     return []
   }
 
-  // 각 크리에이터의 프롬프트 수 + 판매 수 조회
   const results = await Promise.all(
     data.map(async (member: any) => {
       const { count: promptCount } = await supabase

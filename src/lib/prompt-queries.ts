@@ -79,6 +79,7 @@ export async function fetchPromptPostById(
     result_media: normalizeResultMedia(row.result_media),
     view_count: row.view_count ?? 0,
     sales_count: row.sales_count ?? 0,
+    is_adult: row.categories?.includes('adult') ?? false,
   }
 
   return { post, createdAt: row.created_at }

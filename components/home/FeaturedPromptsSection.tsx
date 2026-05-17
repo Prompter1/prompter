@@ -5,8 +5,29 @@ import { SectionHeader } from '@/components/ui/SectionHeader'
 import { Badge } from '@/components/ui/Badge'
 import Reveal from '@/components/ui/Reveal'
 import { fetchFeaturedPrompts } from '@/src/lib/home-queries'
+import { createSupabaseServerClient } from '@/src/lib/supabase-server'
+import PromptCard from '@/components/prompt/PromptCard'
 
 export async function FeaturedPromptsSection() {
+  const supabase = await createSupabaseServerClient()
+
+  // 현재 로그인 유저 + 성인인증 여부
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  let isAdultVerified = false
+  const isLoggedIn = !!user
+
+  if (user) {
+    const { data: member } = await supabase
+      .from('members')
+      .select('adult_verified')
+      .eq('id', user.id)
+      .maybeSingle()
+    isAdultVerified = Boolean(member?.adult_verified)
+  }
+
   const prompts = await fetchFeaturedPrompts()
 
   return (
@@ -31,9 +52,11 @@ export async function FeaturedPromptsSection() {
             </div>
           </Reveal>
         ) : (
-          /* 🔥 Masonry layout */
           <div className="columns-1 gap-5 sm:columns-2 lg:columns-4">
             {prompts.map((prompt, index) => {
+              const isAdult = Boolean((prompt as any).is_adult)
+              const shouldBlur = isAdult && !isAdultVerified
+
               const lastMedia =
                 prompt.result_media && prompt.result_media.length > 0
                   ? prompt.result_media.at(-1)
@@ -53,7 +76,6 @@ export async function FeaturedPromptsSection() {
                   >
                     {/* 이미지 영역 */}
                     <div className="relative w-full overflow-hidden">
-                      {/* 인증 뱃지 */}
                       {prompt.is_verified && (
                         <div className="bg-surface-800/60 absolute top-3 left-3 z-10 flex items-center gap-1 rounded-full px-2 py-1 backdrop-blur">
                           <Badge variant="verified">
@@ -75,7 +97,23 @@ export async function FeaturedPromptsSection() {
                               muted
                               playsInline
                               className="w-full object-cover"
+                              style={
+                                shouldBlur
+                                  ? {
+                                      filter: 'blur(24px)',
+                                      transform: 'scale(1.12)',
+                                    }
+                                  : undefined
+                              }
                             />
+                            {shouldBlur && (
+                              <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/40">
+                                <span className="text-2xl">🔞</span>
+                                <span className="text-xs font-bold text-white">
+                                  19+ 인증 필요
+                                </span>
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <div className="relative max-h-80 w-full overflow-hidden">
@@ -85,7 +123,23 @@ export async function FeaturedPromptsSection() {
                               width={500}
                               height={300}
                               className="w-full object-cover"
+                              style={
+                                shouldBlur
+                                  ? {
+                                      filter: 'blur(24px)',
+                                      transform: 'scale(1.12)',
+                                    }
+                                  : undefined
+                              }
                             />
+                            {shouldBlur && (
+                              <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/40">
+                                <span className="text-2xl">🔞</span>
+                                <span className="text-xs font-bold text-white">
+                                  19+ 인증 필요
+                                </span>
+                              </div>
+                            )}
                           </div>
                         )
                       ) : (
@@ -94,7 +148,6 @@ export async function FeaturedPromptsSection() {
                         </div>
                       )}
 
-                      {/* 하단 그라데이션 (가독성용) */}
                       <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-20 bg-linear-to-t from-black/60 to-transparent" />
                     </div>
 
@@ -103,7 +156,6 @@ export async function FeaturedPromptsSection() {
                       <h3 className="mb-2 line-clamp-2 text-sm font-semibold text-white">
                         {prompt.title}
                       </h3>
-
                       <div className="flex items-center justify-between">
                         <span className="text-surface-300 text-xs">
                           by {prompt.author.nickname}
