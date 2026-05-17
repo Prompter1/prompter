@@ -11,12 +11,12 @@ export default function InfoPage() {
     },
     {
       icon: <FileText className="text-brand-400 h-5 w-5" />,
-      label: '사업자등록번호',
+      label: '사업자번호',
       value: '530-13-02815',
     },
     {
       icon: <User className="text-brand-400 h-5 w-5" />,
-      label: '대표자',
+      label: '대표자명',
       value: '차민우',
     },
     {
@@ -25,10 +25,16 @@ export default function InfoPage() {
       value: 'chaalsdn0217@naver.com',
     },
     {
+      icon: <FileText className="text-brand-400 h-5 w-5" />,
+      label: '유선 번호',
+      value: '010-4858-1897',
+    },
+    {
       icon: <Building2 className="text-brand-400 h-5 w-5" />,
       label: '주소',
       value: '서울시 광진구 자양로 135',
     },
+
     // 필요시 추가 정보 (예: 통신판매업신고번호 등)
   ]
 
