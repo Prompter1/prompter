@@ -28,6 +28,7 @@ type PromptRow = {
   ai_versions: string[] | null
   categories: string[] | null
   is_verified: boolean
+  is_adult: boolean | null
   result_media: unknown
   created_at: string | null
   view_count: number | null
@@ -52,7 +53,7 @@ export async function fetchPromptPostById(
     .from('prompt_posts')
     .select(
       `id, title, content, price, ai_types, ai_versions, categories,
-       is_verified, result_media, created_at, view_count, sales_count,
+       is_verified, is_adult, result_media, created_at, view_count, sales_count,
        author:members!author_id(id, nickname, avatar_url, points, is_sponsor)`
     )
     .eq('id', id)
@@ -76,10 +77,10 @@ export async function fetchPromptPostById(
     categories: row.categories ?? [],
     author: row.author,
     is_verified: row.is_verified,
+    is_adult: Boolean(row.is_adult),
     result_media: normalizeResultMedia(row.result_media),
     view_count: row.view_count ?? 0,
     sales_count: row.sales_count ?? 0,
-    is_adult: row.categories?.includes('adult') ?? false,
   }
 
   return { post, createdAt: row.created_at }
@@ -110,9 +111,10 @@ export async function fetchPromptExplore({
 }> {
   const supabase = await createSupabaseServerClient()
 
+  // is_adult 포함하여 조회
   let query = supabase.from('prompt_posts').select(
     `id, title, content, price, ai_types, ai_versions, categories,
-       is_verified, result_media, view_count, sales_count,
+       is_verified, is_adult, result_media, view_count, sales_count,
        author:members!author_id(id, nickname, avatar_url, points, is_sponsor)`
   )
 
@@ -146,6 +148,7 @@ export async function fetchPromptExplore({
       categories: r.categories ?? [],
       author: r.author!,
       is_verified: r.is_verified,
+      is_adult: Boolean(r.is_adult),
       result_media: normalizeResultMedia(r.result_media),
       view_count: r.view_count ?? 0,
       sales_count: r.sales_count ?? 0,

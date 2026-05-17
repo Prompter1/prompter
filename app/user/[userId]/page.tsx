@@ -26,10 +26,22 @@ export default async function UserProfilePage({ params }: Readonly<PageProps>) {
 
   const supabase = await createSupabaseServerClient()
 
-  // 현재 로그인 유저
+  // 현재 로그인 유저 + 성인인증 여부
   const {
     data: { user: currentUser },
   } = await supabase.auth.getUser()
+
+  let isAdultVerified = false
+  const isLoggedIn = !!currentUser
+
+  if (currentUser) {
+    const { data: member } = await supabase
+      .from('members')
+      .select('adult_verified')
+      .eq('id', currentUser.id)
+      .maybeSingle()
+    isAdultVerified = Boolean(member?.adult_verified)
+  }
 
   // 프로필 대상 멤버 조회
   const { data: member, error: memberErr } = await supabase
@@ -40,12 +52,12 @@ export default async function UserProfilePage({ params }: Readonly<PageProps>) {
 
   if (memberErr || !member) notFound()
 
-  // 해당 멤버의 프롬프트 조회
+  // 해당 멤버의 프롬프트 조회 — is_adult 포함
   const { data: promptsRaw } = await supabase
     .from('prompt_posts')
     .select(
       `id, title, content, price, ai_types, ai_versions, categories,
-       is_verified, result_media, view_count, sales_count,
+       is_verified, is_adult, result_media, view_count, sales_count,
        author:members!author_id(id, nickname, avatar_url, points, is_sponsor)`
     )
     .eq('author_id', userId)
@@ -63,6 +75,7 @@ export default async function UserProfilePage({ params }: Readonly<PageProps>) {
       categories: r.categories ?? [],
       author: r.author,
       is_verified: r.is_verified,
+      is_adult: Boolean(r.is_adult),
       result_media: Array.isArray(r.result_media)
         ? r.result_media
             .map((m: any) => (typeof m === 'string' ? m : (m?.url ?? '')))
@@ -70,7 +83,6 @@ export default async function UserProfilePage({ params }: Readonly<PageProps>) {
         : [],
       view_count: r.view_count ?? 0,
       sales_count: r.sales_count ?? 0,
-      is_adult: r.categories?.includes('adult') ?? false,
     }))
 
   const isOwnProfile = currentUser?.id === userId
@@ -136,6 +148,7 @@ export default async function UserProfilePage({ params }: Readonly<PageProps>) {
                   )}
                 </div>
 
+                {/* 간단 통계 */}
                 <div className="text-surface-400 flex flex-wrap justify-center gap-4 text-sm sm:justify-start">
                   <span className="flex items-center gap-1.5">
                     <Sparkles className="text-brand-400 h-3.5 w-3.5" />
@@ -233,7 +246,12 @@ export default async function UserProfilePage({ params }: Readonly<PageProps>) {
             ) : (
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {prompts.map((prompt) => (
-                  <PromptCard key={prompt.id} prompt={prompt} />
+                  <PromptCard
+                    key={prompt.id}
+                    prompt={prompt}
+                    isLoggedIn={isLoggedIn}
+                    isAdultVerified={isAdultVerified}
+                  />
                 ))}
               </div>
             )}

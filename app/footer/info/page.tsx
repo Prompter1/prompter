@@ -24,6 +24,11 @@ export default function InfoPage() {
       label: '이메일',
       value: 'chaalsdn0217@naver.com',
     },
+    {
+      icon: <Building2 className="text-brand-400 h-5 w-5" />,
+      label: '주소',
+      value: '서울시 광진구 자양로 135',
+    },
     // 필요시 추가 정보 (예: 통신판매업신고번호 등)
   ]
 

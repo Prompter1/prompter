@@ -5,16 +5,19 @@ import CategorySection from '@/components/home/CategoriesSection'
 import { FeaturedPromptsSection } from '@/components/home/FeaturedPromptsSection'
 import TrendingSection from '@/components/home/TrendingSection'
 import CtaSection from '@/components/home/CtaSection'
+import HomeRevealReset from '@/components/home/HomeRevealReset'
 
 export default function Home() {
   return (
     <main className="bg-surface-800 text-surface-50 min-h-screen">
       <Navbar />
-      <HeroSection />
-      <CategorySection />
-      <FeaturedPromptsSection />
-      <TrendingSection />
-      <CtaSection />
+      <HomeRevealReset>
+        <HeroSection />
+        <CategorySection />
+        <FeaturedPromptsSection />
+        <TrendingSection />
+        <CtaSection />
+      </HomeRevealReset>
       <Footer />
     </main>
   )

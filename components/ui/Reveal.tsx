@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, useCallback, type ReactNode } from 'react'
+import { usePathname } from 'next/navigation'
 
 type Variant = 'up' | 'left' | 'right' | 'scale' | 'blur'
 
@@ -49,31 +50,21 @@ export default function Reveal({
   once = true,
 }: RevealProps) {
   const ref = useRef<HTMLDivElement | null>(null)
+  const observerRef = useRef<IntersectionObserver | null>(null)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [mounted, setMounted] = useState(false)
   const [visible, setVisible] = useState(false)
 
-  useEffect(() => {
-    const prefersReducedMotion =
-      window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false
+  const pathname = usePathname()
+  const prevPathname = useRef<string>(pathname)
 
-    if (prefersReducedMotion) {
-      setMounted(true)
-      setVisible(true)
-      return
-    }
-
-    // 🔥 핵심: 초기 진입 딜레이
-    const mountTimer = setTimeout(() => {
-      setMounted(true)
-    }, 120)
-
-    return () => clearTimeout(mountTimer)
-  }, [])
-
-  useEffect(() => {
+  // Observer 연결 함수 (재사용)
+  const connectObserver = useCallback(() => {
     const el = ref.current
-    if (!el || !mounted) return
+    if (!el) return
+
+    observerRef.current?.disconnect()
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -87,12 +78,55 @@ export default function Reveal({
       { threshold, rootMargin: '0px 0px -8% 0px' }
     )
 
+    observerRef.current = observer
     observer.observe(el)
-    return () => observer.disconnect()
-  }, [mounted, once, threshold])
+  }, [once, threshold])
+
+  // 초기 마운트
+  useEffect(() => {
+    const prefersReducedMotion =
+      window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false
+
+    if (prefersReducedMotion) {
+      setMounted(true)
+      setVisible(true)
+      return
+    }
+
+    timerRef.current = setTimeout(() => setMounted(true), 120)
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+      observerRef.current?.disconnect()
+    }
+  }, [])
+
+  // mounted 되면 Observer 연결
+  useEffect(() => {
+    if (!mounted) return
+    connectObserver()
+    return () => observerRef.current?.disconnect()
+  }, [mounted, connectObserver])
+
+  // ✅ 핵심 수정: 경로 변화 감지 → visible 리셋 + Observer 재연결
+  // 탐색 페이지에서 뒤로가기로 홈에 돌아올 때 pathname이 바뀌면서 트리거
+  useEffect(() => {
+    if (prevPathname.current === pathname) return
+    prevPathname.current = pathname
+
+    setVisible(false)
+
+    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => {
+      connectObserver()
+    }, 50)
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [pathname, connectObserver])
 
   const hidden = hiddenStyle(variant, distance)
-
   const shouldShow = mounted && visible
 
   return (
