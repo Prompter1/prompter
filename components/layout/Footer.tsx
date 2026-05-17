@@ -32,10 +32,6 @@ export default function Footer() {
           {/* Brand column */}
           <div className="col-span-2">
             <Link href="/" className="group inline-flex items-center gap-2.5">
-              <div className="from-brand-400 via-brand-500 to-brand-600 shadow-brand-500/20 group-hover:shadow-brand-500/40 relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-linear-to-br shadow-lg transition-all duration-300">
-                <Sparkles className="h-4 w-4 text-white" />
-                <div className="absolute inset-0 bg-linear-to-t from-transparent to-white/20" />
-              </div>
               <span className="text-foreground text-lg font-bold tracking-tight">
                 PROMPTER
               </span>
