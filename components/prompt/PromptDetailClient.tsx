@@ -15,7 +15,6 @@ interface PromptDetailClientProps {
   isLoggedIn: boolean
   postId: number
   title: string
-  userPoints: number
   alt: string
 }
 
@@ -34,7 +33,6 @@ export function PromptDetailClient({
   isLoggedIn,
   postId,
   title,
-  userPoints,
   alt,
 }: Readonly<PromptDetailClientProps>) {
   // 스텝이 있으면 스텝 1의 미디어로 초기화, 없으면 대표 미디어
@@ -67,7 +65,7 @@ export function PromptDetailClient({
           isLoggedIn={isLoggedIn}
           postId={postId}
           title={title}
-          userPoints={userPoints}
+          userId={''}
           onStepChange={handleStepChange}
         />
       )}
