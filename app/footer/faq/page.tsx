@@ -56,6 +56,13 @@ const FAQ_DATA: FAQItem[] = [
       '각 프롬프트는 권장되는 AI 모델 버전(예: GPT-4o, Claude 3.5 등)이 있습니다. 상품 설명에 기재된 설정값을 확인해 주시고, 그럼에도 문제가 있다면 판매자 문의 혹은 고객센터로 문의해 주세요.',
     icon: <HelpCircle className="text-brand-400 h-5 w-5" />,
   },
+  {
+    category: '판매자',
+    question: '세금 처리는 어떻게 되나요?',
+    answer:
+      '판매자 유형에 따라 세무 처리 방식이 다릅니다. 개인 판매자의 경우 정산 시 원천징수가 적용되며, 사업자 판매자의 경우 세금계산서 발행을 통해 정산이 진행됩니다. 자세한 내용은 판매자 정책을 참고해 주세요.',
+    icon: <ShieldCheck className="text-brand-400 h-5 w-5" />,
+  },
 ]
 
 export default function FAQPage() {

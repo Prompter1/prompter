@@ -52,7 +52,7 @@ export async function FeaturedPromptsSection() {
             </div>
           </Reveal>
         ) : (
-          <div className="columns-1 gap-5 sm:columns-2 lg:columns-4">
+          <div className="columns-1 gap-5 sm:columns-4 lg:columns-4">
             {prompts.map((prompt, index) => {
               const isAdult = Boolean((prompt as any).is_adult)
               const shouldBlur = isAdult && !isAdultVerified
