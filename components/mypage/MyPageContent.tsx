@@ -7,7 +7,7 @@ import { useAuth } from '@/providers/auth-provider'
 import { supabase } from '@/src/lib/supabase'
 import { ProfileCard } from '@/components/mypage/ProfileCard'
 import { MyPromptsTab } from '@/components/mypage/tabs/MyPromptsTab'
-import { StatsTab } from '@/components/mypage/tabs/StatsTab'
+import { StatsTab } from '@/components/mypage/StatsTab'
 import { PurchasesTab } from '@/components/mypage/tabs/PurchasesTab'
 import type { PromptPost } from '@/types'
 
@@ -29,6 +29,23 @@ export interface PurchaseTransaction {
   created_at: string
 }
 
+// 구매자 목록 타입
+export interface BuyerRecord {
+  id: number
+  amount: number
+  created_at: string
+  buyer: {
+    id: string
+    nickname: string
+    avatar_url: string | null
+  } | null
+  prompt: {
+    id: number
+    title: string
+    price: number
+  } | null
+}
+
 const TABS = [
   { id: 'myPrompts' as TabType, label: '내가 올린 프롬프트', icon: FileText },
   { id: 'stats' as TabType, label: '사용 통계 및 수익', icon: BarChart2 },
@@ -43,6 +60,7 @@ export function MyPageContent() {
   const [memberData, setMemberData] = useState<MemberData | null>(null)
   const [myPrompts, setMyPrompts] = useState<PromptPost[]>([])
   const [purchases, setPurchases] = useState<PurchaseTransaction[]>([])
+  const [buyers, setBuyers] = useState<BuyerRecord[]>([])
 
   // 탭별 로딩/완료 상태 분리 — 불필요한 중복 요청 방지
   const [loadedTabs, setLoadedTabs] = useState<Set<TabType>>(new Set())
@@ -113,9 +131,32 @@ export function MyPageContent() {
     }
   }, [user, loadedTabs])
 
+  // ── 구매자 목록: stats 탭 첫 진입 시 1회만 로드 ─────────────────────────
+  const fetchBuyers = useCallback(async () => {
+    if (!user || loadedTabs.has('stats')) return
+    setLoadingTab('stats')
+    try {
+      const { data: txs } = await supabase
+        .from('transactions')
+        .select(
+          `id, amount, created_at,
+           buyer:members!buyer_id(id, nickname, avatar_url),
+           prompt:prompt_posts!prompt_post_id(id, title, price)`
+        )
+        .eq('seller_id', user.id)
+        .order('created_at', { ascending: false })
+
+      setBuyers((txs as unknown as BuyerRecord[]) ?? [])
+      setLoadedTabs((prev) => new Set(prev).add('stats'))
+    } finally {
+      setLoadingTab(null)
+    }
+  }, [user, loadedTabs])
+
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab)
     if (tab === 'purchases') fetchPurchases()
+    if (tab === 'stats') fetchBuyers()
   }
 
   // ── 로딩 스피너 ─────────────────────────────────────────────────────────
@@ -134,7 +175,6 @@ export function MyPageContent() {
 
   if (!user) return null
 
-  // ProfileCard가 기대하는 개별 props로 분해
   const avatarUrl = user.user_metadata?.avatar_url as string | undefined
   const fullName =
     memberData?.nickname ||
@@ -150,7 +190,6 @@ export function MyPageContent() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-28">
-      {/* ProfileCard — 기존 props 구조 그대로 유지 */}
       <ProfileCard
         fullName={fullName}
         email={email}
@@ -191,11 +230,11 @@ export function MyPageContent() {
           />
         )}
         {activeTab === 'stats' && (
-          // StatsTab 기존 props: prompts, isLoading, totalRevenue
           <StatsTab
             prompts={myPrompts}
             isLoading={loadingTab === 'stats'}
             totalRevenue={memberData?.total_revenue ?? 0}
+            buyers={buyers}
           />
         )}
         {activeTab === 'purchases' && (

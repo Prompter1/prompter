@@ -46,7 +46,7 @@ export async function POST(req: Request) {
 
   // 프롬프트 가격 검증
   const { data: post, error: postError } = await supabase
-    .from('posts')
+    .from('prompt_posts')
     .select('price')
     .eq('id', postId)
     .single()

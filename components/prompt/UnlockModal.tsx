@@ -42,6 +42,8 @@ export function UnlockModal({
     if (!userId) return
     let cancelled = false
 
+    console.log('CLIENT_KEY:', process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY)
+
     setLoadingWidget(true)
     setWidgetReady(false)
     ;(async () => {
@@ -86,11 +88,12 @@ export function UnlockModal({
     const orderId = `prompt-${postId}-${nanoid()}`
 
     try {
+      // UnlockModal.tsx - handlePayment 함수 안
       await paymentWidgetRef.current.requestPayment({
         orderId,
         orderName: `프롬프트: ${title}`,
-        successUrl: `${window.location.origin}/prompt/purchase/success?postId=${postId}`,
-        failUrl: `${window.location.origin}/prompt/purchase/fail`,
+        successUrl: `${window.location.origin}/charge/success?postId=${postId}`, // ✅ 수정
+        failUrl: `${window.location.origin}/charge/fail`, // ✅ 수정
         metadata: { postId: String(postId) },
       })
     } catch (err: unknown) {
