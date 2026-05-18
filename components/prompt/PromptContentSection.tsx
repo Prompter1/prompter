@@ -12,6 +12,7 @@ interface PromptContentSectionProps {
   canViewFull: boolean
   isLoggedIn: boolean
   userPoints: number
+  userId: string
   // 해금 성공 시 부모(PromptStepsViewer 포함)에 알림용
   onUnlocked?: () => void
 }
@@ -24,6 +25,7 @@ export function PromptContentSection({
   canViewFull,
   isLoggedIn,
   userPoints,
+  userId,
   onUnlocked,
 }: Readonly<PromptContentSectionProps>) {
   const [, setUnlocked] = useState(canViewFull)
@@ -56,7 +58,7 @@ export function PromptContentSection({
           postId={postId}
           title={title}
           price={price}
-          userPoints={userPoints}
+          userId={userId}
           onClose={() => setShowModal(false)}
           onSuccess={handleSuccess}
         />

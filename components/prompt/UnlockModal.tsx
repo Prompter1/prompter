@@ -1,15 +1,22 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Zap, X, Loader2, ShieldCheck, AlertCircle } from 'lucide-react'
+import { Zap, X, Loader2, ShieldCheck, CreditCard } from 'lucide-react'
+import {
+  loadPaymentWidget,
+  PaymentWidgetInstance,
+} from '@tosspayments/payment-widget-sdk'
+import { nanoid } from 'nanoid'
 import { useToast } from '@/components/ui/Toast'
+
+const CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY!
 
 interface UnlockModalProps {
   postId: number
   title: string
   price: number
-  userPoints: number
+  userId: string
   onClose: () => void
   onSuccess: () => void
 }
@@ -18,39 +25,86 @@ export function UnlockModal({
   postId,
   title,
   price,
-  userPoints,
+  userId,
   onClose,
   onSuccess,
 }: Readonly<UnlockModalProps>) {
   const router = useRouter()
   const { success, error: toastError } = useToast()
-  const [loading, setLoading] = useState(false)
+  const [loadingWidget, setLoadingWidget] = useState(true)
+  const [widgetReady, setWidgetReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const canAfford = userPoints >= price
+  const paymentWidgetRef = useRef<PaymentWidgetInstance | null>(null)
 
-  async function handleUnlock() {
-    setError(null)
-    setLoading(true)
+  // 결제 위젯 마운트
+  useEffect(() => {
+    if (!userId) return
+    let cancelled = false
 
-    const res = await fetch('/api/prompt/purchase', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ postId }),
-    })
-    const data = await res.json().catch(() => ({}))
+    setLoadingWidget(true)
+    setWidgetReady(false)
+    ;(async () => {
+      try {
+        const widget = await loadPaymentWidget(CLIENT_KEY, userId)
+        if (cancelled) return
 
-    if (!res.ok) {
-      const msg = data.error ?? '구매에 실패했습니다.'
-      setError(msg)
-      toastError('구매 실패', msg)
-      setLoading(false)
-      return
+        paymentWidgetRef.current = widget
+
+        await Promise.all([
+          widget.renderPaymentMethods(
+            '#toss-unlock-widget',
+            { value: price },
+            { variantKey: 'DEFAULT' }
+          ),
+          widget.renderAgreement('#toss-unlock-agreement', {
+            variantKey: 'AGREEMENT',
+          }),
+        ])
+
+        if (cancelled) return
+        setLoadingWidget(false)
+        setWidgetReady(true)
+      } catch (err) {
+        if (!cancelled) {
+          console.error('위젯 렌더링 실패:', err)
+          setLoadingWidget(false)
+          setError('결제 위젯을 불러오는 데 실패했습니다.')
+        }
+      }
+    })()
+
+    return () => {
+      cancelled = true
     }
+  }, [userId, price])
 
-    success('구매 완료!', `"${title}" 프롬프트가 해금되었습니다.`)
-    onSuccess()
-    router.refresh()
+  async function handlePayment() {
+    if (!paymentWidgetRef.current) return
+    setError(null)
+
+    const orderId = `prompt-${postId}-${nanoid()}`
+
+    try {
+      await paymentWidgetRef.current.requestPayment({
+        orderId,
+        orderName: `프롬프트: ${title}`,
+        successUrl: `${window.location.origin}/prompt/purchase/success?postId=${postId}`,
+        failUrl: `${window.location.origin}/prompt/purchase/fail`,
+        metadata: { postId: String(postId) },
+      })
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'code' in err) {
+        const code = (err as { code: string }).code
+        if (code === 'USER_CANCEL') return
+      }
+      const msg =
+        err && typeof err === 'object' && 'message' in err
+          ? String((err as { message: string }).message)
+          : '결제 요청에 실패했습니다.'
+      setError(msg)
+      toastError('결제 실패', msg)
+    }
   }
 
   return (
@@ -77,87 +131,59 @@ export function UnlockModal({
         </div>
 
         <h2 className="mb-1 text-center text-lg font-bold text-white">
-          크레딧으로 해금하기
+          프롬프트 구매
         </h2>
-        <p className="text-surface-400 mb-6 line-clamp-2 text-center text-sm">
+        <p className="text-surface-400 mb-2 line-clamp-2 text-center text-sm">
           {title}
         </p>
+        <p className="text-brand-400 mb-6 text-center text-2xl font-bold">
+          {price.toLocaleString()}원
+        </p>
 
-        {/* 포인트 요약 */}
-        <div className="border-surface-700/50 bg-surface-900/50 mb-4 space-y-2.5 rounded-2xl border p-4">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-surface-400">보유 크레딧</span>
-            <span className="font-medium text-white">
-              {userPoints.toLocaleString()}P
-            </span>
+        {/* 결제 위젯 */}
+        <div className="border-surface-700/50 bg-surface-900/30 mb-4 rounded-2xl border p-3">
+          <div className="mb-3 flex items-center gap-2 text-sm font-medium text-white">
+            <CreditCard className="text-brand-400 h-4 w-4" />
+            결제 수단 선택
           </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-surface-400">차감 크레딧</span>
-            <span className="text-brand-400 font-medium">
-              -{price.toLocaleString()}P
-            </span>
-          </div>
-          <div className="border-surface-700/50 flex items-center justify-between border-t pt-2.5 text-sm">
-            <span className="text-surface-400">결제 후 잔여</span>
-            <span
-              className={`font-semibold ${canAfford ? 'text-white' : 'text-red-400'}`}
-            >
-              {(userPoints - price).toLocaleString()}P
-            </span>
-          </div>
+
+          {loadingWidget && (
+            <div className="flex h-32 items-center justify-center">
+              <Loader2 className="text-brand-400 h-6 w-6 animate-spin" />
+            </div>
+          )}
+
+          <div id="toss-unlock-widget" />
+          <div id="toss-unlock-agreement" className="mt-2" />
         </div>
 
-        {/* 크레딧 부족 경고 */}
-        {!canAfford && (
-          <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            크레딧이 부족합니다. 충전 후 다시 시도해주세요.
-          </div>
-        )}
-
-        {/* 에러 */}
+        {/* 에러 메시지 */}
         {error && (
-          <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-            <AlertCircle className="h-4 w-4 shrink-0" />
+          <p className="mb-3 rounded-xl bg-red-500/10 px-4 py-2.5 text-center text-sm text-red-400">
             {error}
-          </div>
+          </p>
         )}
 
-        {/* 버튼 */}
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="border-surface-600 text-surface-300 hover:bg-surface-700 flex-1 rounded-xl border py-3 text-sm font-medium transition-colors"
-          >
-            취소
-          </button>
-
-          {canAfford ? (
-            <button
-              type="button"
-              onClick={handleUnlock}
-              disabled={loading}
-              className="bg-brand-500 hover:bg-brand-400 flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <>
-                  <ShieldCheck className="h-4 w-4" />
-                  {price.toLocaleString()}P 해금하기
-                </>
-              )}
-            </button>
+        {/* 결제 버튼 */}
+        <button
+          type="button"
+          onClick={handlePayment}
+          disabled={!widgetReady}
+          className="bg-brand-500 hover:bg-brand-400 flex w-full items-center justify-center gap-2 rounded-2xl py-4 font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {!widgetReady ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              준비 중...
+            </>
           ) : (
-            <a
-              href="/charge"
-              className="bg-brand-500 hover:bg-brand-400 flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white transition-colors"
-            >
-              <Zap className="h-4 w-4" />
-              크레딧 충전하기
-            </a>
+            `${price.toLocaleString()}원 결제하기`
           )}
+        </button>
+
+        <div className="text-surface-500 mt-3 flex items-center justify-center gap-2 text-xs">
+          <ShieldCheck className="h-3.5 w-3.5" />
+          토스페이먼츠 보안 결제
         </div>
       </div>
     </div>

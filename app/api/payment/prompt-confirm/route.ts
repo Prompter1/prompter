@@ -2,22 +2,14 @@ import { NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/src/lib/supabase-server'
 
 const TOSS_SECRET_KEY = process.env.TOSS_SECRET_KEY!
-
-const CHARGE_PACKAGES = new Map<number, number>([
-  [1000, 1000],
-  [3000, 3000],
-  [5000, 5300],
-  [10000, 11000],
-  [30000, 35000],
-  [50000, 60000],
-])
+const PLATFORM_FEE_RATE = 0.1
 
 export async function POST(req: Request) {
-  // ── 1. 요청 파싱 ──────────────────────────────────────────────────────────
   let body: {
     paymentKey?: string
     orderId?: string
     amount?: number
+    postId?: number
   }
   try {
     body = await req.json()
@@ -28,30 +20,22 @@ export async function POST(req: Request) {
     )
   }
 
-  const { paymentKey, orderId, amount } = body
-  if (!paymentKey || !orderId || !amount) {
+  const { paymentKey, orderId, amount, postId } = body
+  if (!paymentKey || !orderId || !amount || !postId) {
     return NextResponse.json(
       { error: '필수 파라미터가 누락되었습니다.' },
       { status: 400 }
     )
   }
 
-  const points = CHARGE_PACKAGES.get(amount)
-  if (!points) {
-    return NextResponse.json(
-      { error: '지원하지 않는 충전 금액입니다.' },
-      { status: 400 }
-    )
-  }
-
   if (!TOSS_SECRET_KEY) {
     return NextResponse.json(
-      { error: '토스페이먼츠 시크릿 키가 아직 설정되지 않았습니다.' },
+      { error: '토스페이먼츠 시크릿 키가 설정되지 않았습니다.' },
       { status: 503 }
     )
   }
 
-  // ── 2. 로그인 유저 확인 ───────────────────────────────────────────────────
+  // 로그인 유저 확인
   const supabase = await createSupabaseServerClient()
   const {
     data: { user },
@@ -60,7 +44,28 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
   }
 
-  // ── 3. 토스페이먼츠 결제 승인 API 호출 ───────────────────────────────────
+  // 프롬프트 가격 검증
+  const { data: post, error: postError } = await supabase
+    .from('posts')
+    .select('price')
+    .eq('id', postId)
+    .single()
+
+  if (postError || !post) {
+    return NextResponse.json(
+      { error: '프롬프트를 찾을 수 없습니다.' },
+      { status: 404 }
+    )
+  }
+
+  if (post.price !== amount) {
+    return NextResponse.json(
+      { error: '결제 금액이 프롬프트 가격과 일치하지 않습니다.' },
+      { status: 400 }
+    )
+  }
+
+  // 토스페이먼츠 결제 승인
   const encryptedKey = Buffer.from(`${TOSS_SECRET_KEY}:`).toString('base64')
   const tossRes = await fetch(
     'https://api.tosspayments.com/v1/payments/confirm',
@@ -84,26 +89,29 @@ export async function POST(req: Request) {
     )
   }
 
-  // ── 4. 결제 내역 저장 + 포인트 증가를 DB 함수 하나로 처리 ────────────────
-  const { data: totalPoints, error: confirmErr } = await supabase.rpc(
-    'confirm_credit_charge',
-    {
+  // 결제 완료 후 프롬프트 구매 처리 (DB RPC)
+  const { data, error } = await supabase
+    .rpc('purchase_prompt_direct', {
+      post_id: postId,
       order_id: orderId,
       payment_key: paymentKey,
-      charge_amount: amount,
-      charge_points: points,
+      paid_amount: amount,
+      platform_fee_rate: PLATFORM_FEE_RATE,
       toss_payload: tossData,
-    }
-  )
+    })
+    .single()
 
-  if (confirmErr) {
-    const message = confirmErr.message ?? '포인트 업데이트에 실패했습니다.'
-    console.error('confirm_credit_charge error:', confirmErr)
+  if (error) {
+    const message = error.message ?? '구매 처리에 실패했습니다.'
+    console.error('purchase_prompt_direct error:', error)
     return NextResponse.json(
       { error: message },
       { status: message.includes('이미') ? 409 : 500 }
     )
   }
 
-  return NextResponse.json({ ok: true, totalPoints })
+  return NextResponse.json({
+    ok: true,
+    transactionId: (data as { transaction_id: number }).transaction_id,
+  })
 }

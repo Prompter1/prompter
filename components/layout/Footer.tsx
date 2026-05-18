@@ -5,7 +5,6 @@ const footerLinks = {
   product: [
     { href: '/prompt', label: '탐색' },
     { href: '/ranking', label: '랭킹' },
-    { href: '/charge', label: '크레딧 충전' },
   ],
   support: [
     { href: '/footer/info', label: '사업자 정보' },

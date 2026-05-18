@@ -83,17 +83,6 @@ export function ProfileCard({
 
         {/* 크레딧 + 로그아웃 */}
         <div className="flex w-full flex-col items-center gap-4 md:w-auto md:items-end">
-          <div className="border-surface-700/50 bg-surface-900/50 w-full rounded-2xl border p-6 text-center md:w-60 md:text-right">
-            <div className="text-surface-400 flex items-center justify-center gap-2 md:justify-end">
-              <Coins className="h-4 w-4" />
-              <p className="text-sm font-medium">보유 크레딧</p>
-            </div>
-            <p className="text-brand-400 mt-2 text-3xl font-bold">
-              {points.toLocaleString()}
-              <span className="text-surface-500 ml-1 text-xl">P</span>
-            </p>
-          </div>
-
           <button
             onClick={onSignOut}
             className="group border-surface-600 bg-surface-700/50 text-surface-300 flex items-center gap-2 rounded-xl border px-6 py-2.5 text-sm font-medium transition-all hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-400"
