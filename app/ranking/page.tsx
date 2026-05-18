@@ -32,7 +32,8 @@ async function fetchRankingData() {
          author:members!author_id(id, nickname, avatar_url, is_sponsor)`
       )
       .order('sales_count', { ascending: false })
-      .limit(10),
+      .order('view_count', { ascending: false })
+      .limit(12),
 
     // 수익 상위 크리에이터
     supabase

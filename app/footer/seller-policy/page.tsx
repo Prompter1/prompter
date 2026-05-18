@@ -108,8 +108,8 @@ export default function SellerPolicyPage() {
               </p>
               <ul className="list-disc space-y-2 pl-5 text-red-200/80">
                 <li>
-                  욕설, 비방, 음란성, 범죄 유도 목적 등 사회 미풍양속을 해치는
-                  프롬프트 등록
+                  욕설, 비방, 범죄 유도 목적 등 사회 미풍양속을 해치는 프롬프트
+                  등록
                 </li>
                 <li>
                   구매자를 외부 직거래로 유도하는 행위 (연락처, 개인 결제 링크

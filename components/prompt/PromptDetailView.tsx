@@ -6,7 +6,7 @@ import {
   Eye,
   FolderOpen,
   ShieldCheck,
-  ShoppingBag,
+  Bookmark,
   ShieldAlert,
 } from 'lucide-react'
 import type { PromptPost } from '@/types'
@@ -171,6 +171,12 @@ export async function PromptDetailView({
                   성인
                 </span>
               )}
+              {is_verified && (
+                <span className="flex items-center gap-1 rounded-lg bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-400">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  검증됨
+                </span>
+              )}
             </div>
 
             {/* 제목 */}
@@ -178,12 +184,11 @@ export async function PromptDetailView({
               {title}
             </h1>
 
-            {/* 검수 배지 */}
-            {is_verified && (
-              <div className="mb-4 flex items-center gap-1.5 text-sm text-emerald-400">
-                <ShieldCheck className="h-4 w-4" />
-                검수 완료
-              </div>
+            {/* 한 줄 소개 */}
+            {content && (
+              <p className="text-surface-400 mb-4 text-sm leading-relaxed">
+                {content.length > 100 ? `${content.slice(0, 100)}…` : content}
+              </p>
             )}
 
             {/* 작성자 */}
@@ -223,7 +228,7 @@ export async function PromptDetailView({
                 {(categories ?? []).map((c: string) => (
                   <span
                     key={c}
-                    className="bg-surface-700/50 text-surface-300 flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs"
+                    className="bg-surface-500/50 text-surface-300 flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs"
                   >
                     <FolderOpen className="h-3 w-3" />
                     {c}
@@ -232,22 +237,36 @@ export async function PromptDetailView({
               </div>
             )}
 
-            {/* 가격 + 구매 버튼 */}
-            <div className="border-surface-700/50 bg-surface-800/40 mb-6 rounded-2xl border p-5">
-              <div className="mb-4 flex items-center justify-between">
-                <span className="text-surface-400 text-sm">가격</span>
-                <span className="text-brand-400 text-2xl font-bold">
+            {/* 가격 + 통계 */}
+            <div className="border-surface-400/50 bg-surface-800/40 mb-6 divide-y divide-white/10 rounded-2xl border">
+              <div className="flex items-center justify-between px-5 py-3.5">
+                <span className="text-surface-400 flex items-center gap-2 text-sm">
+                  <span className="text-surface-400 text-base font-medium">
+                    ₩
+                  </span>
+                  가격
+                </span>
+                <span className="text-brand-400 text-sm font-semibold">
                   {isFree ? '무료' : `${price.toLocaleString()}원`}
                 </span>
               </div>
 
-              <div className="flex items-center gap-4 text-sm text-white/50">
-                <span className="flex items-center gap-1">
+              <div className="flex items-center justify-between px-5 py-3.5">
+                <span className="text-surface-400 flex items-center gap-2 text-sm">
                   <Eye className="h-3.5 w-3.5" />
+                  조회수
+                </span>
+                <span className="text-surface-300 text-sm">
                   {(view_count ?? 0).toLocaleString()}
                 </span>
-                <span className="flex items-center gap-1">
-                  <ShoppingBag className="h-3.5 w-3.5" />
+              </div>
+
+              <div className="flex items-center justify-between px-5 py-3.5">
+                <span className="text-surface-400 flex items-center gap-2 text-sm">
+                  <Bookmark className="h-3.5 w-3.5" />
+                  저장
+                </span>
+                <span className="text-surface-300 text-sm">
                   {(sales_count ?? 0).toLocaleString()}
                 </span>
               </div>

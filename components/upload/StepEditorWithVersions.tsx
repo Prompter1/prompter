@@ -75,7 +75,7 @@ export function StepEditorWithVersions({
               className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all ${
                 step.aiType === opt
                   ? 'border-brand-500/60 bg-brand-500/15 text-brand-300'
-                  : 'border-border/50 bg-surface-800/50 text-muted-foreground hover:border-border hover:text-foreground'
+                  : 'border-surface-600 bg-surface-800/50 text-muted-foreground hover:border-surface-400 hover:text-foreground'
               }`}
             >
               {opt}
@@ -89,7 +89,7 @@ export function StepEditorWithVersions({
             value={step.aiType}
             onChange={(e) => handleAiChange(e.target.value)}
             placeholder="목록에 없으면 직접 입력"
-            className="border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 w-full rounded-xl border px-3.5 py-2 text-sm outline-none"
+            className="border-surface-600 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-400 w-full rounded-xl border px-3.5 py-2 text-sm transition-colors outline-none"
           />
         </div>
       </div>
@@ -117,7 +117,7 @@ export function StepEditorWithVersions({
                     className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all ${
                       step.aiVersion === v
                         ? 'border-amber-500/60 bg-amber-500/15 text-amber-300'
-                        : 'border-border/50 bg-surface-800/50 text-muted-foreground hover:border-border hover:text-foreground'
+                        : 'border-surface-600 bg-surface-800/50 text-muted-foreground hover:border-surface-400 hover:text-foreground'
                     }`}
                   >
                     {v}
@@ -142,7 +142,7 @@ export function StepEditorWithVersions({
                   }
                 }}
                 placeholder={`새 버전 입력 후 포커스 해제 시 자동 저장`}
-                className="border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground w-full rounded-xl border px-3.5 py-2 text-sm outline-none focus:border-amber-500/60"
+                className="border-surface-600 bg-surface-800/50 text-foreground placeholder-muted-foreground w-full rounded-xl border px-3.5 py-2 text-sm transition-colors outline-none focus:border-amber-400"
               />
             </div>
           </>
@@ -163,7 +163,7 @@ export function StepEditorWithVersions({
           onChange={(e) => onChange('inputPrompt', e.target.value)}
           placeholder="AI에 입력한 프롬프트를 그대로 붙여넣으세요"
           rows={5}
-          className="border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 focus:ring-brand-500/20 w-full resize-none rounded-xl border px-3.5 py-3 text-sm outline-none focus:ring-1"
+          className="border-surface-600 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-400 focus:ring-brand-500/20 w-full resize-none rounded-xl border px-3.5 py-3 text-sm transition-colors outline-none focus:ring-1"
         />
       </div>
 
@@ -179,7 +179,7 @@ export function StepEditorWithVersions({
           onChange={(e) => onChange('outputText', e.target.value)}
           placeholder="AI가 출력한 텍스트 결과물을 붙여넣으세요 (선택)"
           rows={4}
-          className="border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 focus:ring-brand-500/20 w-full resize-none rounded-xl border px-3.5 py-3 text-sm outline-none focus:ring-1"
+          className="border-surface-600 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-400 focus:ring-brand-500/20 w-full resize-none rounded-xl border px-3.5 py-3 text-sm transition-colors outline-none focus:ring-1"
         />
       </div>
     </div>

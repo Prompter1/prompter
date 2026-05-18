@@ -17,7 +17,8 @@ export async function fetchFeaturedPrompts(): Promise<
     `
     )
     .order('sales_count', { ascending: false })
-    .limit(8)
+    .order('view_count', { ascending: false })
+    .limit(12)
 
   if (error || !data) {
     console.error('fetchFeaturedPrompts:', error)

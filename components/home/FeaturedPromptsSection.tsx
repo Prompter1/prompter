@@ -77,11 +77,11 @@ export async function FeaturedPromptsSection() {
                     {/* 이미지 영역 */}
                     <div className="relative w-full overflow-hidden">
                       {prompt.is_verified && (
-                        <div className="bg-surface-800/60 absolute top-3 left-3 z-10 flex items-center gap-1 rounded-full px-2 py-1 backdrop-blur">
+                        <div className="absolute top-3 left-3 z-10 flex items-center gap-1 rounded-full px-2 py-1 backdrop-blur">
                           <Badge variant="verified">
                             <span className="flex items-center gap-1">
                               <Shield className="h-3 w-3" />
-                              인증됨
+                              검증됨
                             </span>
                           </Badge>
                         </div>

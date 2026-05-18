@@ -204,7 +204,7 @@ function TagSelector({
               'rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all',
               selected.includes(opt)
                 ? 'border-brand-500/60 bg-brand-500/15 text-brand-300'
-                : 'border-border/50 bg-surface-800/50 text-muted-foreground hover:border-border hover:text-foreground'
+                : 'border-surface-600 bg-surface-800/50 text-muted-foreground hover:border-surface-400 hover:text-foreground'
             )}
           >
             {opt}
@@ -223,12 +223,12 @@ function TagSelector({
             }
           }}
           placeholder={placeholder}
-          className="border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 focus:ring-brand-500/20 min-w-0 flex-1 rounded-xl border px-3.5 py-2 text-sm outline-none focus:ring-1"
+          className="border-surface-600 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-400 focus:ring-brand-500/20 min-w-0 flex-1 rounded-xl border px-3.5 py-2 text-sm transition-colors outline-none focus:ring-1"
         />
         <button
           type="button"
           onClick={addCustom}
-          className="border-border/50 bg-surface-800/70 text-surface-200 hover:border-brand-500/50 inline-flex shrink-0 items-center gap-1.5 rounded-xl border px-3.5 py-2 text-sm font-medium transition-colors hover:text-white"
+          className="border-surface-600 bg-surface-800/70 text-surface-200 hover:border-brand-500/50 inline-flex shrink-0 items-center gap-1.5 rounded-xl border px-3.5 py-2 text-sm font-medium transition-colors hover:text-white"
         >
           <Plus className="h-4 w-4" />
           추가
@@ -302,7 +302,7 @@ function MediaDropZone({
         onDragOver={(e) => e.preventDefault()}
         onClick={() => !disabled && inputRef.current?.click()}
         className={cn(
-          'border-border/50 bg-surface-800/30 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-10 transition-all',
+          'border-surface-600 bg-surface-800/30 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-10 transition-all',
           disabled
             ? 'cursor-not-allowed opacity-50'
             : 'hover:border-brand-500/40 hover:bg-surface-800/50 cursor-pointer',
@@ -458,7 +458,7 @@ function StepEditor({
             value={step.aiType}
             onChange={(e) => onChange('aiType', e.target.value)}
             placeholder="예: ChatGPT, Midjourney"
-            className="border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none"
+            className="border-surface-600 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-400 w-full rounded-xl border px-3.5 py-2.5 text-sm transition-colors outline-none"
           />
           <datalist id={`ai-type-list-${stepIndex}`}>
             {AI_TOOL_OPTIONS.map((opt) => (
@@ -484,7 +484,7 @@ function StepEditor({
                 : 'AI 종류 먼저 선택'
             }
             disabled={!step.aiType.trim()}
-            className="border-border/50 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-500/60 w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none disabled:opacity-50"
+            className="border-surface-600 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-400 w-full rounded-xl border px-3.5 py-2.5 text-sm transition-colors outline-none disabled:opacity-50"
           />
           <datalist id={`ai-version-list-${stepIndex}`}>
             {versionOptions.map((v) => (
@@ -503,7 +503,7 @@ function StepEditor({
           onChange={(e) => onChange('inputPrompt', e.target.value)}
           rows={5}
           placeholder="AI에 입력한 프롬프트"
-          className="border-border/50 bg-surface-800/50 text-foreground w-full resize-none rounded-xl border px-3.5 py-3 text-sm outline-none"
+          className="border-surface-600 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-400 w-full resize-none rounded-xl border px-3.5 py-3 text-sm transition-colors outline-none"
         />
       </div>
 
@@ -525,7 +525,7 @@ function StepEditor({
           onChange={(e) => onChange('outputText', e.target.value)}
           rows={4}
           placeholder="AI 출력 결과"
-          className="border-border/50 bg-surface-800/50 text-foreground w-full resize-none rounded-xl border px-3.5 py-3 text-sm outline-none"
+          className="border-surface-600 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-400 w-full resize-none rounded-xl border px-3.5 py-3 text-sm transition-colors outline-none"
         />
       </div>
 
