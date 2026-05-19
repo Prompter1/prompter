@@ -8,8 +8,10 @@ import {
   Sparkles,
   Users,
   User,
+  ArrowRight,
 } from 'lucide-react'
 import Image from 'next/image'
+import Link from 'next/link'
 import type { PromptPost } from '@/types'
 import type { BuyerRecord } from '@/components/mypage/MyPageContent'
 
@@ -84,7 +86,7 @@ export function StatsTab({
   return (
     <div>
       {/* 통계 카드 그리드 */}
-      <div className="mb-10 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {statCards.map(({ icon: Icon, label, value, sub, color, bg }) => (
           <div
             key={label}
@@ -100,110 +102,101 @@ export function StatsTab({
         ))}
       </div>
 
+      {/* 정산 받기 CTA 배너 */}
+      <div className="border-brand-500/20 bg-brand-500/5 mb-10 flex flex-col items-start justify-between gap-4 rounded-2xl border p-5 sm:flex-row sm:items-center">
+        <div>
+          <p className="text-surface-100 font-semibold">
+            누적 정산 수익 확인 및 정산 신청
+          </p>
+          <p className="text-surface-400 mt-0.5 text-sm">
+            수수료 안내, 세무 처리, 정산 주기 등 정산 상세 정보를 확인하세요.
+          </p>
+        </div>
+        <Link
+          href="/mypage/settlement"
+          className="bg-brand-500 hover:bg-brand-400 inline-flex shrink-0 items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-colors"
+        >
+          정산 받기
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </div>
+
       {/* 하단: 유료 프롬프트 목록 + 구매자 목록 (2열) */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* 유료 프롬프트 목록 */}
         {paidPrompts.length > 0 ? (
-          <div className="border-surface-700/50 bg-surface-800/60 rounded-2xl border">
-            <div className="border-surface-700/50 border-b px-6 py-4">
-              <h3 className="text-sm font-semibold text-white">
+          <div className="border-surface-700/50 bg-surface-800/20 rounded-2xl border">
+            <div className="border-surface-700/50 border-b px-4 py-3">
+              <h3 className="text-surface-100 text-sm font-semibold">
                 유료 프롬프트 목록
               </h3>
             </div>
-            <ul className="divide-surface-700/50 divide-y">
-              {paidPrompts.map((prompt) => (
+            <ul className="divide-surface-700/40 divide-y">
+              {paidPrompts.map((p) => (
                 <li
-                  key={prompt.id}
-                  className="flex items-center justify-between px-6 py-4"
+                  key={p.id}
+                  className="flex items-center justify-between gap-3 px-4 py-3"
                 >
-                  <div>
-                    <p className="text-sm font-medium text-white">
-                      {prompt.title}
-                    </p>
-                    <div className="mt-1 flex gap-1.5">
-                      {prompt.ai_types.slice(0, 2).map((type) => (
-                        <span
-                          key={type}
-                          className="bg-surface-700 text-surface-300 rounded-full px-2 py-0.5 text-xs"
-                        >
-                          {type}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <span className="text-sm font-bold text-white">
-                    {prompt.price.toLocaleString()}P
+                  <span className="text-surface-200 line-clamp-1 text-sm">
+                    {p.title}
+                  </span>
+                  <span className="text-brand-400 shrink-0 text-sm font-semibold">
+                    {p.price.toLocaleString()}P
                   </span>
                 </li>
               ))}
             </ul>
           </div>
         ) : (
-          <div className="border-surface-700 bg-surface-800/30 text-surface-400 flex h-48 flex-col items-center justify-center rounded-2xl border border-dashed">
-            <TrendingUp className="text-surface-600 mb-3 h-8 w-8" />
-            <p className="text-sm">등록된 유료 프롬프트가 없습니다.</p>
+          <div className="border-surface-700/50 bg-surface-800/20 flex flex-col items-center justify-center rounded-2xl border py-12">
+            <p className="text-surface-400 text-sm">유료 프롬프트가 없습니다</p>
           </div>
         )}
 
         {/* 구매자 목록 */}
-        <div className="border-surface-700/50 bg-surface-800/60 rounded-2xl border">
-          <div className="border-surface-700/50 flex items-center justify-between border-b px-6 py-4">
-            <h3 className="text-sm font-semibold text-white">구매자 목록</h3>
-            {buyers.length > 0 && (
-              <span className="bg-surface-700 text-surface-300 rounded-full px-2.5 py-0.5 text-xs">
-                총 {buyers.length}건
-              </span>
-            )}
+        <div className="border-surface-700/50 bg-surface-800/20 rounded-2xl border">
+          <div className="border-surface-700/50 border-b px-4 py-3">
+            <h3 className="text-surface-100 text-sm font-semibold">
+              최근 구매자
+            </h3>
           </div>
-
           {buyers.length === 0 ? (
-            <div className="flex h-48 flex-col items-center justify-center gap-2">
-              <Users className="text-surface-600 h-8 w-8" />
-              <p className="text-surface-400 text-sm">
-                아직 구매자가 없습니다.
-              </p>
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="bg-surface-700/50 mb-3 rounded-2xl p-3">
+                <Users className="text-surface-500 h-6 w-6" />
+              </div>
+              <p className="text-surface-400 text-sm">아직 구매자가 없습니다</p>
             </div>
           ) : (
-            <ul className="divide-surface-700/50 max-h-96 divide-y overflow-y-auto">
-              {buyers.map((tx) => (
-                <li key={tx.id} className="flex items-center gap-3 px-6 py-3.5">
-                  {/* 아바타 */}
-                  <div className="border-surface-600 relative h-8 w-8 shrink-0 overflow-hidden rounded-full border">
-                    {tx.buyer?.avatar_url ? (
-                      <Image
-                        src={tx.buyer.avatar_url}
-                        alt={tx.buyer.nickname ?? '구매자'}
-                        fill
-                        sizes="32px"
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="bg-surface-700 flex h-full w-full items-center justify-center">
-                        <User className="text-surface-400 h-4 w-4" />
-                      </div>
+            <ul className="divide-surface-700/40 divide-y">
+              {buyers.slice(0, 10).map((b) => (
+                <li key={b.id} className="flex items-center gap-3 px-4 py-3">
+                  {b.buyer?.avatar_url ? (
+                    <Image
+                      src={b.buyer.avatar_url}
+                      alt={b.buyer.nickname ?? ''}
+                      width={28}
+                      height={28}
+                      className="rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="bg-surface-700 flex h-7 w-7 items-center justify-center rounded-full">
+                      <User className="text-surface-400 h-3.5 w-3.5" />
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-surface-200 truncate text-sm">
+                      {b.buyer?.nickname ?? '알 수 없음'}
+                    </p>
+                    {b.prompt && (
+                      <p className="text-surface-500 truncate text-xs">
+                        {b.prompt.title}
+                      </p>
                     )}
                   </div>
-
-                  {/* 구매자명 + 프롬프트 */}
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-white">
-                      {tx.buyer?.nickname ?? '알 수 없음'}
-                    </p>
-                    <p className="text-surface-400 truncate text-xs">
-                      {tx.prompt?.title ?? '삭제된 프롬프트'}
-                      <span className="text-surface-500 ml-1">
-                        ({(tx.prompt?.price ?? tx.amount).toLocaleString()}원)
-                      </span>
-                    </p>
-                  </div>
-
-                  {/* 날짜 */}
-                  <time className="text-surface-500 shrink-0 text-xs">
-                    {new Date(tx.created_at).toLocaleDateString('ko-KR', {
-                      month: 'short',
-                      day: 'numeric',
-                    })}
-                  </time>
+                  <span className="shrink-0 text-xs font-medium text-emerald-400">
+                    +{b.amount.toLocaleString()}P
+                  </span>
                 </li>
               ))}
             </ul>

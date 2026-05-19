@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/src/lib/supabase-server'
 
-const TOSS_SECRET_KEY = process.env.TOSS_SECRET_KEY!
-const PLATFORM_FEE_RATE = 0.1
+const TOSS_SECRET_KEY = process.env.TOSS_SECRET_KEY
+const PLATFORM_FEE_RATE = 0.15
 
 export async function POST(req: Request) {
   let body: {
@@ -35,7 +35,6 @@ export async function POST(req: Request) {
     )
   }
 
-  // 로그인 유저 확인
   const supabase = await createSupabaseServerClient()
   const {
     data: { user },
@@ -44,7 +43,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
   }
 
-  // 프롬프트 가격 검증
   const { data: post, error: postError } = await supabase
     .from('prompt_posts')
     .select('price')
@@ -82,14 +80,12 @@ export async function POST(req: Request) {
   const tossData = await tossRes.json()
 
   if (!tossRes.ok) {
-    console.error('토스 승인 실패:', tossData)
     return NextResponse.json(
       { error: tossData.message ?? '결제 승인에 실패했습니다.' },
       { status: tossRes.status }
     )
   }
 
-  // 결제 완료 후 프롬프트 구매 처리 (DB RPC)
   const { data, error } = await supabase
     .rpc('purchase_prompt_direct', {
       post_id: postId,
@@ -103,7 +99,6 @@ export async function POST(req: Request) {
 
   if (error) {
     const message = error.message ?? '구매 처리에 실패했습니다.'
-    console.error('purchase_prompt_direct error:', error)
     return NextResponse.json(
       { error: message },
       { status: message.includes('이미') ? 409 : 500 }

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { createSupabaseServerClient } from '@/src/lib/supabase-server'
-import { isMemberAdmin } from '@/src/lib/admin-auth'
+import { requireAdminAPI } from '@/src/lib/admin-auth'
+import { createSupabaseAdminClient } from '@/src/lib/supabase-admin'
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -10,24 +10,12 @@ type RouteContext = { params: Promise<{ id: string }> }
 export async function POST(req: Request, context: RouteContext) {
   const { id: requestId } = await context.params
 
-  // ✅ parseInt 제거 — UUID 형식 검증으로 교체
   if (!UUID_REGEX.test(requestId)) {
     return NextResponse.json({ error: '잘못된 요청 ID' }, { status: 400 })
   }
 
-  const supabase = await createSupabaseServerClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-  }
-
-  const admin = await isMemberAdmin(supabase, user.id)
-  if (!admin) {
-    return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 })
-  }
+  const authResult = await requireAdminAPI()
+  if (authResult instanceof NextResponse) return authResult
 
   let body: { action?: string }
   try {
@@ -47,10 +35,12 @@ export async function POST(req: Request, context: RouteContext) {
     )
   }
 
-  const { data: vr, error: fetchErr } = await supabase
+  const adminClient = await createSupabaseAdminClient()
+
+  const { data: vr, error: fetchErr } = await adminClient
     .from('verification_requests')
     .select('id, status, prompt_post_id')
-    .eq('id', requestId) // ✅ UUID string 그대로 사용
+    .eq('id', requestId)
     .maybeSingle()
 
   if (fetchErr || !vr) {
@@ -68,26 +58,27 @@ export async function POST(req: Request, context: RouteContext) {
   }
 
   if (action === 'reject') {
-    const { error } = await supabase
+    const { error } = await adminClient
       .from('verification_requests')
-      .update({ status: 'REJECTED' })
-      .eq('id', requestId) // ✅
+      .update({ status: 'REJECTED', updated_at: new Date().toISOString() })
+      .eq('id', requestId)
+
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
     return NextResponse.json({ ok: true, status: 'REJECTED' })
   }
 
-  const { error: u1 } = await supabase
+  const { error: u1 } = await adminClient
     .from('verification_requests')
-    .update({ status: 'APPROVED' })
-    .eq('id', requestId) // ✅
+    .update({ status: 'APPROVED', updated_at: new Date().toISOString() })
+    .eq('id', requestId)
 
   if (u1) {
     return NextResponse.json({ error: u1.message }, { status: 500 })
   }
 
-  const { error: u2 } = await supabase
+  const { error: u2 } = await adminClient
     .from('prompt_posts')
     .update({ is_verified: true })
     .eq('id', vr.prompt_post_id)

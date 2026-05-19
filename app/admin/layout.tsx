@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { LayoutDashboard, Home } from 'lucide-react'
+import { LayoutDashboard, Home, Banknote, ClipboardList } from 'lucide-react'
 import { requireAdmin } from '@/src/lib/admin-auth'
 
 export default async function AdminLayout({
@@ -21,12 +21,20 @@ export default async function AdminLayout({
               <LayoutDashboard className="h-4 w-4" />
               관리자
             </Link>
-            <nav className="hidden items-center gap-4 sm:flex">
+            <nav className="hidden items-center gap-1 sm:flex">
               <Link
                 href="/admin"
-                className="text-surface-400 hover:text-surface-100 text-sm transition-colors"
+                className="text-surface-400 hover:text-surface-100 flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-white/5"
               >
+                <ClipboardList className="h-3.5 w-3.5" />
                 검수 대기
+              </Link>
+              <Link
+                href="/admin/settlement"
+                className="text-surface-400 hover:text-surface-100 flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-white/5"
+              >
+                <Banknote className="h-3.5 w-3.5" />
+                정산 관리
               </Link>
             </nav>
           </div>
