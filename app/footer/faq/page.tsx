@@ -14,6 +14,12 @@ import {
   HelpCircle,
   Mail,
   Banknote,
+  Scale,
+  Lock,
+  Trash2,
+  PauseCircle,
+  Globe,
+  Megaphone,
 } from 'lucide-react'
 
 interface FAQItem {
@@ -65,6 +71,41 @@ const FAQ_DATA: FAQItem[] = [
     answer:
       '각 프롬프트는 권장 AI 모델 버전(예: GPT-4o, Claude 3.5 등)이 있습니다. 상품 설명에 기재된 권장 설정값을 먼저 확인해 주세요. 그래도 문제가 있다면 고객센터(chaalsdn0217@naver.com)로 문의 주세요.',
     icon: <HelpCircle className="text-brand-400 h-5 w-5" />,
+  },
+  {
+    category: '저작권',
+    question: '업로드한 프롬프트의 저작권은 누구에게 있나요?',
+    answer:
+      '저작권은 원칙적으로 창작자(업로더)에게 귀속됩니다. 플랫폼은 서비스 운영 및 제공을 위한 범위 내에서 비독점적 사용 권한만 부여받으며, 그 외의 목적으로는 활용하지 않습니다.',
+    icon: <Scale className="text-brand-400 h-5 w-5" />,
+  },
+  {
+    category: '저작권',
+    question: '독점 판매도 가능한가요?',
+    answer:
+      '현재는 비독점 등록이 기본입니다. 추후 독점 판매 기능이 추가될 예정입니다. 단, 기존에 등록된 프롬프트와 유사도가 높거나 중복성이 있다고 판단될 경우 플랫폼 정책에 따라 등록이 제한될 수 있습니다.',
+    icon: <Lock className="text-brand-400 h-5 w-5" />,
+  },
+  {
+    category: '저작권',
+    question: '등록한 프롬프트를 삭제하거나 판매를 중단할 수 있나요?',
+    answer:
+      '삭제 및 판매 중단 모두 언제든지 가능합니다. 단, 이미 구매가 완료된 콘텐츠에 대해서는 회수 또는 접근 제한이 불가능합니다. 구매자는 이미 취득한 열람 권한을 계속 보유합니다.',
+    icon: <Trash2 className="text-brand-400 h-5 w-5" />,
+  },
+  {
+    category: '저작권',
+    question: '구매자가 프롬프트를 복제하거나 재판매할 수 있나요?',
+    answer:
+      '플랫폼 내에서의 무단 복제 및 재판매는 금지됩니다. 다만 플랫폼 외부에서의 사용 및 재배포는 기술적으로 제한하기 어려우며, 외부 침해에 대한 권리 보호는 창작자 본인의 책임 하에 이루어집니다.',
+    icon: <Globe className="text-brand-400 h-5 w-5" />,
+  },
+  {
+    category: '저작권',
+    question: '플랫폼이 제 프롬프트를 마케팅에 사용할 수 있나요?',
+    answer:
+      '플랫폼은 서비스 홍보 및 마케팅 목적에 한하여 업로드된 프롬프트의 일부(내용, 결과물, 썸네일 등)를 비독점적으로 활용할 수 있습니다. 단, 창작자의 권리를 침해하지 않는 범위 내에서만 사용되며, 상업적 재판매 목적으로는 사용되지 않습니다.',
+    icon: <Megaphone className="text-brand-400 h-5 w-5" />,
   },
 ]
 
@@ -123,7 +164,7 @@ export default function FAQPage() {
 
                   <div
                     className={`overflow-hidden px-6 transition-all duration-300 ease-in-out ${
-                      isOpen ? 'max-h-48 pb-6 opacity-100' : 'max-h-0 opacity-0'
+                      isOpen ? 'max-h-64 pb-6 opacity-100' : 'max-h-0 opacity-0'
                     }`}
                   >
                     <div className="text-surface-400 border-surface-700/50 border-t pt-4 pl-14 leading-relaxed text-sm">

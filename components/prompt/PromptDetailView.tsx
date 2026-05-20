@@ -12,7 +12,6 @@ import {
 import type { PromptPost } from '@/types'
 import { Badge } from '@/components/ui/Badge'
 import { PromptMediaGallery } from '@/components/prompt/PromptMediaGallery'
-import { PromptContentSection } from '@/components/prompt/PromptContentSection'
 import { PromptStepsViewer } from '@/components/prompt/PromptStepsViewer'
 import { AdultContentGate } from '@/components/ui/AdultContentGate'
 import { PromptOwnerActions } from '@/components/prompt/PromptOwnerActions'
@@ -96,8 +95,6 @@ export async function PromptDetailView({
   const isFree = price === 0
   const isOwner = user?.id === author.id
   const canViewFull = isFree || isOwner || hasPurchased
-
-  const isAdultBlocked = isAdult && !isAdultVerified
 
   const dateLabel = createdAt
     ? new Date(createdAt).toLocaleDateString('ko-KR', {

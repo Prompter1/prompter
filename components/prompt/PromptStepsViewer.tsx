@@ -1,17 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import {
-  ChevronLeft,
-  ChevronRight,
-  FileText,
-  MessageSquare,
-  Sparkles,
-  Lock,
-  AlertCircle,
-} from 'lucide-react'
+import { FileText, MessageSquare, Sparkles, Lock, Clock, X } from 'lucide-react'
 import { cn } from '@/src/lib/utils'
-import { UnlockModal } from '@/components/prompt/UnlockModal'
 import { CopyPromptButton } from './CopyPromptButton'
 
 export interface PromptStep {
@@ -25,7 +16,47 @@ export interface PromptStep {
   output_media: string[]
 }
 
-// ── 개별 스텝의 입력 프롬프트 (해금 로직 포함) ──────────────────────────────
+// ── 프리론칭 안내 모달 ────────────────────────────────────────────────────────
+function PreLaunchNotice({ onClose }: Readonly<{ onClose: () => void }>) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div className="border-surface-700/50 bg-surface-800 relative w-full max-w-sm rounded-3xl border p-6 shadow-2xl">
+        <button
+          type="button"
+          onClick={onClose}
+          className="text-surface-400 hover:text-surface-200 absolute top-4 right-4 transition-colors"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/15">
+          <Clock className="h-7 w-7 text-amber-400" />
+        </div>
+
+        <h2 className="mb-2 text-center text-lg font-bold text-white">
+          정식 론칭 준비 중
+        </h2>
+        <p className="text-surface-400 mb-1 text-center text-sm leading-relaxed">
+          해금 및 결제는 정식 런칭 이후 가능합니다.
+        </p>
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="bg-surface-700 hover:bg-surface-600 mt-6 w-full rounded-2xl py-3 text-sm font-semibold text-white transition-colors"
+        >
+          확인
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── 개별 스텝의 입력 프롬프트 ────────────────────────────────────────────────
 function StepInputPrompt({
   prompt,
   unlocked,
@@ -121,9 +152,9 @@ export function PromptStepsViewer({
   price,
   canViewFull,
   isLoggedIn,
-  postId,
-  title,
-  userId,
+  postId: _postId,
+  title: _title,
+  userId: _userId,
   onStepChange,
 }: Readonly<{
   steps: PromptStep[]
@@ -133,12 +164,11 @@ export function PromptStepsViewer({
   postId: number
   title: string
   userId: string
-  /** 스텝 변경 시 상단 갤러리에 표시할 미디어 URL 목록을 전달하는 콜백 */
   onStepChange?: (outputMedia: string[], inputMedia: string[]) => void
 }>) {
   const [activeStep, setActiveStep] = useState(0)
-  const [unlocked, setUnlocked] = useState(canViewFull)
-  const [showModal, setShowModal] = useState(false)
+  const [unlocked] = useState(canViewFull)
+  const [showNotice, setShowNotice] = useState(false)
 
   if (steps.length === 0) return null
 
@@ -148,11 +178,6 @@ export function PromptStepsViewer({
   const handleStepChange = (idx: number) => {
     setActiveStep(idx)
     const targetStep = steps[idx]
-    // 결과물 미디어 우선, 없으면 입력 미디어
-    const mediaToShow =
-      targetStep.output_media.length > 0
-        ? targetStep.output_media
-        : targetStep.input_media
     onStepChange?.(targetStep.output_media, targetStep.input_media)
   }
 
@@ -202,7 +227,7 @@ export function PromptStepsViewer({
             unlocked={isFree || unlocked}
             price={price}
             isLoggedIn={isLoggedIn}
-            onRequestUnlock={() => setShowModal(true)}
+            onRequestUnlock={() => setShowNotice(true)}
           />
 
           {/* 출력 텍스트 */}
@@ -249,20 +274,8 @@ export function PromptStepsViewer({
         )}
       </div>
 
-      {/* 해금 모달 */}
-      {showModal && (
-        <UnlockModal
-          postId={postId}
-          title={title}
-          price={price}
-          userId={userId}
-          onClose={() => setShowModal(false)}
-          onSuccess={() => {
-            setUnlocked(true)
-            setShowModal(false)
-          }}
-        />
-      )}
+      {/* 프리론칭 안내 */}
+      {showNotice && <PreLaunchNotice onClose={() => setShowNotice(false)} />}
     </>
   )
 }
