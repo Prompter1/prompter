@@ -153,6 +153,16 @@ export function MyPageContent() {
     }
   }, [user, loadedTabs])
 
+  const handleNicknameChange = async (nickname: string) => {
+    if (!user) return
+    const { error } = await supabase
+      .from('members')
+      .update({ nickname })
+      .eq('id', user.id)
+    if (error) throw new Error(error.message)
+    setMemberData((prev) => (prev ? { ...prev, nickname } : prev))
+  }
+
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab)
     if (tab === 'purchases') fetchPurchases()
@@ -199,6 +209,7 @@ export function MyPageContent() {
         points={memberData?.points ?? 0}
         isSponsor={memberData?.is_sponsor ?? false}
         onSignOut={signOut}
+        onNicknameChange={handleNicknameChange}
       />
 
       {/* 탭 네비게이션 */}

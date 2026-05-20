@@ -16,43 +16,18 @@ export interface FormatResult {
   wasCompressed: boolean
 }
 
-function bytesToMB(bytes: number): number {
-  return bytes / (1024 * 1024)
-}
-
 // ── 이미지 포매터 ─────────────────────────────────────────────────────────────
 export async function formatImage(
   file: File,
   onProgress?: (progress: number) => void
 ): Promise<FormatResult> {
   const originalSize = file.size
-  const originalMB = bytesToMB(originalSize)
 
   console.log(
     `[ImageFormatter] 시작: ${file.name} (${formatFileSize(originalSize)})`
   )
 
-  /**
-   * [로직 변경]
-   * 1. 파일 용량이 목표치(TARGET_IMAGE_SIZE_MB)보다 크거나
-   * 2. 용량이 1MB를 넘는데 WebP 형식이 아닐 경우 압축/변환 진행
-   */
-  const shouldCompress =
-    originalMB > TARGET_IMAGE_SIZE_MB ||
-    (!file.type.includes('webp') && originalMB > 1)
-
-  if (!shouldCompress) {
-    console.log(
-      `[ImageFormatter] 압축 불필요 (목표 크기 이하): 그대로 반환합니다.`
-    )
-    onProgress?.(100)
-    return { file, compressionRatio: 1, wasCompressed: false }
-  }
-
   try {
-    console.log(
-      `[ImageFormatter] 목표 크기(${TARGET_IMAGE_SIZE_MB}MB) 초과. 압축을 시작합니다...`
-    )
     const compressed = await imageCompression(file, {
       maxSizeMB: TARGET_IMAGE_SIZE_MB,
       maxWidthOrHeight: TARGET_IMAGE_MAX_PX,
@@ -123,6 +98,12 @@ export async function formatVideo(
     videoEl.src = objectUrl
     videoEl.muted = true
     videoEl.preload = 'metadata'
+
+    videoEl.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      onProgress?.(100)
+      resolve({ file, compressionRatio: 1, wasCompressed: false })
+    }
 
     videoEl.onloadedmetadata = () => {
       const duration = videoEl.duration

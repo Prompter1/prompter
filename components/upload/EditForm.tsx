@@ -239,7 +239,12 @@ function MediaDropZone({
           multiple
           accept="image/*,video/*"
           className="hidden"
-          onChange={(e) => e.target.files && onAdd(e.target.files)}
+          onChange={(e) => {
+                if (e.target.files) {
+                  onAdd(e.target.files)
+                  e.target.value = ''
+                }
+              }}
         />
       </div>
       {items.length > 0 && (
@@ -254,6 +259,7 @@ function MediaDropZone({
                   src={item.previewUrl}
                   alt=""
                   fill
+                  sizes="(max-width: 640px) 33vw, 20vw"
                   className="object-cover"
                 />
               ) : (
@@ -334,7 +340,7 @@ function StepEditor({
   const [versionOptions, setVersionOptions] = useState<string[]>([])
   const [loadingVersions, setLoadingVersions] = useState(false)
 
-  // 🔥 AI 변경 시 버전 목록 fetch
+  // AI 변경 시 버전 목록 fetch
   useEffect(() => {
     let cancelled = false
 
@@ -373,8 +379,11 @@ function StepEditor({
     }
   }, [step.aiType])
 
-  // 🔥 AI 바뀌면 기존 버전 초기화
+  // AI 종류가 실제로 바뀔 때만 버전 초기화 (마운트 시 기존값 보존)
+  const prevAiTypeRef = useRef(step.aiType)
   useEffect(() => {
+    if (step.aiType === prevAiTypeRef.current) return
+    prevAiTypeRef.current = step.aiType
     onChange('aiVersion', '')
   }, [step.aiType])
 
@@ -540,19 +549,23 @@ export function EditForm({
           `${labelPrefix}${file.name} ${isVideo ? '트리밍' : '압축'} 중...`
         )
 
-        const result = await formatMediaFile(file, (p) => setProgress(p))
-        setStatus('idle')
-        setProgress(0)
-        setProgressLabel('')
-
-        results.push({
-          file: result.file,
-          previewUrl: URL.createObjectURL(result.file),
-          type: result.file.type.startsWith('video/') ? 'video' : 'image',
-          wasCompressed: result.wasCompressed,
-          compressionRatio: result.compressionRatio,
-          isExisting: false,
-        })
+        try {
+          const result = await formatMediaFile(file, (p) => setProgress(p))
+          results.push({
+            file: result.file,
+            previewUrl: URL.createObjectURL(result.file),
+            type: result.file.type.startsWith('video/') ? 'video' : 'image',
+            wasCompressed: result.wasCompressed,
+            compressionRatio: result.compressionRatio,
+            isExisting: false,
+          })
+        } catch (err) {
+          console.error('[EditForm] 미디어 처리 실패:', err)
+        } finally {
+          setStatus('idle')
+          setProgress(0)
+          setProgressLabel('')
+        }
       }
       return results
     },
@@ -641,17 +654,26 @@ export function EditForm({
     if (!title.trim()) errors.title = '제목을 입력해주세요.'
     if (categories.length === 0)
       errors.categories = '카테고리를 1개 이상 선택해주세요.'
+    let firstErrorStep = -1
     for (let i = 0; i < steps.length; i++) {
       const s = steps[i]
-      if (!s.aiType.trim())
+      let hasStepError = false
+      if (!s.aiType.trim()) {
         errors[`step_${i}_aiType`] = `스텝 ${i + 1}: AI 종류를 입력해주세요.`
-      if (!s.aiVersion.trim())
+        hasStepError = true
+      }
+      if (!s.aiVersion.trim()) {
         errors[`step_${i}_aiVersion`] = `스텝 ${i + 1}: AI 버전을 입력해주세요.`
-      if (!s.inputPrompt.trim())
-        errors[`step_${i}_prompt`] =
-          `스텝 ${i + 1}: 입력 프롬프트를 입력해주세요.`
+        hasStepError = true
+      }
+      if (!s.inputPrompt.trim()) {
+        errors[`step_${i}_prompt`] = `스텝 ${i + 1}: 입력 프롬프트를 입력해주세요.`
+        hasStepError = true
+      }
+      if (hasStepError && firstErrorStep === -1) firstErrorStep = i
     }
     setFieldErrors(errors)
+    if (firstErrorStep !== -1) setActiveStep(firstErrorStep)
     return Object.keys(errors).length === 0
   }
 
@@ -949,6 +971,24 @@ export function EditForm({
             }
             disabled={isBusy}
           />
+          {(['aiType', 'aiVersion', 'prompt'] as const).some(
+            (f) => fieldErrors[`step_${activeStep}_${f}`]
+          ) && (
+            <div className="mt-3 space-y-1">
+              {(['aiType', 'aiVersion', 'prompt'] as const).map((f) => {
+                const msg = fieldErrors[`step_${activeStep}_${f}`]
+                return msg ? (
+                  <p
+                    key={f}
+                    className="flex items-center gap-1 text-xs text-red-400"
+                  >
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                    {msg}
+                  </p>
+                ) : null
+              })}
+            </div>
+          )}
         </div>
 
         {steps.length > 1 && (

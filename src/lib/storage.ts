@@ -70,15 +70,7 @@ export async function uploadEvidenceFile(
 }
 
 export function isAllowedMediaType(file: File): boolean {
-  const allowed = [
-    'image/jpeg',
-    'image/png',
-    'image/gif',
-    'image/webp',
-    'video/mp4',
-    'video/webm',
-  ]
-  return allowed.includes(file.type)
+  return file.type.startsWith('image/') || file.type.startsWith('video/')
 }
 
 async function simulateProgress(onProgress: UploadProgressCallback) {
