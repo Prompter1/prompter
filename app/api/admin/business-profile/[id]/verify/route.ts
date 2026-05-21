@@ -25,7 +25,7 @@ export async function POST(
     )
   }
 
-  const adminClient = await createSupabaseAdminClient()
+  const adminClient = createSupabaseAdminClient()
 
   const { data: bp, error: bpErr } = await adminClient
     .from('business_profiles')

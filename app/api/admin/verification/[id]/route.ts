@@ -35,7 +35,7 @@ export async function POST(req: Request, context: RouteContext) {
     )
   }
 
-  const adminClient = await createSupabaseAdminClient()
+  const adminClient = createSupabaseAdminClient()
 
   const { data: vr, error: fetchErr } = await adminClient
     .from('verification_requests')
@@ -60,7 +60,7 @@ export async function POST(req: Request, context: RouteContext) {
   if (action === 'reject') {
     const { error } = await adminClient
       .from('verification_requests')
-      .update({ status: 'REJECTED', updated_at: new Date().toISOString() })
+      .update({ status: 'REJECTED' })
       .eq('id', requestId)
 
     if (error) {
@@ -71,7 +71,7 @@ export async function POST(req: Request, context: RouteContext) {
 
   const { error: u1 } = await adminClient
     .from('verification_requests')
-    .update({ status: 'APPROVED', updated_at: new Date().toISOString() })
+    .update({ status: 'APPROVED' })
     .eq('id', requestId)
 
   if (u1) {

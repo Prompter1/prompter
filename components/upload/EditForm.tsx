@@ -240,11 +240,11 @@ function MediaDropZone({
           accept="image/*,video/*"
           className="hidden"
           onChange={(e) => {
-                if (e.target.files) {
-                  onAdd(e.target.files)
-                  e.target.value = ''
-                }
-              }}
+            if (e.target.files) {
+              onAdd(e.target.files)
+              e.target.value = ''
+            }
+          }}
         />
       </div>
       {items.length > 0 && (
@@ -402,7 +402,7 @@ function StepEditor({
             list={`ai-type-list-${stepIndex}`}
             value={step.aiType}
             onChange={(e) => onChange('aiType', e.target.value)}
-            placeholder="예: ChatGPT, Midjourney"
+            placeholder="예: ChatGPT, Midjourney (또는 직접 입력)"
             className="border-surface-600 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-400 w-full rounded-xl border px-3.5 py-2.5 text-sm transition-colors outline-none"
           />
 
@@ -428,7 +428,7 @@ function StepEditor({
               step.aiType
                 ? loadingVersions
                   ? '버전 불러오는 중...'
-                  : '해당 AI 버전 선택'
+                  : '해당 AI 버전 선택(또는 직접 입력)'
                 : 'AI 종류 먼저 선택'
             }
             disabled={!step.aiType.trim()}
@@ -470,7 +470,7 @@ function StepEditor({
       {/* 결과 텍스트 */}
       <div>
         <label className="text-foreground/90 mb-2 text-sm font-medium">
-          결과 텍스트 (선택)
+          결과 텍스트
         </label>
         <textarea
           value={step.outputText}
@@ -667,7 +667,8 @@ export function EditForm({
         hasStepError = true
       }
       if (!s.inputPrompt.trim()) {
-        errors[`step_${i}_prompt`] = `스텝 ${i + 1}: 입력 프롬프트를 입력해주세요.`
+        errors[`step_${i}_prompt`] =
+          `스텝 ${i + 1}: 입력 프롬프트를 입력해주세요.`
         hasStepError = true
       }
       if (hasStepError && firstErrorStep === -1) firstErrorStep = i

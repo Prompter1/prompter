@@ -152,7 +152,12 @@ function AdultContentToggle({
               <p className="text-xs leading-relaxed text-amber-200">
                 성인 컨텐츠로 표시된 게시물의 결과물 미디어는 미인증 사용자에게
                 블러 처리되며, 만 19세 이상 인증 후 열람 가능합니다. 허위
-                표시·미표시 시 계정이 제재될 수 있습니다.
+                표시·미표시 시 계정이 제재될 수 있으며, 범죄에 활용될 수 있는
+                컨텐츠는 엄격히 금지됩니다. 자세한 내용은{' '}
+                <a href="/footer/faq" className="underline">
+                  FAQ
+                </a>
+                를 참고하세요.
               </p>
             </div>
           )}
@@ -457,7 +462,7 @@ function StepEditor({
             list={`ai-type-list-${stepIndex}`}
             value={step.aiType}
             onChange={(e) => onChange('aiType', e.target.value)}
-            placeholder="예: ChatGPT, Midjourney"
+            placeholder="예: ChatGPT, Midjourney (또는 직접 입력)"
             className="border-surface-600 bg-surface-800/50 text-foreground placeholder-muted-foreground focus:border-brand-400 w-full rounded-xl border px-3.5 py-2.5 text-sm transition-colors outline-none"
           />
           <datalist id={`ai-type-list-${stepIndex}`}>
@@ -480,7 +485,7 @@ function StepEditor({
               step.aiType
                 ? loadingVersions
                   ? '버전 불러오는 중...'
-                  : '해당 AI 버전 선택'
+                  : '해당 AI 버전 선택 (또는 직접 입력)'
                 : 'AI 종류 먼저 선택'
             }
             disabled={!step.aiType.trim()}
@@ -512,13 +517,13 @@ function StepEditor({
         onAdd={(files) => onAddMedia('input', files)}
         onRemove={(idx) => onRemoveMedia('input', idx)}
         disabled={disabled}
-        title="입력 미디어"
+        title="입력 미디어 (프롬프트와 함께 넣은 미디어가 있을 시 반드시 함께 올려주세요)"
         maxFiles={5}
       />
 
       <div>
         <label className="text-foreground/90 mb-2 text-sm font-medium">
-          결과 텍스트 (선택)
+          결과 텍스트
         </label>
         <textarea
           value={step.outputText}
@@ -728,8 +733,6 @@ export function UploadForm() {
         errors.price = `가격은 ${MIN_PRICE_WON.toLocaleString()}원 이상이어야 합니다.`
       else if (price > MAX_PRICE_WON)
         errors.price = `가격은 ${MAX_PRICE_WON.toLocaleString()}원 이하여야 합니다.`
-      if (evidencePreviews.length === 0)
-        errors.evidence = '유료 판매 시 증빙을 1개 이상 첨부해주세요.'
     }
 
     setFieldErrors(errors)
@@ -957,8 +960,19 @@ export function UploadForm() {
             onRemove={handleRemoveEvidence}
             error={evidenceError || fieldErrors.evidence}
             disabled={isBusy}
-            title="증빙 스크린샷 · 영상"
-            sizeHint={<>(필수 · 검수용 · 최대 {MAX_EVIDENCE_FILES}개)</>}
+            title="증빙 스크린샷 혹은 영상 (선택)"
+            sizeHint={
+              <>
+                해당 프롬프트를 AI에 넣은 모습과 결과물을 스크린샷 혹은 영상으로
+                올리세요. <br />
+                첨부 시 관리자 심사를 거쳐 <strong>검수 혜택</strong>을 받을 수
+                있습니다. 검수 혜택에 대한 자세한 내용은{' '}
+                <a href="/footer/faq" className="underline">
+                  FAQ
+                </a>
+                를 참고하세요.
+              </>
+            }
             footnote={`이미지 또는 영상 · 영상은 최대 ${VERIFICATION_EVIDENCE_MAX_VIDEO_SEC}초`}
             maxFiles={MAX_EVIDENCE_FILES}
           />
