@@ -155,7 +155,7 @@ export default function PromptCard({
             </span>
           )}
           {is_verified && (
-            <span className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-400">
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500 px-2.5 py-1 text-xs font-semibold text-white">
               <ShieldCheck className="h-3.5 w-3.5" />
               검증됨
             </span>

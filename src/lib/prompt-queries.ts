@@ -111,30 +111,54 @@ export async function fetchPromptExplore({
 }> {
   const supabase = await createSupabaseServerClient()
 
-  // is_adult 포함하여 조회
-  let query = supabase.from('prompt_posts').select(
+  // ── 메인 프롬프트 쿼리 (모든 필터 적용) ──────────────────────────────────
+  let mainQ = supabase.from('prompt_posts').select(
     `id, title, content, price, ai_types, ai_versions, categories,
        is_verified, is_adult, result_media, view_count, sales_count,
        author:members!author_id(id, nickname, avatar_url, points, is_sponsor)`
   )
-
-  if (q) query = query.ilike('title', `%${q}%`)
-  if (ai) query = query.contains('ai_types', [ai])
-  if (version) query = query.contains('ai_versions', [version])
-  if (category) query = query.contains('categories', [category])
-  if (verified) query = query.eq('is_verified', true)
-
+  if (q) mainQ = mainQ.ilike('title', `%${q}%`)
+  if (ai) mainQ = mainQ.contains('ai_types', [ai])
+  if (version) mainQ = mainQ.contains('ai_versions', [version])
+  if (category) mainQ = mainQ.contains('categories', [category])
+  if (verified) mainQ = mainQ.eq('is_verified', true)
   if (sort === 'popular')
-    query = query.order('sales_count', { ascending: false })
+    mainQ = mainQ
+      .order('is_verified', { ascending: false })
+      .order('sales_count', { ascending: false })
+      .order('view_count', { ascending: false })
   else if (sort === 'views')
-    query = query.order('view_count', { ascending: false })
-  else query = query.order('created_at', { ascending: false })
+    mainQ = mainQ.order('view_count', { ascending: false })
+  else mainQ = mainQ.order('created_at', { ascending: false })
 
-  const { data, error } = await query.limit(60)
-  if (error || !data)
+  // ── 카테고리 카운트 쿼리: category 제외한 나머지 필터 적용 ──────────────
+  let catQ = supabase.from('prompt_posts').select('categories')
+  if (q) catQ = catQ.ilike('title', `%${q}%`)
+  if (ai) catQ = catQ.contains('ai_types', [ai])
+  if (version) catQ = catQ.contains('ai_versions', [version])
+  if (verified) catQ = catQ.eq('is_verified', true)
+
+  // ── 버전 카운트 쿼리: version 제외한 나머지 필터 적용 ─────────────────────
+  let verQ = supabase.from('prompt_posts').select('ai_versions')
+  if (q) verQ = verQ.ilike('title', `%${q}%`)
+  if (ai) verQ = verQ.contains('ai_types', [ai])
+  if (category) verQ = verQ.contains('categories', [category])
+  if (verified) verQ = verQ.eq('is_verified', true)
+
+  // ── AI 랭킹 카운트: 필터 없이 전체 기준 (사이드바 순위) ──────────────────
+  const aiQ = supabase.from('prompt_posts').select('ai_types')
+
+  const [mainRes, catRes, verRes, aiRes] = await Promise.all([
+    mainQ.limit(60),
+    catQ,
+    verQ,
+    aiQ,
+  ])
+
+  if (mainRes.error || !mainRes.data)
     return { prompts: [], aiRankings: [], categories: [], versions: [] }
 
-  const rows = data as unknown as PromptRow[]
+  const rows = mainRes.data as unknown as PromptRow[]
 
   const prompts: PromptPost[] = rows
     .filter((r) => r.author)
@@ -154,24 +178,26 @@ export async function fetchPromptExplore({
       sales_count: r.sales_count ?? 0,
     }))
 
-  // 필터 집계 — 전체 데이터 기준
-  const { data: allData } = await supabase
-    .from('prompt_posts')
-    .select('ai_types, ai_versions, categories')
+  // ── 집계 ─────────────────────────────────────────────────────────────────
+  const catCount: Record<string, number> = {}
+  for (const row of catRes.data ?? [])
+    for (const c of (row as any).categories ?? [])
+      catCount[c] = (catCount[c] ?? 0) + 1
+
+  const verCount: Record<string, number> = {}
+  for (const row of verRes.data ?? [])
+    for (const v of (row as any).ai_versions ?? [])
+      verCount[v] = (verCount[v] ?? 0) + 1
 
   const aiCount: Record<string, number> = {}
-  const catCount: Record<string, number> = {}
-  const verCount: Record<string, number> = {}
-
-  for (const row of allData ?? []) {
-    for (const t of row.ai_types ?? []) aiCount[t] = (aiCount[t] ?? 0) + 1
-    for (const c of row.categories ?? []) catCount[c] = (catCount[c] ?? 0) + 1
-    for (const v of row.ai_versions ?? []) verCount[v] = (verCount[v] ?? 0) + 1
-  }
+  for (const row of aiRes.data ?? [])
+    for (const t of (row as any).ai_types ?? [])
+      aiCount[t] = (aiCount[t] ?? 0) + 1
 
   const toRanking = (obj: Record<string, number>) =>
     Object.entries(obj)
       .map(([name, count]) => ({ name, count }))
+      .filter(({ count }) => count > 0)
       .sort((a, b) => b.count - a.count)
 
   return {

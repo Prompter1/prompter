@@ -51,134 +51,129 @@ export async function FeaturedPromptsSection() {
               </p>
             </div>
           </Reveal>
-        ) : (
-          <div className="columns-1 gap-5 sm:columns-4 lg:columns-4">
-            {prompts.map((prompt, index) => {
-              const isAdult = Boolean((prompt as any).is_adult)
-              const shouldBlur = isAdult && !isAdultVerified
+        ) : (() => {
+          const NUM_COLS = 4
+          // 행 우선 분배: rank1→열0, rank2→열1, rank3→열2, rank4→열3, rank5→열0 ...
+          const cols = Array.from({ length: NUM_COLS }, (_, ci) =>
+            prompts.filter((_, i) => i % NUM_COLS === ci)
+          )
 
-              const lastMedia =
-                prompt.result_media && prompt.result_media.length > 0
-                  ? prompt.result_media.at(-1)
-                  : null
+          return (
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+              {cols.map((col, ci) => (
+                <div key={ci} className="flex flex-1 flex-col gap-5">
+                  {col.map((prompt, inColIdx) => {
+                    const index = ci + inColIdx * NUM_COLS
+                    const isAdult = Boolean((prompt as any).is_adult)
+                    const shouldBlur = isAdult && !isAdultVerified
+                    const lastMedia =
+                      prompt.result_media && prompt.result_media.length > 0
+                        ? prompt.result_media.at(-1)
+                        : null
 
-              return (
-                <Reveal
-                  key={prompt.id}
-                  variant="up"
-                  delay={index * 60}
-                  duration={500}
-                  className="mb-5 break-inside-avoid"
-                >
-                  <Link
-                    href={`/prompt/${prompt.id}`}
-                    className="group relative block w-full overflow-hidden rounded-4xl border border-white/10 bg-white/3 backdrop-blur-xl transition-all duration-300 hover:bg-white/5 hover:shadow-[0_20px_60px_rgba(0,0,0,0.4)]"
-                  >
-                    {/* 이미지 영역 */}
-                    <div className="relative w-full overflow-hidden">
-                      {prompt.is_verified && (
-                        <div className="absolute top-3 left-3 z-10 flex items-center gap-1 rounded-full px-2 py-1 backdrop-blur">
-                          <Badge variant="verified">
-                            <span className="flex items-center gap-1">
-                              <Shield className="h-3 w-3" />
-                              검증됨
-                            </span>
-                          </Badge>
-                        </div>
-                      )}
-
-                      {lastMedia ? (
-                        /\.(mp4|webm)$/i.test(lastMedia) ? (
-                          <div className="relative max-h-80 w-full overflow-hidden">
-                            <video
-                              src={lastMedia}
-                              autoPlay
-                              loop
-                              muted
-                              playsInline
-                              className="w-full object-cover"
-                              style={
-                                shouldBlur
-                                  ? {
-                                      filter: 'blur(24px)',
-                                      transform: 'scale(1.12)',
-                                    }
-                                  : undefined
-                              }
-                            />
-                            {shouldBlur && (
-                              <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/40">
-                                <span className="text-2xl">🔞</span>
-                                <span className="text-xs font-bold text-white">
-                                  19+ 인증 필요
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="relative max-h-80 w-full overflow-hidden">
-                            <Image
-                              src={lastMedia}
-                              alt={prompt.title}
-                              width={500}
-                              height={300}
-                              className="w-full object-cover"
-                              style={
-                                shouldBlur
-                                  ? {
-                                      filter: 'blur(24px)',
-                                      transform: 'scale(1.12)',
-                                    }
-                                  : undefined
-                              }
-                            />
-                            {shouldBlur && (
-                              <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/40">
-                                <span className="text-2xl">🔞</span>
-                                <span className="text-xs font-bold text-white">
-                                  19+ 인증 필요
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        )
-                      ) : (
-                        <div className="bg-surface-800 flex h-50 items-center justify-center">
-                          <Sparkles className="text-surface-600 h-8 w-8" />
-                        </div>
-                      )}
-
-                      <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-20 bg-linear-to-t from-black/60 to-transparent" />
-                    </div>
-
-                    {/* 텍스트 */}
-                    <div className="p-4">
-                      <h3 className="mb-2 line-clamp-2 text-sm font-semibold text-white">
-                        {prompt.title}
-                      </h3>
-                      <div className="flex items-center justify-between">
-                        <span className="text-surface-300 text-xs">
-                          by {prompt.author.nickname}
-                        </span>
-                        <span
-                          className={`text-xs font-bold ${
-                            prompt.price === 0
-                              ? 'text-emerald-400'
-                              : 'text-brand-400'
-                          }`}
+                    return (
+                      <Reveal
+                        key={prompt.id}
+                        variant="up"
+                        delay={index * 60}
+                        duration={500}
+                      >
+                        <Link
+                          href={`/prompt/${prompt.id}`}
+                          className="group relative block w-full overflow-hidden rounded-4xl border border-white/10 bg-white/3 backdrop-blur-xl transition-all duration-300 hover:bg-white/5 hover:shadow-[0_20px_60px_rgba(0,0,0,0.4)]"
                         >
-                          {prompt.price === 0
-                            ? '무료'
-                            : `${prompt.price.toLocaleString()}P`}
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
-                </Reveal>
-              )
-            })}
-          </div>
-        )}
+                          <div className="relative w-full overflow-hidden">
+                            {prompt.is_verified && (
+                              <div className="absolute top-3 left-3 z-10">
+                                <Badge variant="verified">
+                                  <Shield className="h-3 w-3" />
+                                  검증됨
+                                </Badge>
+                              </div>
+                            )}
+
+                            {lastMedia ? (
+                              /\.(mp4|webm)$/i.test(lastMedia) ? (
+                                <div className="relative max-h-80 w-full overflow-hidden">
+                                  <video
+                                    src={lastMedia}
+                                    autoPlay
+                                    loop
+                                    muted
+                                    playsInline
+                                    className="w-full object-cover"
+                                    style={
+                                      shouldBlur
+                                        ? { filter: 'blur(24px)', transform: 'scale(1.12)' }
+                                        : undefined
+                                    }
+                                  />
+                                  {shouldBlur && (
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/40">
+                                      <span className="text-2xl">🔞</span>
+                                      <span className="text-xs font-bold text-white">19+ 인증 필요</span>
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="relative max-h-80 w-full overflow-hidden">
+                                  <Image
+                                    src={lastMedia}
+                                    alt={prompt.title}
+                                    width={500}
+                                    height={300}
+                                    className="w-full object-cover"
+                                    style={
+                                      shouldBlur
+                                        ? { filter: 'blur(24px)', transform: 'scale(1.12)' }
+                                        : undefined
+                                    }
+                                  />
+                                  {shouldBlur && (
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/40">
+                                      <span className="text-2xl">🔞</span>
+                                      <span className="text-xs font-bold text-white">19+ 인증 필요</span>
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            ) : (
+                              <div className="bg-surface-800 flex h-50 items-center justify-center">
+                                <Sparkles className="text-surface-600 h-8 w-8" />
+                              </div>
+                            )}
+
+                            <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-20 bg-linear-to-t from-black/60 to-transparent" />
+                          </div>
+
+                          <div className="p-4">
+                            <h3 className="mb-2 line-clamp-2 text-sm font-semibold text-white">
+                              {prompt.title}
+                            </h3>
+                            <div className="flex items-center justify-between">
+                              <span className="text-surface-300 text-xs">
+                                by {prompt.author.nickname}
+                              </span>
+                              <span
+                                className={`text-xs font-bold ${
+                                  prompt.price === 0 ? 'text-emerald-400' : 'text-brand-400'
+                                }`}
+                              >
+                                {prompt.price === 0
+                                  ? '무료'
+                                  : `${prompt.price.toLocaleString()}P`}
+                              </span>
+                            </div>
+                          </div>
+                        </Link>
+                      </Reveal>
+                    )
+                  })}
+                </div>
+              ))}
+            </div>
+          )
+        })()}
       </div>
     </section>
   )

@@ -10,7 +10,7 @@ const VARIANT_STYLES: Record<NonNullable<BadgeProps['variant']>, string> = {
   default: 'bg-surface-700 text-surface-300',
   free: 'bg-emerald-500/15 text-emerald-400',
   paid: 'bg-brand-500/15 text-brand-400',
-  verified: 'bg-emerald-500/10 text-emerald-400',
+  verified: 'bg-emerald-500 text-white',
   sponsor: 'bg-amber-500/15 text-amber-400',
 }
 
@@ -22,7 +22,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        'rounded-full px-2.5 py-0.5 text-xs font-medium',
+        'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium',
         VARIANT_STYLES[variant],
         className
       )}

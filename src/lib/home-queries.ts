@@ -1,21 +1,61 @@
 import { createSupabaseServerClient } from './supabase-server'
 import type { PromptPost } from '@/types'
 
-// ─── 인기 프롬프트 (sales_count 기준 상위 8개) ────────────────────────────
+// ─── 인기 프롬프트 (prompt_rankings 캐시 테이블 기준) ──────────────────────
 export async function fetchFeaturedPrompts(): Promise<
   (PromptPost & { is_adult?: boolean })[]
 > {
   const supabase = await createSupabaseServerClient()
 
+  // 1차: 사전 계산된 순위 테이블에서 읽기 (정렬 없음)
+  const { data: rankings, error: rankErr } = await supabase
+    .from('prompt_rankings')
+    .select('rank, prompt_post_id')
+    .order('rank', { ascending: true })
+
+  if (!rankErr && rankings && rankings.length > 0) {
+    const ids = rankings.map((r: any) => r.prompt_post_id)
+
+    const { data: posts, error: postsErr } = await supabase
+      .from('prompt_posts')
+      .select(
+        `id, title, content, price, ai_types, ai_versions, categories,
+         is_verified, is_adult, result_media,
+         author:members!author_id(id, nickname, avatar_url, points, is_sponsor)`
+      )
+      .in('id', ids)
+
+    if (!postsErr && posts) {
+      // 순위 테이블 순서대로 재정렬
+      const postMap = new Map(posts.map((p: any) => [p.id, p]))
+      return ids
+        .map((id: number) => postMap.get(id))
+        .filter(Boolean)
+        .map((row: any) => ({
+          id: row.id,
+          title: row.title,
+          content: row.content,
+          price: row.price,
+          ai_types: row.ai_types ?? [],
+          ai_versions: row.ai_versions ?? [],
+          categories: row.categories ?? [],
+          is_verified: row.is_verified,
+          is_adult: Boolean(row.is_adult),
+          result_media: normalizeMedia(row.result_media),
+          author: row.author,
+        }))
+    }
+  }
+
+  // 2차 폴백: 순위 테이블이 비었을 때 직접 정렬
   const { data, error } = await supabase
     .from('prompt_posts')
     .select(
-      `
-      id, title, content, price, ai_types, ai_versions, categories,
-      is_verified, is_adult, result_media,
-      author:members!author_id(id, nickname, avatar_url, points, is_sponsor)
-    `
+      `id, title, content, price, ai_types, ai_versions, categories,
+       is_verified, is_adult, result_media,
+       author:members!author_id(id, nickname, avatar_url, points, is_sponsor)`
     )
+    .order('is_verified', { ascending: false })
     .order('sales_count', { ascending: false })
     .order('view_count', { ascending: false })
     .limit(12)
