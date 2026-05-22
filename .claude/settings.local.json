@@ -3,7 +3,14 @@
     "allow": [
       "Bash(npx tsc *)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\User\\\\prompter\\\\app\\\\api\" -Recurse -Filter \"*verification*\" -ErrorAction SilentlyContinue)",
-      "Bash(Select-Object -ExpandProperty FullName)"
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(npm install *)",
+      "Bash(mkdir -p \"c:/Users/User/prompter/app/api/admin/publication\" && mkdir -p \"c:/Users/User/prompter/app/api/admin/publication/[id]\")",
+      "Bash(mkdir -p \"c:/Users/User/prompter/app/admin/publication\" && mkdir -p \"c:/Users/User/prompter/app/admin/publication/[id]\" && mkdir -p \"c:/Users/User/prompter/components/admin\")"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\User\\prompter\\app\\api\\admin\\publication",
+      "c:\\Users\\User\\prompter\\app\\admin\\publication"
     ]
   }
 }

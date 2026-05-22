@@ -8,6 +8,8 @@ import {
   ShieldCheck,
   Bookmark,
   ShieldAlert,
+  Hourglass,
+  Trash2,
 } from 'lucide-react'
 import type { PromptPost } from '@/types'
 import { Badge } from '@/components/ui/Badge'
@@ -95,6 +97,9 @@ export async function PromptDetailView({
   const isFree = price === 0
   const isOwner = user?.id === author.id
   const canViewFull = isFree || isOwner || hasPurchased
+  const publicationStatus = (post as any).publication_status ?? 'approved'
+  const isPendingReview = publicationStatus === 'pending'
+  const isDeleted = Boolean((post as any).is_deleted)
 
   const dateLabel = createdAt
     ? new Date(createdAt).toLocaleDateString('ko-KR', {
@@ -142,6 +147,8 @@ export async function PromptDetailView({
                   price={price}
                   canViewFull={canViewFull}
                   isLoggedIn={!!user}
+                  isPendingReview={isPendingReview}
+                  isDeleted={isDeleted}
                   postId={post.id}
                   title={title}
                   userId={user?.id ?? ''}
@@ -152,6 +159,39 @@ export async function PromptDetailView({
 
           {/* 우측: 메타 정보 */}
           <div className="flex flex-col lg:sticky lg:top-24 lg:self-start">
+            {/* 삭제됨 배너 */}
+            {isDeleted && (
+              <div className="mb-4 flex items-start gap-3 rounded-xl border border-surface-600/40 bg-surface-800/60 px-4 py-3">
+                <Trash2 className="mt-0.5 h-4 w-4 shrink-0 text-surface-400" />
+                <div>
+                  <p className="text-sm font-semibold text-surface-200">
+                    {hasPurchased
+                      ? '판매자가 삭제한 게시물입니다.'
+                      : '삭제된 게시물입니다.'}
+                  </p>
+                  <p className="mt-0.5 text-xs text-surface-500">
+                    {hasPurchased
+                      ? '구매 이력이 있어 계속 열람하실 수 있습니다.'
+                      : '더 이상 구매할 수 없습니다.'}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* 인증 대기 배너 */}
+            {isPendingReview && (
+              <div className="mb-4 flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+                <Hourglass className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+                <div>
+                  <p className="text-sm font-semibold text-amber-300">
+                    이 게시물은 인증 대기 중입니다.
+                  </p>
+                  <p className="mt-0.5 text-xs text-amber-400/70">
+                    관리자 승인 전까지 구매 버튼이 비활성화됩니다.
+                  </p>
+                </div>
+              </div>
+            )}
             {/* 배지 행 */}
             <div className="mb-4 flex flex-wrap items-center gap-2">
               {ai_types.map((t) => (

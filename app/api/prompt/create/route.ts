@@ -48,6 +48,7 @@ export async function POST(req: Request) {
       result_media: body.result_media,
       is_verified: body.is_verified,
       is_adult: Boolean(body.is_adult),
+      publication_status: body.price > 0 ? 'pending' : 'approved',
     })
     .select('id')
     .single()

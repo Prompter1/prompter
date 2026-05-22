@@ -33,6 +33,8 @@ type PromptRow = {
   created_at: string | null
   view_count: number | null
   sales_count: number | null
+  publication_status: string | null
+  is_deleted: boolean | null
   author: {
     id: string
     nickname: string
@@ -53,7 +55,7 @@ export async function fetchPromptPostById(
     .from('prompt_posts')
     .select(
       `id, title, content, price, ai_types, ai_versions, categories,
-       is_verified, is_adult, result_media, created_at, view_count, sales_count,
+       is_verified, is_adult, result_media, created_at, view_count, sales_count, publication_status, is_deleted,
        author:members!author_id(id, nickname, avatar_url, points, is_sponsor)`
     )
     .eq('id', id)
@@ -81,6 +83,8 @@ export async function fetchPromptPostById(
     result_media: normalizeResultMedia(row.result_media),
     view_count: row.view_count ?? 0,
     sales_count: row.sales_count ?? 0,
+    publication_status: (row.publication_status ?? 'approved') as 'pending' | 'approved' | 'rejected',
+    is_deleted: Boolean(row.is_deleted),
   }
 
   return { post, createdAt: row.created_at }
@@ -114,9 +118,9 @@ export async function fetchPromptExplore({
   // ── 메인 프롬프트 쿼리 (모든 필터 적용) ──────────────────────────────────
   let mainQ = supabase.from('prompt_posts').select(
     `id, title, content, price, ai_types, ai_versions, categories,
-       is_verified, is_adult, result_media, view_count, sales_count,
+       is_verified, is_adult, result_media, view_count, sales_count, publication_status,
        author:members!author_id(id, nickname, avatar_url, points, is_sponsor)`
-  )
+  ).eq('publication_status', 'approved').eq('is_deleted', false)
   if (q) mainQ = mainQ.ilike('title', `%${q}%`)
   if (ai) mainQ = mainQ.contains('ai_types', [ai])
   if (version) mainQ = mainQ.contains('ai_versions', [version])
@@ -132,21 +136,21 @@ export async function fetchPromptExplore({
   else mainQ = mainQ.order('created_at', { ascending: false })
 
   // ── 카테고리 카운트 쿼리: category 제외한 나머지 필터 적용 ──────────────
-  let catQ = supabase.from('prompt_posts').select('categories')
+  let catQ = supabase.from('prompt_posts').select('categories').eq('publication_status', 'approved').eq('is_deleted', false)
   if (q) catQ = catQ.ilike('title', `%${q}%`)
   if (ai) catQ = catQ.contains('ai_types', [ai])
   if (version) catQ = catQ.contains('ai_versions', [version])
   if (verified) catQ = catQ.eq('is_verified', true)
 
   // ── 버전 카운트 쿼리: version 제외한 나머지 필터 적용 ─────────────────────
-  let verQ = supabase.from('prompt_posts').select('ai_versions')
+  let verQ = supabase.from('prompt_posts').select('ai_versions').eq('publication_status', 'approved').eq('is_deleted', false)
   if (q) verQ = verQ.ilike('title', `%${q}%`)
   if (ai) verQ = verQ.contains('ai_types', [ai])
   if (category) verQ = verQ.contains('categories', [category])
   if (verified) verQ = verQ.eq('is_verified', true)
 
   // ── AI 랭킹 카운트: 필터 없이 전체 기준 (사이드바 순위) ──────────────────
-  const aiQ = supabase.from('prompt_posts').select('ai_types')
+  const aiQ = supabase.from('prompt_posts').select('ai_types').eq('publication_status', 'approved').eq('is_deleted', false)
 
   const [mainRes, catRes, verRes, aiRes] = await Promise.all([
     mainQ.limit(60),

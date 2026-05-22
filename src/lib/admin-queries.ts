@@ -56,6 +56,42 @@ export async function fetchPendingVerifications(): Promise<
   }))
 }
 
+export type PendingPublicationRow = {
+  id: number
+  title: string
+  price: number
+  author_id: string
+  created_at: string | null
+  author: { nickname: string | null; email: string | null } | null
+}
+
+export async function fetchPendingPublications(): Promise<
+  PendingPublicationRow[]
+> {
+  const supabase = await createSupabaseServerClient()
+  const { data, error } = await supabase
+    .from('prompt_posts')
+    .select(
+      'id, title, price, author_id, created_at, author:members!author_id(nickname, email)'
+    )
+    .eq('publication_status', 'pending')
+    .order('created_at', { ascending: true })
+
+  if (error || !data) {
+    if (error) console.error('fetchPendingPublications', error)
+    return []
+  }
+
+  return (data as any[]).map((r) => ({
+    id: r.id,
+    title: r.title,
+    price: r.price,
+    author_id: r.author_id,
+    created_at: r.created_at,
+    author: r.author ?? null,
+  }))
+}
+
 export type VerificationReviewBundle = {
   request: {
     id: string              // ✅ UUID → string

@@ -39,7 +39,7 @@ export async function PATCH(req: Request) {
   // 본인 게시물 확인
   const { data: existing, error: fetchErr } = await supabase
     .from('prompt_posts')
-    .select('id, author_id')
+    .select('id, author_id, price, publication_status')
     .eq('id', body.postId)
     .maybeSingle()
 
@@ -54,6 +54,13 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 })
   }
 
+  // 유료로 변경되거나 유료 상태에서 수정 시 검수 재진행
+  const newStatus =
+    body.price > 0 &&
+    (existing.price === 0 || existing.publication_status === 'rejected')
+      ? 'pending'
+      : undefined
+
   // 게시물 업데이트
   const { error: updateErr } = await supabase
     .from('prompt_posts')
@@ -65,7 +72,7 @@ export async function PATCH(req: Request) {
       ai_versions: body.ai_versions,
       categories: body.categories,
       result_media: body.result_media,
-      //is_verified: false, // 수정 시 검증 필요로 변경
+      ...(newStatus ? { publication_status: newStatus } : {}),
     })
     .eq('id', body.postId)
     .eq('author_id', user.id)

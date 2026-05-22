@@ -27,7 +27,7 @@ export default async function AdminLayout({
                 className="text-surface-400 hover:text-surface-100 flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-white/5"
               >
                 <ClipboardList className="h-3.5 w-3.5" />
-                검수 대기
+                인증·검수 대기
               </Link>
               <Link
                 href="/admin/settlement"

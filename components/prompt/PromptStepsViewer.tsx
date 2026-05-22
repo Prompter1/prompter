@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { FileText, MessageSquare, Sparkles, Lock, Clock, X } from 'lucide-react'
+import { FileText, MessageSquare, Sparkles, Lock, Clock, X, Hourglass } from 'lucide-react'
 import { cn } from '@/src/lib/utils'
 import { CopyPromptButton } from './CopyPromptButton'
 
@@ -62,12 +62,16 @@ function StepInputPrompt({
   unlocked,
   price,
   isLoggedIn,
+  isPendingReview,
+  isDeleted,
   onRequestUnlock,
 }: Readonly<{
   prompt: string
   unlocked: boolean
   price: number
   isLoggedIn: boolean
+  isPendingReview: boolean
+  isDeleted?: boolean
   onRequestUnlock: () => void
 }>) {
   const previewLength = Math.min(
@@ -121,7 +125,17 @@ function StepInputPrompt({
                   {price.toLocaleString()}원으로 전체 내용을 확인하세요
                 </p>
               </div>
-              {isLoggedIn ? (
+              {isDeleted ? (
+                <span className="bg-surface-700 flex cursor-not-allowed items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold text-surface-400">
+                  <Lock className="h-3.5 w-3.5" />
+                  판매 종료
+                </span>
+              ) : isPendingReview ? (
+                <span className="bg-surface-700 flex cursor-not-allowed items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold text-surface-400">
+                  <Hourglass className="h-3.5 w-3.5" />
+                  인증 대기 중
+                </span>
+              ) : isLoggedIn ? (
                 <button
                   type="button"
                   onClick={onRequestUnlock}
@@ -152,6 +166,8 @@ export function PromptStepsViewer({
   price,
   canViewFull,
   isLoggedIn,
+  isPendingReview = false,
+  isDeleted = false,
   postId: _postId,
   title: _title,
   userId: _userId,
@@ -161,6 +177,8 @@ export function PromptStepsViewer({
   price: number
   canViewFull: boolean
   isLoggedIn: boolean
+  isPendingReview?: boolean
+  isDeleted?: boolean
   postId: number
   title: string
   userId: string
@@ -227,6 +245,8 @@ export function PromptStepsViewer({
             unlocked={isFree || unlocked}
             price={price}
             isLoggedIn={isLoggedIn}
+            isPendingReview={isPendingReview}
+            isDeleted={isDeleted}
             onRequestUnlock={() => setShowNotice(true)}
           />
 

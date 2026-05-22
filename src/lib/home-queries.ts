@@ -24,6 +24,8 @@ export async function fetchFeaturedPrompts(): Promise<
          author:members!author_id(id, nickname, avatar_url, points, is_sponsor)`
       )
       .in('id', ids)
+      .eq('publication_status', 'approved')
+      .eq('is_deleted', false)
 
     if (!postsErr && posts) {
       // 순위 테이블 순서대로 재정렬
@@ -55,6 +57,8 @@ export async function fetchFeaturedPrompts(): Promise<
        is_verified, is_adult, result_media,
        author:members!author_id(id, nickname, avatar_url, points, is_sponsor)`
     )
+    .eq('publication_status', 'approved')
+    .eq('is_deleted', false)
     .order('is_verified', { ascending: false })
     .order('sales_count', { ascending: false })
     .order('view_count', { ascending: false })

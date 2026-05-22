@@ -22,6 +22,8 @@ export interface PromptPost {
   view_count?: number
   sales_count?: number
   is_adult?: boolean
+  publication_status?: 'pending' | 'approved' | 'rejected'
+  is_deleted?: boolean
 }
 
 // ─── Featured Prompt (lightweight, no author) ────────────────────────────────

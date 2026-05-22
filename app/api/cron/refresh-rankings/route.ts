@@ -12,6 +12,8 @@ export async function GET(req: Request) {
   const { data: posts, error: fetchErr } = await admin
     .from('prompt_posts')
     .select('id')
+    .eq('publication_status', 'approved')
+    .eq('is_deleted', false)
     .order('is_verified', { ascending: false })
     .order('sales_count', { ascending: false })
     .order('view_count', { ascending: false })

@@ -1,6 +1,14 @@
 import { Navbar } from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
-import { Building2, User, Mail, FileText, Phone, MapPin, Globe } from 'lucide-react'
+import {
+  Building2,
+  User,
+  Mail,
+  FileText,
+  Phone,
+  MapPin,
+  Globe,
+} from 'lucide-react'
 
 const businessDetails = [
   {
@@ -21,7 +29,7 @@ const businessDetails = [
   {
     icon: <FileText className="text-brand-400 h-5 w-5" />,
     label: '통신판매업신고번호',
-    value: '신고 예정',
+    value: '처리중',
   },
   {
     icon: <MapPin className="text-brand-400 h-5 w-5" />,
@@ -70,7 +78,9 @@ export default function InfoPage() {
                     {item.icon}
                   </div>
                   <div>
-                    <p className="text-surface-400 mb-1 text-sm">{item.label}</p>
+                    <p className="text-surface-400 mb-1 text-sm">
+                      {item.label}
+                    </p>
                     <p className="text-lg font-medium">{item.value}</p>
                   </div>
                 </div>
@@ -92,8 +102,8 @@ export default function InfoPage() {
           </div>
 
           <p className="text-surface-600 mt-6 text-center text-xs">
-            * 통신판매업신고는 관할 기관 심사 후 번호가 부여됩니다.
-            신고 완료 후 즉시 업데이트됩니다.
+            * 통신판매업신고는 관할 기관 심사 후 번호가 부여됩니다. 신고 완료 후
+            즉시 업데이트됩니다.
           </p>
         </div>
       </section>

@@ -60,51 +60,110 @@ export default function SellerPolicyPage() {
                   을 명확히 기재해야 합니다.
                 </li>
                 <li>
-                  등록된 프롬프트는 관리자의{' '}
-                  <strong className="text-surface-200">검수(Content Review)</strong>
-                  를 거친 후 공개됩니다. 검수 기준에 부합하지 않는 경우 반려될 수
-                  있습니다.
+                  <strong className="text-surface-200">유료 프롬프트</strong>는
+                  등록 즉시 "인증 대기" 상태로 전환되며, 관리자 인증 전까지
+                  구매 버튼이 비활성화됩니다. 무료 프롬프트는 별도 인증 없이
+                  즉시 공개됩니다.
                 </li>
               </ul>
             </div>
 
-            {/* 2. 검수(콘텐츠 리뷰) 절차 */}
+            {/* 2. 유료 게시물 인증 절차 */}
             <div className="bg-surface-800/20 border-surface-700/50 rounded-3xl border p-8">
               <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold text-white">
-                <ClipboardCheck className="text-brand-400 h-5 w-5" /> 2. 검수(콘텐츠 리뷰) 절차
+                <ClipboardCheck className="text-brand-400 h-5 w-5" /> 2. 유료 게시물 인증 절차
               </h2>
+              <div className="mb-6 space-y-4">
+                {/* 단계 표시 */}
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                  <div className="bg-surface-900/50 rounded-2xl p-4 text-center">
+                    <div className="bg-brand-500/20 text-brand-400 mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold">
+                      1
+                    </div>
+                    <p className="font-semibold text-white text-sm">게시물 등록</p>
+                    <p className="text-surface-500 mt-1 text-xs">
+                      가격 &gt; 0원 설정 시 자동으로 인증 대기 전환
+                    </p>
+                  </div>
+                  <div className="bg-surface-900/50 rounded-2xl p-4 text-center">
+                    <div className="bg-amber-500/20 text-amber-400 mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold">
+                      2
+                    </div>
+                    <p className="font-semibold text-white text-sm">관리자 검토</p>
+                    <p className="text-surface-500 mt-1 text-xs">
+                      콘텐츠 적합성·저작권·정책 위반 여부 확인
+                    </p>
+                  </div>
+                  <div className="bg-surface-900/50 rounded-2xl p-4 text-center">
+                    <div className="bg-emerald-500/20 text-emerald-400 mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold">
+                      3
+                    </div>
+                    <p className="font-semibold text-white text-sm">결과 통보</p>
+                    <p className="text-surface-500 mt-1 text-xs">
+                      승인 → 판매 활성화 / 반려 → 이메일 통보 후 삭제
+                    </p>
+                  </div>
+                </div>
+              </div>
               <ul className="list-disc space-y-3 pl-5">
-                <li>
-                  판매자가 프롬프트를 등록하면 자동으로 검수 대기 상태로
-                  전환됩니다.
-                </li>
                 <li>
                   관리자는{' '}
                   <strong className="text-surface-200">영업일 기준 3일 이내</strong>
-                  에 검수를 완료하며, 결과(승인/반려)를 서비스 내 알림으로
-                  안내합니다.
+                  에 검수를 완료합니다.
                 </li>
                 <li>
-                  검수 승인 시 상품이 공개되며, 반려 시 사유가 함께 통보됩니다.
-                  수정 후 재신청이 가능합니다.
+                  <strong className="text-surface-200">승인</strong> 시 게시물이
+                  즉시 공개되며 구매 버튼이 활성화됩니다.
+                </li>
+                <li>
+                  <strong className="text-surface-200">반려</strong> 시 게시물은
+                  즉시 삭제되고, 등록한 이메일로 반려 사유가 발송됩니다. 사유를
+                  확인한 뒤 내용을 수정하여 새로 등록하시면 됩니다.
                 </li>
                 <li>
                   검수 기준: 적법한 저작권 보유, 서비스 목적에 부합하는 콘텐츠,
-                  금지 행위 해당 여부 등.
+                  금지 행위 해당 여부, 정확한 상품 설명 여부 등.
+                </li>
+                <li>
+                  기존에 승인된 유료 게시물을 수정하여 무료 → 유료로 가격을 변경한
+                  경우에도 인증 대기 상태로 재전환됩니다.
                 </li>
               </ul>
             </div>
 
-            {/* 3. 수익 정산 및 수수료 */}
+            {/* 3. 검증됨(Verified) 뱃지 */}
+            <div className="bg-surface-800/20 border-surface-700/50 rounded-3xl border p-8">
+              <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold text-white">
+                <CheckCircle className="text-brand-400 h-5 w-5" /> 3. 검증됨(Verified) 뱃지
+              </h2>
+              <p className="mb-3">
+                인증과는 별도로, 프롬프트 활용 결과를 증빙하면 "검증됨" 뱃지를 획득할 수 있습니다.
+              </p>
+              <ul className="list-disc space-y-3 pl-5">
+                <li>
+                  업로드 시 AI 활용 스크린샷·영상 등 증빙 자료를 첨부하고 관리자
+                  심사를 통과하면 뱃지가 부여됩니다.
+                </li>
+                <li>
+                  검증됨 프롬프트는 홈 화면 인기 프롬프트 및 탐색 페이지 인기순
+                  정렬에서 <strong className="text-surface-200">1순위 기준</strong>으로
+                  적용되어 미검증 프롬프트보다 항상 상위에 노출됩니다.
+                </li>
+                <li>
+                  상세 페이지에 "Verified" 뱃지가 표시되어 구매자에게 신뢰 신호를 제공합니다.
+                </li>
+              </ul>
+            </div>
+
+            {/* 4. 수익 정산 및 수수료 */}
             <div className="bg-brand-500/5 border-brand-500/20 rounded-3xl border p-8">
               <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold text-white">
-                <Percent className="text-brand-400 h-5 w-5" /> 3. 수익 정산 및 중개 수수료
+                <Percent className="text-brand-400 h-5 w-5" /> 4. 수익 정산 및 중개 수수료
               </h2>
               <p className="mb-4">
                 Prompter는 투명하고 합리적인 정산 시스템을 지향합니다.
               </p>
 
-              {/* 수수료 박스 */}
               <div className="bg-surface-900/60 border-surface-700/50 mb-5 rounded-2xl border p-5">
                 <div className="border-surface-700/50 mb-3 flex items-center justify-between border-b pb-3">
                   <span className="text-surface-200 font-medium">플랫폼 중개 수수료</span>
@@ -149,10 +208,10 @@ export default function SellerPolicyPage() {
               </ul>
             </div>
 
-            {/* 4. 사업자 정보 등록 */}
+            {/* 5. 사업자 정보 등록 */}
             <div className="bg-surface-800/20 border-surface-700/50 rounded-3xl border p-8">
               <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold text-white">
-                <Banknote className="text-brand-400 h-5 w-5" /> 4. 사업자 정보 등록 및 승인
+                <Banknote className="text-brand-400 h-5 w-5" /> 5. 사업자 정보 등록 및 승인
               </h2>
               <ul className="list-disc space-y-3 pl-5">
                 <li>
@@ -175,10 +234,10 @@ export default function SellerPolicyPage() {
               </ul>
             </div>
 
-            {/* 5. 금지 행위 및 제재 */}
+            {/* 6. 금지 행위 및 제재 */}
             <div className="bg-surface-800/20 border-surface-700/50 rounded-3xl border p-8">
               <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold text-white">
-                <ShieldAlert className="h-5 w-5 text-red-400" /> 5. 금지 행위 및 제재
+                <ShieldAlert className="h-5 w-5 text-red-400" /> 6. 금지 행위 및 제재
               </h2>
               <p className="mb-3">
                 안전한 거래 생태계를 위해 아래 행위는 엄격히 금지됩니다. 위반 시
@@ -194,10 +253,10 @@ export default function SellerPolicyPage() {
               </ul>
             </div>
 
-            {/* 6. 제재 수준 */}
+            {/* 7. 제재 기준 */}
             <div className="bg-surface-800/20 border-surface-700/50 rounded-3xl border p-8">
               <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold text-white">
-                <AlertTriangle className="text-brand-400 h-5 w-5" /> 6. 제재 기준
+                <AlertTriangle className="text-brand-400 h-5 w-5" /> 7. 제재 기준
               </h2>
               <ul className="list-disc space-y-3 pl-5">
                 <li>
