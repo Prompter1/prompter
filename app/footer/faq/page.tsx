@@ -35,7 +35,7 @@ const FAQ_DATA: FAQItem[] = [
     category: '결제',
     question: '결제는 어떻게 하나요?',
     answer:
-      '프롬프트 상세 페이지에서 구매 버튼을 누르면 토스페이먼츠 결제창이 열립니다. 신용카드, 계좌이체, 간편결제(카카오페이, 네이버페이 등) 등 다양한 결제 수단을 지원합니다.',
+      '프롬프트 상세 페이지에서 구매 버튼을 누르면 PG사와 연결되어 결제 로직이 실행됩니다. (PG사 심사중)',
     icon: <CreditCard className="text-brand-400 h-5 w-5" />,
   },
   {
@@ -174,7 +174,9 @@ export default function FAQPage() {
                         <span className="text-brand-400 text-xs font-semibold tracking-wider uppercase">
                           {faq.category}
                         </span>
-                        <h3 className="mt-1 text-lg font-medium">{faq.question}</h3>
+                        <h3 className="mt-1 text-lg font-medium">
+                          {faq.question}
+                        </h3>
                       </div>
                     </div>
                     {isOpen ? (
@@ -189,7 +191,7 @@ export default function FAQPage() {
                       isOpen ? 'max-h-64 pb-6 opacity-100' : 'max-h-0 opacity-0'
                     }`}
                   >
-                    <div className="text-surface-400 border-surface-700/50 border-t pt-4 pl-14 leading-relaxed text-sm">
+                    <div className="text-surface-400 border-surface-700/50 border-t pt-4 pl-14 text-sm leading-relaxed">
                       {faq.answer}
                     </div>
                   </div>
@@ -199,7 +201,9 @@ export default function FAQPage() {
           </div>
 
           <div className="mt-16 text-center">
-            <p className="text-surface-400 mb-6">원하시는 답변을 찾지 못하셨나요?</p>
+            <p className="text-surface-400 mb-6">
+              원하시는 답변을 찾지 못하셨나요?
+            </p>
             <Link
               href="/footer/contact"
               className="bg-brand-500 hover:bg-brand-400 inline-flex items-center gap-2 rounded-full px-8 py-3 font-semibold text-white transition-colors"

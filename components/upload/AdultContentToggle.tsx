@@ -87,7 +87,12 @@ export function AdultContentToggle({
               <p className="text-xs leading-relaxed text-amber-200">
                 성인 컨텐츠로 표시된 게시물의 결과물 미디어는 미인증 사용자에게
                 블러 처리되며, 만 19세 이상 인증 후 열람 가능합니다. 허위
-                표시·미표시 시 계정이 제재될 수 있습니다.
+                표시·미표시 시 계정이 제재될 수 있으며, 범죄에 활용될 수 있는
+                컨텐츠는 엄격히 금지됩니다. 자세한 내용은{' '}
+                <a href="/footer/faq" className="underline">
+                  FAQ
+                </a>
+                를 참고하세요.
               </p>
             </div>
           )}
