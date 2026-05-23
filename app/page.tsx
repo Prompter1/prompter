@@ -11,9 +11,13 @@ export default function Home() {
     <main className="bg-surface-800 text-surface-50 min-h-screen">
       <Navbar />
       <HeroSection />
-      <CategorySection />
+      <div className="hidden lg:block">
+        <CategorySection />
+      </div>
       <FeaturedPromptsSection />
-      <TrendingSection />
+      <div className="hidden lg:block">
+        <TrendingSection />
+      </div>
       <CtaSection />
       <Footer />
     </main>

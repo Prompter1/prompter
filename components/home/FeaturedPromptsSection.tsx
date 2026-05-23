@@ -68,7 +68,7 @@ export async function FeaturedPromptsSection() {
   const prompts = await fetchFeaturedPrompts()
 
   return (
-    <section className="relative border-y border-white/10 py-24">
+    <section className="relative border-y border-white/10 py-12 lg:py-24">
       <div className="relative mx-auto max-w-7xl px-6">
         <Reveal variant="up" distance={18} duration={650}>
           <SectionHeader
@@ -96,9 +96,9 @@ export async function FeaturedPromptsSection() {
           )
 
           return (
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+            <div className="grid grid-cols-2 gap-3 lg:flex lg:flex-row lg:items-start lg:gap-5">
               {cols.map((col, ci) => (
-                <div key={ci} className="flex flex-1 flex-col gap-5">
+                <div key={ci} className="flex flex-col gap-3 lg:flex-1 lg:gap-5">
                   {col.map((prompt, inColIdx) => {
                     const index = ci + inColIdx * NUM_COLS
                     const isAdult = Boolean((prompt as any).is_adult)
@@ -134,7 +134,7 @@ export async function FeaturedPromptsSection() {
 
                             {lastMedia ? (
                               /\.(mp4|webm)$/i.test(lastMedia) ? (
-                                <div className="relative max-h-80 w-full overflow-hidden">
+                                <div className="relative max-h-48 w-full overflow-hidden lg:max-h-80">
                                   <video
                                     src={lastMedia}
                                     autoPlay
@@ -156,7 +156,7 @@ export async function FeaturedPromptsSection() {
                                   )}
                                 </div>
                               ) : (
-                                <div className="relative max-h-80 w-full overflow-hidden">
+                                <div className="relative max-h-48 w-full overflow-hidden lg:max-h-80">
                                   <Image
                                     src={lastMedia}
                                     alt={prompt.title}
@@ -178,7 +178,7 @@ export async function FeaturedPromptsSection() {
                                 </div>
                               )
                             ) : (
-                              <div className={`relative flex h-50 items-center justify-center bg-linear-to-br ${gradient} opacity-90`}>
+                              <div className={`relative flex h-36 items-center justify-center bg-linear-to-br lg:h-50 ${gradient} opacity-90`}>
                                 <div className="flex flex-col items-center gap-2">
                                   <Sparkles className="h-8 w-8 text-white/60" strokeWidth={1.5} />
                                   {prompt.ai_types?.[0] && (
@@ -193,7 +193,7 @@ export async function FeaturedPromptsSection() {
                             <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-20 bg-linear-to-t from-black/60 to-transparent" />
                           </div>
 
-                          <div className="p-4">
+                          <div className="p-3 lg:p-4">
                             {prompt.ai_types?.[0] && (
                               <span className="bg-surface-700/50 text-surface-300 mb-2 inline-block rounded-full px-3 py-1 text-xs font-medium">
                                 {prompt.ai_types[0]}

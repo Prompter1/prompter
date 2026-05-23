@@ -54,7 +54,7 @@ export default async function HeroSection() {
   ]
 
   return (
-    <section className="hero-wrap relative isolate overflow-hidden border-b border-white/10 bg-[#05060a] px-6 pt-32 pb-16 sm:pt-40 sm:pb-24">
+    <section className="hero-wrap relative isolate overflow-hidden border-b border-white/10 bg-[#05060a] px-6 pt-20 pb-10 lg:pt-40 lg:pb-24">
       <div className="pointer-events-none absolute inset-0" aria-hidden="true">
         <div className="hero-vignette" />
         <div className="hero-noise" />
@@ -77,8 +77,8 @@ export default async function HeroSection() {
             <ArrowRight className="h-4 w-4 text-white/50" />
           </div>
 
-          <h1 className="hero-title animate-fade-in-up max-w-3xl text-4xl font-black tracking-[-0.07em] text-balance text-white [word-spacing:1rem] sm:text-6xl lg:text-[4.7rem] lg:leading-[0.9]">
-            <span className="block">검증된 프롬프트를</span>
+          <h1 className="hero-title animate-fade-in-up max-w-3xl text-4xl font-black tracking-[-0.07em] text-white [word-spacing:1rem] sm:text-6xl lg:text-[4.7rem] lg:leading-[0.9]">
+            <span className="block whitespace-nowrap">검증된 프롬프트를</span>
 
             <span className="mt-1 block">
               <span className="hero-word-slot relative inline-block align-baseline">
@@ -136,7 +136,7 @@ export default async function HeroSection() {
           </div>
         </div>
 
-        <div className="card-premium animate-fade-in-up stagger-5 relative rounded-4xl border border-white/10 bg-white/6 p-5 shadow-[0_30px_120px_rgba(0,0,0,0.45)] backdrop-blur-2xl">
+        <div className="card-premium animate-fade-in-up stagger-5 relative hidden rounded-4xl border border-white/10 bg-white/6 p-5 shadow-[0_30px_120px_rgba(0,0,0,0.45)] backdrop-blur-2xl lg:block">
           <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-4xl">
             <div className="card-glow card-glow-1" />
             <div className="card-glow card-glow-2" />

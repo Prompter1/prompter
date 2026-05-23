@@ -4,7 +4,7 @@ import Reveal from '@/components/ui/Reveal'
 
 export default function CTASection() {
   return (
-    <section className="relative border-t border-white/10 py-24">
+    <section className="relative border-t border-white/10 py-12 lg:py-24">
       <div className="relative mx-auto max-w-4xl px-6 text-center">
         <Reveal variant="blur" distance={16} duration={650}>
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-1.5">
