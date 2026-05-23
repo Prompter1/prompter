@@ -39,7 +39,7 @@ export default function CTASection() {
             </Link>
 
             <a
-              href="/about"
+              href="/footer/about"
               className="hover:border-brand-500/30 inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/3 px-8 py-4 text-sm font-semibold text-white backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/5"
             >
               자세히 알아보기

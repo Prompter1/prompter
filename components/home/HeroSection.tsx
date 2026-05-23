@@ -74,7 +74,6 @@ export default async function HeroSection() {
             <span className="text-surface-200 text-sm font-medium">
               AI 도구·버전·콘텐츠별 프롬프트 마켓
             </span>
-            <ArrowRight className="h-4 w-4 text-white/50" />
           </div>
 
           <h1 className="hero-title animate-fade-in-up max-w-3xl text-4xl font-black tracking-[-0.07em] text-white [word-spacing:1rem] sm:text-6xl lg:text-[4.7rem] lg:leading-[0.9]">
@@ -127,7 +126,7 @@ export default async function HeroSection() {
             {features.map((feature) => (
               <div
                 key={feature.title}
-                className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 backdrop-blur-md transition-colors duration-200 hover:bg-white/8"
+                className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 backdrop-blur-md transition-colors duration-200"
               >
                 <feature.icon className="text-brand-400 h-4 w-4" />
                 <span className="text-sm text-white/68">{feature.title}</span>
