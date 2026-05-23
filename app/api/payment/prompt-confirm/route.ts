@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/src/lib/supabase-server'
 
 const TOSS_SECRET_KEY = process.env.TOSS_SECRET_KEY
-const PLATFORM_FEE_RATE = 0.15
+
+function resolveFeeRate(sellerType: string | null, isPromotion: boolean): number {
+  if (sellerType === 'business') return isPromotion ? 0.05 : 0.15
+  return 0.20 // individual or unset
+}
 
 export async function POST(req: Request) {
   let body: {
@@ -45,7 +49,7 @@ export async function POST(req: Request) {
 
   const { data: post, error: postError } = await supabase
     .from('prompt_posts')
-    .select('price')
+    .select('price, author_id')
     .eq('id', postId)
     .single()
 
@@ -62,6 +66,18 @@ export async function POST(req: Request) {
       { status: 400 }
     )
   }
+
+  // 판매자 유형·프로모션 여부로 수수료율 결정
+  const { data: seller } = await supabase
+    .from('members')
+    .select('seller_type, is_promotion')
+    .eq('id', post.author_id)
+    .maybeSingle()
+
+  const platformFeeRate = resolveFeeRate(
+    seller?.seller_type ?? null,
+    Boolean(seller?.is_promotion)
+  )
 
   // 토스페이먼츠 결제 승인
   const encryptedKey = Buffer.from(`${TOSS_SECRET_KEY}:`).toString('base64')
@@ -92,7 +108,7 @@ export async function POST(req: Request) {
       order_id: orderId,
       payment_key: paymentKey,
       paid_amount: amount,
-      platform_fee_rate: PLATFORM_FEE_RATE,
+      platform_fee_rate: platformFeeRate,
       toss_payload: tossData,
     })
     .single()

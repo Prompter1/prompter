@@ -189,6 +189,52 @@ export default function TermsPage() {
               </ul>
             </section>
 
+            {/* 제5조의3 */}
+            <section>
+              <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold text-white">
+                <FileText className="text-brand-400 h-5 w-5" /> 제5조의3
+                (수수료 및 정산)
+              </h2>
+              <ul className="list-disc space-y-2 pl-5 text-sm">
+                <li>
+                  회사는 판매자 유형에 따라 아래와 같이 중개 수수료를 부과합니다.
+                  <ul className="mt-2 list-none space-y-1 pl-4">
+                    <li>
+                      — <strong className="text-surface-200">개인 판매자:</strong>{' '}
+                      결제 금액의 <strong className="text-surface-200">20%</strong> (부가가치세 및 운영비 포함)
+                    </li>
+                    <li>
+                      — <strong className="text-surface-200">사업자 판매자:</strong>{' '}
+                      결제 금액의 <strong className="text-surface-200">15%</strong> (부가가치세 별도)
+                    </li>
+                    <li>
+                      — <strong className="text-surface-200">초기 프로모션 (사업자 선착순 100명):</strong>{' '}
+                      결제 금액의 <strong className="text-surface-200">5%</strong> (부가가치세 별도)
+                    </li>
+                  </ul>
+                </li>
+                <li>
+                  수수료율은 회사의 정책 변경에 따라 변동될 수 있으며, 변경 시
+                  서비스 내 공지 및 판매자 정책 페이지에 사전 안내합니다.
+                </li>
+                <li>
+                  정산은 매월 1일~말일 판매 확정분을 기준으로{' '}
+                  <strong className="text-surface-200">익월 10일</strong>에
+                  지급합니다.
+                </li>
+                <li>
+                  개인 판매자는 수수료 공제 후 잔액에 대해 소득세 3% +
+                  지방소득세 0.3% (합계 3.3%)를 원천징수한 금액을 지급하며,
+                  개인 판매자의 월 매출이 50만원을 초과하면 정산이 보류되고
+                  사업자 정보 등록이 요청됩니다.
+                </li>
+                <li>
+                  사업자 판매자는 원천징수 없이 정산되며, 정산 시 세금계산서
+                  발행이 요구됩니다. 미발행 시 정산이 보류될 수 있습니다.
+                </li>
+              </ul>
+            </section>
+
             {/* 제6조 */}
             <section className="bg-brand-500/5 border-brand-500/20 rounded-2xl border p-6">
               <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold text-white">

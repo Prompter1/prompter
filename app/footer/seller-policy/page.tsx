@@ -8,6 +8,7 @@ import {
   ClipboardCheck,
   Banknote,
   AlertTriangle,
+  Receipt,
 } from 'lucide-react'
 
 const EFFECTIVE_DATE = '2026. 05. 13'
@@ -160,19 +161,31 @@ export default function SellerPolicyPage() {
               <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold text-white">
                 <Percent className="text-brand-400 h-5 w-5" /> 4. 수익 정산 및 중개 수수료
               </h2>
-              <p className="mb-4">
-                Prompter는 투명하고 합리적인 정산 시스템을 지향합니다.
+              <p className="mb-5">
+                Prompter는 판매자 유형 및 프로모션 적용 여부에 따라 아래와 같은 수수료 정책을 적용합니다.
               </p>
 
-              <div className="bg-surface-900/60 border-surface-700/50 mb-5 rounded-2xl border p-5">
-                <div className="border-surface-700/50 mb-3 flex items-center justify-between border-b pb-3">
-                  <span className="text-surface-200 font-medium">플랫폼 중개 수수료</span>
-                  <span className="text-brand-400 text-lg font-bold">결제 금액의 15%</span>
+              {/* 수수료 구조 카드 */}
+              <div className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-3">
+                <div className="bg-surface-900/60 border-surface-700/50 rounded-2xl border p-5">
+                  <p className="text-surface-400 mb-1 text-xs font-medium">개인 판매자</p>
+                  <p className="text-brand-400 text-2xl font-bold">20%</p>
+                  <p className="text-surface-500 mt-1 text-xs">부가가치세 및 운영비 포함</p>
                 </div>
-                <p className="text-surface-400 text-xs">
-                  * PG(결제 대행) 수수료, 서버 인프라 유지비, 플랫폼 운영비 포함
-                </p>
+                <div className="bg-surface-900/60 border-surface-700/50 rounded-2xl border p-5">
+                  <p className="text-surface-400 mb-1 text-xs font-medium">사업자 판매자</p>
+                  <p className="text-brand-400 text-2xl font-bold">15%</p>
+                  <p className="text-surface-500 mt-1 text-xs">부가가치세 별도</p>
+                </div>
+                <div className="bg-surface-900/60 border-amber-500/30 rounded-2xl border p-5">
+                  <p className="text-amber-400 mb-1 text-xs font-medium">초기 프로모션 (사업자 선착순 100명)</p>
+                  <p className="text-amber-400 text-2xl font-bold">5%</p>
+                  <p className="text-surface-500 mt-1 text-xs">부가가치세 별도</p>
+                </div>
               </div>
+              <p className="text-surface-500 mb-5 text-xs">
+                * PG(결제 대행) 수수료, 서버 인프라 유지비, 플랫폼 운영비 포함 / 프로모션은 사업자 등록 완료 + 관리자 승인 시점 기준 선착순 적용
+              </p>
 
               <ul className="list-disc space-y-3 pl-5">
                 <li>
@@ -183,7 +196,7 @@ export default function SellerPolicyPage() {
                 </li>
                 <li>
                   <strong className="text-surface-200">개인 판매자 원천징수:</strong>{' '}
-                  플랫폼 수수료(15%) 공제 후 잔액에 대해{' '}
+                  플랫폼 수수료(20%) 공제 후 잔액에 대해{' '}
                   <strong className="text-surface-200">소득세 3% + 지방소득세 0.3% = 3.3%</strong>
                   를 원천징수한 금액을 지급합니다. 플랫폼이 원천징수 의무자로서
                   세무 신고 및 지급명세서 제출을 이행합니다.
@@ -202,16 +215,111 @@ export default function SellerPolicyPage() {
                 </li>
                 <li>
                   판매자 유형 변경(개인 → 사업자) 시 사업자 정보를 등록하고
-                  관리자 승인을 받아야 합니다. 승인 전 발생한 매출은 승인 완료
-                  후 다음 정산 주기에 합산됩니다.
+                  관리자 승인을 받아야 합니다. 승인 완료 시점부터 사업자 수수료
+                  정책이 적용되며, 승인 전 발생한 매출은 승인 완료 후 다음
+                  정산 주기에 합산됩니다.
+                </li>
+              </ul>
+
+              {/* 사업자 판매자 정산 절차 5단계 */}
+              <div className="mt-6">
+                <p className="text-surface-300 mb-4 text-sm font-semibold">
+                  사업자 판매자 정산 진행 절차
+                </p>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-5">
+                  {[
+                    {
+                      step: 1,
+                      title: '정산 집계',
+                      desc: '매월 1일 이전 달 판매 데이터 자동 집계',
+                      color: 'bg-brand-500/20 text-brand-400',
+                    },
+                    {
+                      step: 2,
+                      title: '세금계산서 발행',
+                      desc: '마이페이지에서 정산 금액에 대한 세금계산서를 플랫폼 앞으로 발행',
+                      color: 'bg-blue-500/20 text-blue-400',
+                    },
+                    {
+                      step: 3,
+                      title: '제출 확인',
+                      desc: '관리자가 세금계산서 수령 및 내용 확인',
+                      color: 'bg-amber-500/20 text-amber-400',
+                    },
+                    {
+                      step: 4,
+                      title: '정산 승인',
+                      desc: '확인 완료 후 정산 승인 처리',
+                      color: 'bg-violet-500/20 text-violet-400',
+                    },
+                    {
+                      step: 5,
+                      title: '지급 완료',
+                      desc: '익월 10일 실지급액 이체',
+                      color: 'bg-emerald-500/20 text-emerald-400',
+                    },
+                  ].map(({ step, title, desc, color }) => (
+                    <div
+                      key={step}
+                      className="bg-surface-900/50 rounded-2xl p-4 text-center"
+                    >
+                      <div
+                        className={`mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold ${color}`}
+                      >
+                        {step}
+                      </div>
+                      <p className="text-sm font-semibold text-white">
+                        {title}
+                      </p>
+                      <p className="text-surface-500 mt-1 text-xs">{desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* 5. 부가가치세(VAT) 처리 */}
+            <div className="bg-surface-800/20 border-surface-700/50 rounded-3xl border p-8">
+              <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold text-white">
+                <Receipt className="text-brand-400 h-5 w-5" /> 5. 부가가치세(VAT) 처리
+              </h2>
+              <ul className="list-disc space-y-3 pl-5">
+                <li>
+                  Prompter는 전자적 용역(디지털 콘텐츠) 판매 플랫폼으로서, 구매자가
+                  결제하는 금액에는{' '}
+                  <strong className="text-surface-200">부가가치세(VAT) 10%</strong>가
+                  포함됩니다.
+                </li>
+                <li>
+                  <strong className="text-surface-200">개인 판매자:</strong>{' '}
+                  플랫폼이 구매자로부터 VAT를 수취·납부하며, 개인 판매자에게는
+                  별도의 VAT 신고 의무가 발생하지 않습니다.
+                </li>
+                <li>
+                  <strong className="text-surface-200">사업자 판매자(일반과세자):</strong>{' '}
+                  정산 금액(결제 금액 − 플랫폼 수수료)에 대한{' '}
+                  <strong className="text-surface-200">세금계산서를 플랫폼 앞으로 발행</strong>해야
+                  하며, 미발행 시 정산이 보류될 수 있습니다. VAT 신고·납부 의무는
+                  판매자 본인에게 있습니다.
+                </li>
+                <li>
+                  <strong className="text-surface-200">간이과세자:</strong>{' '}
+                  간이과세자는 부가가치세 신고 방식이 다르므로, 사업자 등록 시
+                  과세 유형(일반과세자 / 간이과세자)을 정확히 선택해야 합니다.
+                </li>
+                <li>
+                  플랫폼 수수료(사업자 기준 15%, 프로모션 적용 시 5%)에 대해서는
+                  Prompter가 사업자 판매자에게 세금계산서를 발행합니다. 발행된 세금계산서는{' '}
+                  <strong className="text-surface-200">마이페이지 &gt; 수익 정산</strong>
+                  에서 확인할 수 있습니다.
                 </li>
               </ul>
             </div>
 
-            {/* 5. 사업자 정보 등록 */}
+            {/* 6. 사업자 정보 등록 */}
             <div className="bg-surface-800/20 border-surface-700/50 rounded-3xl border p-8">
               <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold text-white">
-                <Banknote className="text-brand-400 h-5 w-5" /> 5. 사업자 정보 등록 및 승인
+                <Banknote className="text-brand-400 h-5 w-5" /> 6. 사업자 정보 등록 및 승인
               </h2>
               <ul className="list-disc space-y-3 pl-5">
                 <li>
@@ -234,10 +342,10 @@ export default function SellerPolicyPage() {
               </ul>
             </div>
 
-            {/* 6. 금지 행위 및 제재 */}
+            {/* 7. 금지 행위 및 제재 */}
             <div className="bg-surface-800/20 border-surface-700/50 rounded-3xl border p-8">
               <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold text-white">
-                <ShieldAlert className="h-5 w-5 text-red-400" /> 6. 금지 행위 및 제재
+                <ShieldAlert className="h-5 w-5 text-red-400" /> 7. 금지 행위 및 제재
               </h2>
               <p className="mb-3">
                 안전한 거래 생태계를 위해 아래 행위는 엄격히 금지됩니다. 위반 시
@@ -253,10 +361,10 @@ export default function SellerPolicyPage() {
               </ul>
             </div>
 
-            {/* 7. 제재 기준 */}
+            {/* 8. 제재 기준 */}
             <div className="bg-surface-800/20 border-surface-700/50 rounded-3xl border p-8">
               <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold text-white">
-                <AlertTriangle className="text-brand-400 h-5 w-5" /> 7. 제재 기준
+                <AlertTriangle className="text-brand-400 h-5 w-5" /> 8. 제재 기준
               </h2>
               <ul className="list-disc space-y-3 pl-5">
                 <li>

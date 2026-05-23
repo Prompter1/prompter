@@ -6,7 +6,44 @@ import { Badge } from '@/components/ui/Badge'
 import Reveal from '@/components/ui/Reveal'
 import { fetchFeaturedPrompts } from '@/src/lib/home-queries'
 import { createSupabaseServerClient } from '@/src/lib/supabase-server'
-import PromptCard from '@/components/prompt/PromptCard'
+
+const AI_GRADIENTS: Record<string, string> = {
+  Midjourney: 'from-violet-600 via-purple-600 to-indigo-700',
+  'Stable Diffusion': 'from-pink-600 via-rose-500 to-orange-500',
+  ChatGPT: 'from-emerald-500 via-teal-500 to-cyan-600',
+  Claude: 'from-amber-500 via-orange-500 to-rose-500',
+  'LLM Agents': 'from-cyan-500 via-blue-500 to-indigo-600',
+  'Video Prompts': 'from-orange-500 via-amber-500 to-yellow-500',
+  'DALL-E': 'from-blue-500 via-indigo-500 to-violet-600',
+  Runway: 'from-fuchsia-500 via-pink-500 to-rose-500',
+  Sora: 'from-sky-500 via-blue-600 to-indigo-700',
+}
+
+const AI_BORDER_HOVER: Record<string, string> = {
+  Midjourney: 'hover:border-violet-500/60',
+  'Stable Diffusion': 'hover:border-pink-500/60',
+  ChatGPT: 'hover:border-emerald-500/60',
+  Claude: 'hover:border-amber-500/60',
+  'LLM Agents': 'hover:border-cyan-500/60',
+  'Video Prompts': 'hover:border-orange-500/60',
+  'DALL-E': 'hover:border-blue-500/60',
+  Runway: 'hover:border-fuchsia-500/60',
+  Sora: 'hover:border-sky-500/60',
+}
+
+function getGradient(aiTypes: string[]): string {
+  for (const t of aiTypes) {
+    if (AI_GRADIENTS[t]) return AI_GRADIENTS[t]
+  }
+  return 'from-brand-500 via-violet-500 to-indigo-600'
+}
+
+function getHoverBorder(aiTypes: string[]): string {
+  for (const t of aiTypes) {
+    if (AI_BORDER_HOVER[t]) return AI_BORDER_HOVER[t]
+  }
+  return 'hover:border-brand-500/50'
+}
 
 export async function FeaturedPromptsSection() {
   const supabase = await createSupabaseServerClient()
@@ -71,6 +108,9 @@ export async function FeaturedPromptsSection() {
                         ? prompt.result_media.at(-1)
                         : null
 
+                    const hoverBorder = getHoverBorder(prompt.ai_types ?? [])
+                    const gradient = getGradient(prompt.ai_types ?? [])
+
                     return (
                       <Reveal
                         key={prompt.id}
@@ -80,7 +120,7 @@ export async function FeaturedPromptsSection() {
                       >
                         <Link
                           href={`/prompt/${prompt.id}`}
-                          className="group relative block w-full overflow-hidden rounded-4xl border border-white/10 bg-white/3 backdrop-blur-xl transition-all duration-300 hover:bg-white/5 hover:shadow-[0_20px_60px_rgba(0,0,0,0.4)]"
+                          className={`group relative block w-full overflow-hidden rounded-4xl border border-white/10 bg-white/3 backdrop-blur-xl transition-all duration-300 hover:bg-white/5 hover:shadow-[0_20px_60px_rgba(0,0,0,0.4)] ${hoverBorder}`}
                         >
                           <div className="relative w-full overflow-hidden">
                             {prompt.is_verified && (
@@ -138,8 +178,15 @@ export async function FeaturedPromptsSection() {
                                 </div>
                               )
                             ) : (
-                              <div className="bg-surface-800 flex h-50 items-center justify-center">
-                                <Sparkles className="text-surface-600 h-8 w-8" />
+                              <div className={`relative flex h-50 items-center justify-center bg-linear-to-br ${gradient} opacity-90`}>
+                                <div className="flex flex-col items-center gap-2">
+                                  <Sparkles className="h-8 w-8 text-white/60" strokeWidth={1.5} />
+                                  {prompt.ai_types?.[0] && (
+                                    <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/80 backdrop-blur-sm">
+                                      {prompt.ai_types[0]}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             )}
 
@@ -147,6 +194,11 @@ export async function FeaturedPromptsSection() {
                           </div>
 
                           <div className="p-4">
+                            {prompt.ai_types?.[0] && (
+                              <span className="bg-surface-700/50 text-surface-300 mb-2 inline-block rounded-full px-3 py-1 text-xs font-medium">
+                                {prompt.ai_types[0]}
+                              </span>
+                            )}
                             <h3 className="mb-2 line-clamp-2 text-sm font-semibold text-white">
                               {prompt.title}
                             </h3>

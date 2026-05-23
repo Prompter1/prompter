@@ -29,7 +29,7 @@ const businessDetails = [
   {
     icon: <FileText className="text-brand-400 h-5 w-5" />,
     label: '통신판매업신고번호',
-    value: '처리중',
+    value: '2026-충남예산-00073',
   },
   {
     icon: <MapPin className="text-brand-400 h-5 w-5" />,
@@ -100,11 +100,6 @@ export default function InfoPage() {
               운영 시간: 평일 10:00 ~ 18:00 (주말 및 공휴일 제외)
             </p>
           </div>
-
-          <p className="text-surface-600 mt-6 text-center text-xs">
-            * 통신판매업신고는 관할 기관 심사 후 번호가 부여됩니다. 신고 완료 후
-            즉시 업데이트됩니다.
-          </p>
         </div>
       </section>
 

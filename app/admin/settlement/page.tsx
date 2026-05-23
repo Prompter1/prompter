@@ -17,7 +17,7 @@ import {
 import { supabase } from '@/src/lib/supabase'
 import { BusinessProfileActions } from '@/components/admin/BusinessProfileActions'
 import { cn, formatKRW } from '@/src/lib/utils'
-import { buildPeriodOptions, periodSuffix } from '@/src/lib/settlement-utils'
+import { buildPeriodOptions } from '@/src/lib/settlement-utils'
 
 interface Stats {
   totalGross: number
@@ -40,6 +40,7 @@ interface BusinessProfile {
     email: string | null
     settlement_status: string | null
     monthly_gross: number
+    is_promotion?: boolean
   } | null
 }
 
@@ -55,13 +56,15 @@ interface SettlementRow {
   net_amount: number
   status: string
   paid_at: string | null
-  member: { nickname: string | null; email: string | null } | null
+  invoice_submitted: boolean
+  is_promotion: boolean
+  member: { nickname: string | null; email: string | null; is_promotion?: boolean } | null
 }
 
 type RawBP = Omit<BusinessProfile, 'member'>
 type RawSettlement = Omit<SettlementRow, 'member'>
-type MemberRow = { id: string; nickname: string | null; email: string | null; settlement_status: string | null; monthly_gross: number }
-type SellerRow = { id: string; nickname: string | null; email: string | null }
+type MemberRow = { id: string; nickname: string | null; email: string | null; settlement_status: string | null; monthly_gross: number; is_promotion?: boolean }
+type SellerRow = { id: string; nickname: string | null; email: string | null; is_promotion?: boolean }
 
 const PERIOD_OPTIONS = buildPeriodOptions()
 
@@ -118,12 +121,11 @@ export default function AdminSettlementPage() {
   // 집계 실행 상태
   const [runLoading, setRunLoading] = useState(false)
   const [runResult, setRunResult] = useState<{
-    period: string
-    inserted: number
-    deferred?: number
+    total: number
+    individualCount: number
+    businessCount: number
   } | null>(null)
   const [runError, setRunError] = useState<string | null>(null)
-  const [selectedIdx, setSelectedIdx] = useState(1) // 기본: 직전 달
 
   // 정산 목록 필터
   const [filterPeriod, setFilterPeriod] = useState(0) // 0 = 전체
@@ -172,7 +174,7 @@ export default function AdminSettlementPage() {
       supabase
         .from('settlements')
         .select(
-          'id, seller_id, period_start, period_end, seller_type, gross_amount, fee_amount, withholding_tax, net_amount, status, paid_at'
+          'id, seller_id, period_start, period_end, seller_type, gross_amount, fee_amount, withholding_tax, net_amount, status, paid_at, invoice_submitted, is_promotion'
         )
         .order('period_start', { ascending: false })
         .order('created_at', { ascending: false })
@@ -199,13 +201,13 @@ export default function AdminSettlementPage() {
       memberIds.length > 0
         ? supabase
             .from('members')
-            .select('id, nickname, email, settlement_status, monthly_gross')
+            .select('id, nickname, email, settlement_status, monthly_gross, is_promotion')
             .in('id', memberIds)
         : Promise.resolve({ data: [] }),
       sellerIds.length > 0
         ? supabase
             .from('members')
-            .select('id, nickname, email')
+            .select('id, nickname, email, is_promotion')
             .in('id', sellerIds)
         : Promise.resolve({ data: [] }),
     ])
@@ -216,7 +218,7 @@ export default function AdminSettlementPage() {
     const sellerMap = new Map(
       (sellerRes.data as SellerRow[] ?? []).map((m) => [
         m.id,
-        { nickname: m.nickname, email: m.email },
+        { nickname: m.nickname, email: m.email, is_promotion: m.is_promotion },
       ])
     )
 
@@ -239,25 +241,75 @@ export default function AdminSettlementPage() {
     setRunResult(null)
     setRunError(null)
 
-    const { year, month } = PERIOD_OPTIONS[selectedIdx]
     try {
-      const res = await fetch('/api/admin/settlement/run', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ year, month }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        setRunError(data.error ?? '정산 실행에 실패했습니다.')
-      } else {
-        setRunResult(data.result)
-        // 집계 완료 후 목록 새로고침
-        await loadData()
-      }
+      // status = 'ready'인 전체 미정산 목록 조회
+      const { data, error } = await supabase
+        .from('settlements')
+        .select('seller_type, net_amount, invoice_submitted')
+        .eq('status', 'ready')
+
+      if (error) throw error
+
+      const rows = data ?? []
+      // 개인: 전체 포함 / 사업자: 세금계산서 제출된 것만
+      const eligible = rows.filter(
+        (s: { seller_type: string; invoice_submitted: boolean }) =>
+          s.seller_type === 'individual' ||
+          (s.seller_type === 'business' && s.invoice_submitted)
+      )
+      const total = eligible.reduce(
+        (sum: number, s: { net_amount: number }) => sum + (s.net_amount ?? 0),
+        0
+      )
+      const individualCount = eligible.filter(
+        (s: { seller_type: string }) => s.seller_type === 'individual'
+      ).length
+      const businessCount = eligible.filter(
+        (s: { seller_type: string }) => s.seller_type === 'business'
+      ).length
+
+      setRunResult({ total, individualCount, businessCount })
     } catch {
-      setRunError('네트워크 오류가 발생했습니다.')
+      setRunError('조회 중 오류가 발생했습니다.')
     } finally {
       setRunLoading(false)
+    }
+  }
+
+  async function handleInvoiceToggle(settlementId: number, current: boolean) {
+    const res = await fetch(`/api/admin/settlement/${settlementId}/invoice`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ submitted: !current }),
+    })
+    if (res.ok) {
+      setSettlements((prev) =>
+        prev.map((s) =>
+          s.id === settlementId ? { ...s, invoice_submitted: !current } : s
+        )
+      )
+    }
+  }
+
+  async function handlePromotionToggle(memberId: string, current: boolean) {
+    const res = await fetch(`/api/admin/members/${memberId}/promotion`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_promotion: !current }),
+    })
+    if (res.ok) {
+      setPendingProfiles((prev) =>
+        prev.map((bp) =>
+          bp.member_id === memberId
+            ? {
+                ...bp,
+                member: bp.member
+                  ? { ...bp.member, is_promotion: !current }
+                  : null,
+              }
+            : bp
+        )
+      )
     }
   }
 
@@ -359,6 +411,7 @@ export default function AdminSettlementPage() {
                       '이메일',
                       '정산 상태',
                       '등록일',
+                      '프로모션',
                       '동작',
                     ].map((h) => (
                       <th
@@ -408,6 +461,25 @@ export default function AdminSettlementPage() {
                         {new Date(bp.created_at).toLocaleDateString('ko-KR')}
                       </td>
                       <td className="px-4 py-3">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handlePromotionToggle(
+                              bp.member_id,
+                              Boolean(bp.member?.is_promotion)
+                            )
+                          }
+                          className={cn(
+                            'rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors',
+                            bp.member?.is_promotion
+                              ? 'bg-amber-500/15 text-amber-400 hover:bg-amber-500/25'
+                              : 'bg-surface-700/50 text-surface-400 hover:bg-surface-700'
+                          )}
+                        >
+                          {bp.member?.is_promotion ? '🎉 프로모션' : '일반'}
+                        </button>
+                      </td>
+                      <td className="px-4 py-3">
                         <BusinessProfileActions
                           profileId={bp.id}
                           onDone={loadData}
@@ -422,34 +494,15 @@ export default function AdminSettlementPage() {
         )}
       </section>
 
-      {/* ── 월별 정산 집계 실행 ── */}
+      {/* ── 지급 예정 금액 집계 ── */}
       <section>
         <h2 className="text-surface-400 mb-4 text-xs font-semibold tracking-wider uppercase">
-          월별 정산 집계
+          지급 예정 금액 집계
         </h2>
         <div className="border-surface-700/50 bg-surface-800/20 rounded-2xl border p-6">
-          <div className="mb-4 flex flex-wrap items-center gap-3">
-            <label className="text-surface-300 text-sm font-medium">
-              집계 기간
-            </label>
-            <select
-              value={selectedIdx}
-              onChange={(e) => setSelectedIdx(Number(e.target.value))}
-              disabled={runLoading}
-              className="border-surface-700/60 bg-surface-800/80 focus:border-brand-400 rounded-xl border px-3 py-2 text-sm text-white outline-none disabled:opacity-50"
-            >
-              {PERIOD_OPTIONS.map((opt, i) => (
-                <option key={opt.label} value={i}>
-                  {opt.label}
-                  {periodSuffix(i)}
-                </option>
-              ))}
-            </select>
-            <span className="text-surface-500 text-xs">
-              → {PERIOD_OPTIONS[selectedIdx].year}년{' '}
-              {PERIOD_OPTIONS[selectedIdx].month}월 데이터 집계
-            </span>
-          </div>
+          <p className="text-surface-400 mb-4 text-xs">
+            status = ready 중 — 개인 전체 + 사업자(세금계산서 제출 완료)의 실지급 합계
+          </p>
 
           <button
             type="button"
@@ -462,28 +515,21 @@ export default function AdminSettlementPage() {
             ) : (
               <CalendarClock className="h-4 w-4" />
             )}
-            {runLoading ? '집계 중...' : '정산 집계 실행'}
+            {runLoading ? '조회 중...' : '정산 집계 실행'}
           </button>
 
           {runResult && (
-            <div className="mt-4 flex items-start gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm">
-              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
-              <div>
-                <p className="font-semibold text-emerald-300">정산 집계 완료</p>
-                <p className="mt-1 text-xs text-emerald-200/70">
-                  기간: <strong>{runResult.period}</strong> · 처리:{' '}
-                  <strong>{runResult.inserted}건</strong>
-                  {(runResult.deferred ?? 0) > 0 && (
-                    <>
-                      {' '}
-                      · 이월(미승인):{' '}
-                      <strong className="text-purple-400">
-                        {runResult.deferred}건
-                      </strong>
-                    </>
-                  )}
-                </p>
-              </div>
+            <div className="mt-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5">
+              <p className="text-xs font-medium text-emerald-400">지급 예정 합계</p>
+              <p className="mt-1 text-3xl font-bold text-white">
+                {formatKRW(runResult.total)}
+              </p>
+              <p className="text-emerald-200/60 mt-2 text-xs">
+                개인 <strong className="text-emerald-200">{runResult.individualCount}건</strong>
+                {' + '}
+                사업자(세금계산서 확인){' '}
+                <strong className="text-emerald-200">{runResult.businessCount}건</strong>
+              </p>
             </div>
           )}
 
@@ -537,7 +583,7 @@ export default function AdminSettlementPage() {
         ) : (
           <div className="border-surface-700/50 overflow-hidden rounded-2xl border">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[780px] text-left text-sm">
+              <table className="w-full min-w-[960px] text-left text-sm">
                 <thead>
                   <tr className="border-surface-700/50 bg-surface-800/50 border-b">
                     {[
@@ -550,6 +596,7 @@ export default function AdminSettlementPage() {
                       '실지급',
                       '상태',
                       '지급일',
+                      '세금계산서',
                     ].map((h) => (
                       <th
                         key={h}
@@ -581,16 +628,23 @@ export default function AdminSettlementPage() {
                           {period}
                         </td>
                         <td className="px-4 py-3">
-                          <span
-                            className={cn(
-                              'rounded-full px-2 py-0.5 text-xs font-medium',
-                              s.seller_type === 'business'
-                                ? 'bg-blue-500/15 text-blue-400'
-                                : 'bg-surface-700/50 text-surface-300'
+                          <div className="flex flex-wrap items-center gap-1">
+                            <span
+                              className={cn(
+                                'rounded-full px-2 py-0.5 text-xs font-medium',
+                                s.seller_type === 'business'
+                                  ? 'bg-blue-500/15 text-blue-400'
+                                  : 'bg-surface-700/50 text-surface-300'
+                              )}
+                            >
+                              {s.seller_type === 'business' ? '사업자' : '개인'}
+                            </span>
+                            {s.is_promotion && (
+                              <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-400">
+                                🎉 프로모션
+                              </span>
                             )}
-                          >
-                            {s.seller_type === 'business' ? '사업자' : '개인'}
-                          </span>
+                          </div>
                         </td>
                         <td className="px-4 py-3 text-white">
                           {formatKRW(s.gross_amount)}
@@ -621,6 +675,26 @@ export default function AdminSettlementPage() {
                             ? new Date(s.paid_at).toLocaleDateString('ko-KR')
                             : '—'}
                         </td>
+                        <td className="px-4 py-3">
+                          {s.seller_type === 'business' ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleInvoiceToggle(s.id, s.invoice_submitted)
+                              }
+                              className={cn(
+                                'rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors',
+                                s.invoice_submitted
+                                  ? 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25'
+                                  : 'bg-amber-500/15 text-amber-400 hover:bg-amber-500/25'
+                              )}
+                            >
+                              {s.invoice_submitted ? '제출됨' : '미제출'}
+                            </button>
+                          ) : (
+                            <span className="text-surface-600 text-xs">—</span>
+                          )}
+                        </td>
                       </tr>
                     )
                   })}
@@ -639,7 +713,9 @@ export default function AdminSettlementPage() {
         <div className="border-surface-700/50 bg-surface-800/20 rounded-2xl border p-6">
           <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
             {[
-              { label: '플랫폼 수수료', value: '15%' },
+              { label: '개인 판매자 수수료', value: '20% (VAT 포함)' },
+              { label: '사업자 판매자 수수료', value: '15% (VAT 별도)' },
+              { label: '초기 프로모션 수수료', value: '5% (사업자 선착순 100명, VAT 별도)' },
               {
                 label: '개인 원천징수',
                 value: '3.3% (소득세 3% + 지방소득세 0.3%)',

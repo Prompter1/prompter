@@ -33,7 +33,9 @@ import { cn, formatKRW } from '@/src/lib/utils'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const PLATFORM_FEE_RATE = 0.15
+const INDIVIDUAL_FEE_RATE = 0.20
+const BUSINESS_FEE_RATE = 0.15
+const PROMO_FEE_RATE = 0.05
 const WITHHOLDING_RATE = 0.033
 const MONTHLY_LIMIT = 500_000
 
@@ -65,6 +67,8 @@ interface Settlement {
   net_amount: number
   status: string
   paid_at: string | null
+  invoice_submitted: boolean
+  is_promotion: boolean
 }
 
 // ─── 정산 정책 헬퍼 ──────────────────────────────────────────────────────────
@@ -79,14 +83,18 @@ function applyWithholding(sellerType: SellerType, verified: boolean): boolean {
   return true
 }
 
-function calcExample(gross: number, sellerType: SellerType, verified: boolean) {
-  const fee = Math.floor(gross * PLATFORM_FEE_RATE)
+function calcExample(gross: number, sellerType: SellerType, verified: boolean, isPromotion = false) {
+  const feeRate =
+    sellerType === 'business'
+      ? isPromotion ? PROMO_FEE_RATE : BUSINESS_FEE_RATE
+      : INDIVIDUAL_FEE_RATE
+  const fee = Math.floor(gross * feeRate)
   const afterFee = gross - fee
   const withhold = applyWithholding(sellerType, verified)
     ? Math.floor(afterFee * WITHHOLDING_RATE)
     : 0
   const net = afterFee - withhold
-  return { fee, withhold, net }
+  return { fee, feeRate, withhold, net }
 }
 
 function periodLabel(start: string, end: string) {
@@ -172,11 +180,13 @@ function StatusBanner({
   sellerType,
   verified,
   monthlyGross,
+  isPromotion,
 }: {
   status: SettlementStatus
   sellerType: SellerType
   verified: boolean
   monthlyGross: number
+  isPromotion: boolean
 }) {
   if (status === 'business_required')
     return (
@@ -217,9 +227,11 @@ function StatusBanner({
   if (sellerType === 'business' && verified)
     return (
       <InfoBox variant="green">
-        <p className="font-semibold">사업자 판매자 — 원천징수 없이 85% 지급</p>
+        <p className="font-semibold">
+          사업자 판매자 — 수수료 {isPromotion ? '5% (프로모션)' : '15%'} 공제, 원천징수 없음
+        </p>
         <p className="mt-1 text-xs">
-          세금계산서는 익월 10일 정산 시 등록된 이메일로 발송됩니다.
+          익월 1일 정산 예정 금액 안내 후, 세금계산서 발행 확인 시 익월 10일 지급됩니다.
         </p>
       </InfoBox>
     )
@@ -317,6 +329,7 @@ export default function SettlementPage() {
 
   const [memberInfo, setMemberInfo] = useState<MemberInfo | null>(null)
   const [verified, setVerified] = useState(false)
+  const [isPromotion, setIsPromotion] = useState(false)
   const [settlements, setSettlements] = useState<Settlement[]>([])
   const [dataLoading, setDataLoading] = useState(true)
   const [pendingAmount, setPendingAmount] = useState(0)
@@ -352,7 +365,7 @@ export default function SettlementPage() {
           supabase
             .from('members')
             .select(
-              'seller_type, settlement_status, total_revenue, monthly_gross'
+              'seller_type, settlement_status, total_revenue, monthly_gross, is_promotion'
             )
             .eq('id', user.id)
             .single(),
@@ -364,7 +377,7 @@ export default function SettlementPage() {
           supabase
             .from('settlements')
             .select(
-              'id, period_start, period_end, seller_type, gross_amount, fee_amount, withholding_tax, net_amount, status, paid_at'
+              'id, period_start, period_end, seller_type, gross_amount, fee_amount, withholding_tax, net_amount, status, paid_at, invoice_submitted, is_promotion'
             )
             .eq('seller_id', user.id)
             .order('period_start', { ascending: false })
@@ -380,6 +393,7 @@ export default function SettlementPage() {
       if (member) {
         setMemberInfo(member as MemberInfo)
         setSelectedType((member as MemberInfo).seller_type ?? null)
+        setIsPromotion(Boolean((member as any).is_promotion))
       }
       setVerified(bp?.verified ?? false)
       setPendingAmount(
@@ -434,12 +448,16 @@ export default function SettlementPage() {
   const hasWithhold = settlements.some((s) => s.withholding_tax > 0)
 
   // 수수료 예시 (이번 달 매출 또는 10,000원)
+  // selectedType 기준으로 계산 — 저장 전 미리보기 역할
+  // 아직 저장 안 된 유형으로 바꿨을 때는 verified = true 로 가정
   const exGross = monthly > 0 ? monthly : 10_000
+  const previewVerified = selectedType !== sellerType ? true : verified
   const {
     fee: exFee,
+    feeRate: exFeeRate,
     withhold: exWithhold,
     net: exNet,
-  } = calcExample(exGross, sellerType, verified)
+  } = calcExample(exGross, selectedType, previewVerified, isPromotion)
 
   const faqs = [
     {
@@ -463,8 +481,8 @@ export default function SettlementPage() {
       a: '개인 판매자가 월 50만원을 초과하면 정산이 보류되고 사업자 등록이 요청됩니다.',
     },
     {
-      q: '수수료 15%에 무엇이 포함?',
-      a: 'PG 수수료, 서버 인프라 유지비, 플랫폼 운영비가 모두 포함됩니다.',
+      q: '수수료에 무엇이 포함되나요?',
+      a: 'PG 수수료, 서버 인프라 유지비, 플랫폼 운영비가 포함됩니다. 개인 판매자 20%는 부가가치세까지 포함된 금액이며, 사업자 판매자 15%(프로모션 5%)는 부가가치세가 별도입니다.',
     },
   ]
 
@@ -500,6 +518,7 @@ export default function SettlementPage() {
             sellerType={sellerType}
             verified={verified}
             monthlyGross={monthly}
+            isPromotion={isPromotion}
           />
         </div>
 
@@ -663,13 +682,26 @@ export default function SettlementPage() {
           <SectionCard icon={Percent} title="중개 수수료" accent>
             <div className="space-y-3">
               <div className="border-surface-700/50 bg-surface-900/60 flex items-center justify-between rounded-2xl border px-5 py-4">
-                <span className="text-surface-200 font-medium">
-                  플랫폼 중개 수수료
+                <div>
+                  <span className="text-surface-200 font-medium">
+                    플랫폼 중개 수수료
+                  </span>
+                  {selectedType === null && (
+                    <p className="text-surface-500 mt-0.5 text-xs">개인 20% / 사업자 15%</p>
+                  )}
+                </div>
+                <span className="text-brand-400 text-xl font-bold">
+                  {selectedType === 'business'
+                    ? isPromotion ? '5% 🎉' : '15%'
+                    : selectedType === 'individual'
+                      ? '20%'
+                      : '15~20%'}
                 </span>
-                <span className="text-brand-400 text-xl font-bold">15%</span>
               </div>
               <p className="text-surface-400 text-xs">
                 * PG 수수료, 서버 인프라 유지비, 플랫폼 운영비 포함
+                {selectedType === 'individual' && ' / 개인 판매자는 VAT 포함'}
+                {selectedType === 'business' && ' / 사업자 판매자는 VAT 별도'}
               </p>
 
               <div className="space-y-2 pt-1">
@@ -677,15 +709,15 @@ export default function SettlementPage() {
                   {monthly > 0
                     ? `이번 달 매출 기준 (${formatKRW(monthly)})`
                     : '예시 (10,000원 기준)'}
-                  {sellerType === 'business' && !verified && (
+                  {selectedType === 'business' && sellerType === 'business' && !verified && (
                     <span className="ml-2 text-amber-400">
                       · 승인 대기 — 이번 달 보류
                     </span>
                   )}
                 </p>
 
-                {sellerType === 'business' && !verified ? (
-                  // 미승인 사업자 — 예시 표시 불가
+                {selectedType === 'business' && sellerType === 'business' && !verified ? (
+                  // 저장된 유형이 사업자이고 아직 미승인 — 예시 표시 불가
                   <div className="bg-surface-900/40 rounded-xl px-4 py-3 text-sm text-amber-200/70">
                     사업자 승인 완료 후 정산 금액이 확정됩니다.
                   </div>
@@ -696,7 +728,7 @@ export default function SettlementPage() {
                       value: formatKRW(exGross),
                     },
                     {
-                      label: '수수료 −15%',
+                      label: `수수료 −${Math.round(exFeeRate * 100)}%`,
                       value: `−${formatKRW(exFee)}`,
                       muted: true,
                     },
@@ -744,6 +776,59 @@ export default function SettlementPage() {
             </div>
           </SectionCard>
 
+          {/* 사업자 판매자 정산 플로우 */}
+          {sellerType === 'business' && verified && (
+            <SectionCard icon={FileText} title="사업자 정산 진행 절차">
+              <ol className="space-y-3">
+                {[
+                  { step: 1, label: '매출 집계', desc: '매월 1일~말일 판매 확정 금액을 자동 집계합니다.' },
+                  { step: 2, label: '정산 예정 금액 안내', desc: '익월 1일 정산 예정 금액(수수료 제외)이 이 페이지에 표시됩니다.' },
+                  { step: 3, label: '세금계산서 발행', desc: '정산 금액(수수료 제외)에 대해 플랫폼 앞으로 세금계산서를 발행해 주세요. 미발행 시 지급이 보류됩니다.' },
+                  { step: 4, label: '플랫폼 확인', desc: '관리자가 세금계산서 발행 여부 및 금액을 확인합니다.' },
+                  { step: 5, label: '정산 지급', desc: '이상이 없는 경우 익월 10일에 지급됩니다.' },
+                ].map(({ step, label, desc }) => (
+                  <li key={step} className="flex items-start gap-3">
+                    <span className="bg-brand-500/20 text-brand-400 mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold">
+                      {step}
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold text-white">{label}</p>
+                      <p className="text-surface-400 text-xs leading-relaxed">{desc}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+
+              {/* 이번 달 세금계산서 상태 */}
+              {settlements.length > 0 && settlements[0].status === 'ready' && (
+                <div className={cn(
+                  'mt-4 flex items-start gap-3 rounded-2xl border p-4 text-sm',
+                  settlements[0].invoice_submitted
+                    ? 'border-emerald-500/20 bg-emerald-500/5 text-emerald-200/80'
+                    : 'border-amber-500/20 bg-amber-500/5 text-amber-200/80'
+                )}>
+                  {settlements[0].invoice_submitted ? (
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
+                  ) : (
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+                  )}
+                  <div>
+                    <p className="font-semibold">
+                      {settlements[0].invoice_submitted
+                        ? '세금계산서 발행 확인 완료 — 익월 10일 지급 예정'
+                        : '세금계산서 발행 대기 중'}
+                    </p>
+                    {!settlements[0].invoice_submitted && (
+                      <p className="mt-0.5 text-xs">
+                        정산 금액({formatKRW(settlements[0].net_amount)})에 대해 플랫폼(Prompter) 앞으로 세금계산서를 발행한 후 관리자에게 알려주세요.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </SectionCard>
+          )}
+
           {/* 정산 이력 */}
           <SectionCard icon={TrendingUp} title="정산 이력">
             {settlements.length === 0 ? (
@@ -763,6 +848,7 @@ export default function SettlementPage() {
                         ...(hasWithhold ? ['원천징수'] : []),
                         '실지급',
                         '상태',
+                        ...(sellerType === 'business' ? ['세금계산서'] : []),
                         '지급일',
                       ].map((h) => (
                         <th
@@ -819,6 +905,20 @@ export default function SettlementPage() {
                               {st.label}
                             </span>
                           </td>
+                          {sellerType === 'business' && (
+                            <td className="px-4 py-3">
+                              {s.seller_type === 'business' ? (
+                                <span className={cn(
+                                  'rounded-full px-2.5 py-0.5 text-xs font-medium',
+                                  s.invoice_submitted
+                                    ? 'bg-emerald-500/15 text-emerald-400'
+                                    : 'bg-amber-500/15 text-amber-400'
+                                )}>
+                                  {s.invoice_submitted ? '발행 확인' : '미확인'}
+                                </span>
+                              ) : '—'}
+                            </td>
+                          )}
                           <td className="text-surface-500 px-4 py-3 text-xs">
                             {s.paid_at
                               ? new Date(s.paid_at).toLocaleDateString('ko-KR')

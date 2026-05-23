@@ -89,24 +89,13 @@ export default function CategorySection() {
                   <Icon className="h-6 w-6 text-white" />
                 </div>
 
-                <h3 className="text-foreground group-hover:text-brand-300 text-lg font-semibold transition-colors">
+                <h3 className="text-foreground group-hover:text-brand-300 mt-6 text-2xl font-semibold transition-colors">
                   {category.name}
                 </h3>
 
                 <p className="text-muted-foreground mt-2 text-sm">
                   {category.description}
                 </p>
-
-                <div className="mt-6 flex items-center justify-between">
-                  <span className="text-sm font-semibold text-white">
-                    {category.prompts.toLocaleString()}
-                    <span className="text-muted-foreground ml-1 text-xs">
-                      prompts
-                    </span>
-                  </span>
-
-                  <ArrowRight className="text-muted-foreground/40 group-hover:text-brand-400 h-5 w-5 transition-all duration-300 group-hover:translate-x-1" />
-                </div>
               </a>
             </Reveal>
           )
