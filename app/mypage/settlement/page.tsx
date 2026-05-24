@@ -12,6 +12,7 @@ import {
   ChevronDown,
   ChevronRight,
   Clock,
+  ExternalLink,
   FileText,
   Info,
   Loader2,
@@ -33,7 +34,7 @@ import { cn, formatKRW } from '@/src/lib/utils'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const INDIVIDUAL_FEE_RATE = 0.20
+const INDIVIDUAL_FEE_RATE = 0.2
 const BUSINESS_FEE_RATE = 0.15
 const PROMO_FEE_RATE = 0.05
 const WITHHOLDING_RATE = 0.033
@@ -83,10 +84,17 @@ function applyWithholding(sellerType: SellerType, verified: boolean): boolean {
   return true
 }
 
-function calcExample(gross: number, sellerType: SellerType, verified: boolean, isPromotion = false) {
+function calcExample(
+  gross: number,
+  sellerType: SellerType,
+  verified: boolean,
+  isPromotion = false
+) {
   const feeRate =
     sellerType === 'business'
-      ? isPromotion ? PROMO_FEE_RATE : BUSINESS_FEE_RATE
+      ? isPromotion
+        ? PROMO_FEE_RATE
+        : BUSINESS_FEE_RATE
       : INDIVIDUAL_FEE_RATE
   const fee = Math.floor(gross * feeRate)
   const afterFee = gross - fee
@@ -228,10 +236,12 @@ function StatusBanner({
     return (
       <InfoBox variant="green">
         <p className="font-semibold">
-          사업자 판매자 — 수수료 {isPromotion ? '5% (프로모션)' : '15%'} 공제, 원천징수 없음
+          사업자 판매자 — 수수료 {isPromotion ? '5% (프로모션)' : '15%'} 공제,
+          원천징수 없음
         </p>
         <p className="mt-1 text-xs">
-          익월 1일 정산 예정 금액 안내 후, 세금계산서 발행 확인 시 익월 10일 지급됩니다.
+          익월 1일 정산 예정 금액 안내 후, 세금계산서 발행 확인 시 익월 10일
+          지급됩니다.
         </p>
       </InfoBox>
     )
@@ -447,6 +457,18 @@ export default function SettlementPage() {
   const typeChanged = selectedType !== sellerType
   const hasWithhold = settlements.some((s) => s.withholding_tax > 0)
 
+  // status = 'ready' 이면 이전 달 정산이 미지급 상태
+  const readySettlements = settlements.filter((s) => s.status === 'ready')
+  const readyNoInvoice = readySettlements.filter((s) => !s.invoice_submitted)
+  const readyNoInvoiceTotal = readyNoInvoice.reduce(
+    (sum, s) => sum + s.net_amount,
+    0
+  )
+  const prevUnpaidTotal = readySettlements.reduce(
+    (sum, s) => sum + s.net_amount,
+    0
+  )
+
   // 수수료 예시 (이번 달 매출 또는 10,000원)
   // selectedType 기준으로 계산 — 저장 전 미리보기 역할
   // 아직 저장 안 된 유형으로 바꿨을 때는 verified = true 로 가정
@@ -474,7 +496,7 @@ export default function SettlementPage() {
     },
     {
       q: '사업자 승인 후 세금계산서는?',
-      a: '등록하신 이메일로 익월 10일 정산 시 발송됩니다.',
+      a: '사업자 판매자가 Prompter(사업자번호 530-13-02815) 앞으로 전자세금계산서를 직접 발행해야 합니다. 홈택스(www.hometax.go.kr) 또는 손택스 앱에서 발행하며, 공급가액은 정산금액(수수료 제외) 기준입니다. 발행 기한은 익월 10일이며 미발행 시 정산이 보류됩니다.',
     },
     {
       q: '월 50만원 초과 시?',
@@ -558,6 +580,26 @@ export default function SettlementPage() {
               </p>
             </div>
           </div>
+
+          {/* 미정산 누적 */}
+          {prevUnpaidTotal > 0 && (
+            <div className="flex items-center justify-between rounded-2xl border border-amber-500/20 bg-amber-500/5 px-5 py-4">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
+                <div>
+                  <p className="text-sm font-semibold text-amber-200">
+                    미정산 누적 금액
+                  </p>
+                  <p className="text-xs text-amber-200/60">
+                    {readySettlements.length}건 · 익월 10일 지급 예정
+                  </p>
+                </div>
+              </div>
+              <p className="text-xl font-bold text-amber-400">
+                {formatKRW(prevUnpaidTotal)}
+              </p>
+            </div>
+          )}
 
           {/* 판매자 유형 */}
           <SectionCard icon={User} title="판매자 유형">
@@ -687,12 +729,16 @@ export default function SettlementPage() {
                     플랫폼 중개 수수료
                   </span>
                   {selectedType === null && (
-                    <p className="text-surface-500 mt-0.5 text-xs">개인 20% / 사업자 15%</p>
+                    <p className="text-surface-500 mt-0.5 text-xs">
+                      개인 20% / 사업자 15%
+                    </p>
                   )}
                 </div>
                 <span className="text-brand-400 text-xl font-bold">
                   {selectedType === 'business'
-                    ? isPromotion ? '5% 🎉' : '15%'
+                    ? isPromotion
+                      ? '5% 🎉'
+                      : '15%'
                     : selectedType === 'individual'
                       ? '20%'
                       : '15~20%'}
@@ -709,14 +755,18 @@ export default function SettlementPage() {
                   {monthly > 0
                     ? `이번 달 매출 기준 (${formatKRW(monthly)})`
                     : '예시 (10,000원 기준)'}
-                  {selectedType === 'business' && sellerType === 'business' && !verified && (
-                    <span className="ml-2 text-amber-400">
-                      · 승인 대기 — 이번 달 보류
-                    </span>
-                  )}
+                  {selectedType === 'business' &&
+                    sellerType === 'business' &&
+                    !verified && (
+                      <span className="ml-2 text-amber-400">
+                        · 승인 대기 — 이번 달 보류
+                      </span>
+                    )}
                 </p>
 
-                {selectedType === 'business' && sellerType === 'business' && !verified ? (
+                {selectedType === 'business' &&
+                sellerType === 'business' &&
+                !verified ? (
                   // 저장된 유형이 사업자이고 아직 미승인 — 예시 표시 불가
                   <div className="bg-surface-900/40 rounded-xl px-4 py-3 text-sm text-amber-200/70">
                     사업자 승인 완료 후 정산 금액이 확정됩니다.
@@ -781,49 +831,187 @@ export default function SettlementPage() {
             <SectionCard icon={FileText} title="사업자 정산 진행 절차">
               <ol className="space-y-3">
                 {[
-                  { step: 1, label: '매출 집계', desc: '매월 1일~말일 판매 확정 금액을 자동 집계합니다.' },
-                  { step: 2, label: '정산 예정 금액 안내', desc: '익월 1일 정산 예정 금액(수수료 제외)이 이 페이지에 표시됩니다.' },
-                  { step: 3, label: '세금계산서 발행', desc: '정산 금액(수수료 제외)에 대해 플랫폼 앞으로 세금계산서를 발행해 주세요. 미발행 시 지급이 보류됩니다.' },
-                  { step: 4, label: '플랫폼 확인', desc: '관리자가 세금계산서 발행 여부 및 금액을 확인합니다.' },
-                  { step: 5, label: '정산 지급', desc: '이상이 없는 경우 익월 10일에 지급됩니다.' },
+                  {
+                    step: 1,
+                    label: '매출 집계',
+                    desc: '매월 1일~말일 판매 확정 금액을 자동 집계합니다.',
+                  },
+                  {
+                    step: 2,
+                    label: '정산 예정 금액 안내',
+                    desc: '익월 1일 정산 예정 금액(수수료 제외)이 이 페이지에 표시됩니다.',
+                  },
+                  {
+                    step: 3,
+                    label: '세금계산서 발행',
+                    desc: '정산 금액(수수료 제외)에 대해 플랫폼 앞으로 세금계산서를 발행해 주세요. 미발행 시 지급이 보류됩니다.',
+                  },
+                  {
+                    step: 4,
+                    label: '플랫폼 확인',
+                    desc: '관리자가 세금계산서 발행 여부 및 금액을 확인합니다.',
+                  },
+                  {
+                    step: 5,
+                    label: '정산 지급',
+                    desc: '이상이 없는 경우 익월 10일에 지급됩니다.',
+                  },
                 ].map(({ step, label, desc }) => (
                   <li key={step} className="flex items-start gap-3">
                     <span className="bg-brand-500/20 text-brand-400 mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold">
                       {step}
                     </span>
                     <div>
-                      <p className="text-sm font-semibold text-white">{label}</p>
-                      <p className="text-surface-400 text-xs leading-relaxed">{desc}</p>
+                      <p className="text-sm font-semibold text-white">
+                        {label}
+                      </p>
+                      <p className="text-surface-400 text-xs leading-relaxed">
+                        {desc}
+                      </p>
                     </div>
                   </li>
                 ))}
               </ol>
 
-              {/* 이번 달 세금계산서 상태 */}
-              {settlements.length > 0 && settlements[0].status === 'ready' && (
-                <div className={cn(
-                  'mt-4 flex items-start gap-3 rounded-2xl border p-4 text-sm',
-                  settlements[0].invoice_submitted
-                    ? 'border-emerald-500/20 bg-emerald-500/5 text-emerald-200/80'
-                    : 'border-amber-500/20 bg-amber-500/5 text-amber-200/80'
-                )}>
-                  {settlements[0].invoice_submitted ? (
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
+              {/* 세금계산서 상태 + 발행 안내 */}
+              {readySettlements.length > 0 && (
+                <div className="mt-5 space-y-4">
+                  {/* 상태 배너 */}
+                  {readyNoInvoice.length > 0 ? (
+                    <div className="flex items-start gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-amber-200/80">
+                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+                      <div>
+                        <p className="font-semibold text-amber-200">
+                          세금계산서 발행이 필요합니다
+                        </p>
+                        <p className="mt-0.5 text-xs">
+                          미제출 {readyNoInvoice.length}건 · 공급가액 합계{' '}
+                          <strong>{formatKRW(readyNoInvoiceTotal)}</strong>
+                        </p>
+                      </div>
+                    </div>
                   ) : (
-                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
-                  )}
-                  <div>
-                    <p className="font-semibold">
-                      {settlements[0].invoice_submitted
-                        ? '세금계산서 발행 확인 완료 — 익월 10일 지급 예정'
-                        : '세금계산서 발행 대기 중'}
-                    </p>
-                    {!settlements[0].invoice_submitted && (
-                      <p className="mt-0.5 text-xs">
-                        정산 금액({formatKRW(settlements[0].net_amount)})에 대해 플랫폼(Prompter) 앞으로 세금계산서를 발행한 후 관리자에게 알려주세요.
+                    <div className="flex items-start gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-emerald-200/80">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
+                      <p className="font-semibold">
+                        세금계산서 확인 완료 — 익월 10일 지급 예정
                       </p>
-                    )}
-                  </div>
+                    </div>
+                  )}
+
+                  {/* 발행 안내 (미제출 건 있을 때만) */}
+                  {readyNoInvoice.length > 0 && (
+                    <div className="border-surface-700/50 bg-surface-900/50 space-y-4 rounded-2xl border p-5 text-sm">
+                      {/* 발행 정보 */}
+                      <div>
+                        <p className="text-surface-400 mb-3 text-xs font-semibold tracking-wider uppercase">
+                          발행 정보
+                        </p>
+                        <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                          {[
+                            { label: '공급받는 자', value: 'Prompter' },
+                            {
+                              label: '사업자등록번호',
+                              value: '530-13-02815',
+                              mono: true,
+                            },
+                            {
+                              label: '공급가액',
+                              value: formatKRW(readyNoInvoiceTotal),
+                            },
+                            {
+                              label: '부가가치세',
+                              value: formatKRW(
+                                Math.round(readyNoInvoiceTotal * 0.1)
+                              ),
+                            },
+                            {
+                              label: '작성일자',
+                              value: '해당 월 말일 또는 발행일',
+                            },
+                            { label: '발행 기한', value: '익월 10일 이전' },
+                          ].map(({ label, value, mono }) => (
+                            <div key={label}>
+                              <p className="text-surface-500 text-xs">
+                                {label}
+                              </p>
+                              <p
+                                className={cn(
+                                  'mt-0.5 text-white',
+                                  mono && 'font-mono text-xs'
+                                )}
+                              >
+                                {value}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* 발행 방법 */}
+                      <div>
+                        <p className="text-surface-400 mb-2 text-xs font-semibold tracking-wider uppercase">
+                          발행 방법
+                        </p>
+                        <a
+                          href="https://www.hometax.go.kr"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 rounded-xl border border-blue-500/30 bg-blue-500/10 px-4 py-2.5 text-sm font-semibold text-blue-300 transition-colors hover:bg-blue-500/20"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                          국세청 홈택스에서 발행하기
+                        </a>
+                        <p className="text-surface-500 mt-1.5 text-xs">
+                          모바일: 손택스 앱 → 전자세금계산서 발급
+                        </p>
+                      </div>
+
+                      {/* 유의사항 */}
+                      <div>
+                        <p className="text-surface-400 mb-2 text-xs font-semibold tracking-wider uppercase">
+                          유의사항
+                        </p>
+                        <ul className="text-surface-400 space-y-1.5 text-xs leading-relaxed">
+                          <li className="flex gap-1.5">
+                            <span className="text-surface-600 mt-0.5 shrink-0">
+                              •
+                            </span>
+                            반드시 위 사업자번호(530-13-02815)로 발행해 주세요.
+                          </li>
+                          <li className="flex gap-1.5">
+                            <span className="text-surface-600 mt-0.5 shrink-0">
+                              •
+                            </span>
+                            발행된 세금계산서는 국세청 시스템으로 자동
+                            전달됩니다. 별도 파일 제출은 불필요합니다.
+                          </li>
+                          <li className="flex gap-1.5">
+                            <span className="text-surface-600 mt-0.5 shrink-0">
+                              •
+                            </span>
+                            공급가액은{' '}
+                            <strong className="text-surface-300">
+                              총 판매금액 − 플랫폼 수수료
+                            </strong>{' '}
+                            기준입니다.
+                          </li>
+                          <li className="flex gap-1.5">
+                            <span className="text-surface-600 mt-0.5 shrink-0">
+                              •
+                            </span>
+                            부가가치세 신고·납부는 판매자 본인의 의무입니다.
+                          </li>
+                          <li className="flex gap-1.5">
+                            <span className="text-surface-600 mt-0.5 shrink-0">
+                              •
+                            </span>
+                            미발행 시 정산이 익월로 보류됩니다.
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </SectionCard>
@@ -838,7 +1026,7 @@ export default function SettlementPage() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[520px] text-left text-sm">
+                <table className="w-full min-w-130 text-left text-xs">
                   <thead>
                     <tr className="border-surface-700/50 border-b">
                       {[
@@ -908,15 +1096,19 @@ export default function SettlementPage() {
                           {sellerType === 'business' && (
                             <td className="px-4 py-3">
                               {s.seller_type === 'business' ? (
-                                <span className={cn(
-                                  'rounded-full px-2.5 py-0.5 text-xs font-medium',
-                                  s.invoice_submitted
-                                    ? 'bg-emerald-500/15 text-emerald-400'
-                                    : 'bg-amber-500/15 text-amber-400'
-                                )}>
+                                <span
+                                  className={cn(
+                                    'rounded-full px-2.5 py-0.5 text-xs font-medium',
+                                    s.invoice_submitted
+                                      ? 'bg-emerald-500/15 text-emerald-400'
+                                      : 'bg-amber-500/15 text-amber-400'
+                                  )}
+                                >
                                   {s.invoice_submitted ? '발행 확인' : '미확인'}
                                 </span>
-                              ) : '—'}
+                              ) : (
+                                '—'
+                              )}
                             </td>
                           )}
                           <td className="text-surface-500 px-4 py-3 text-xs">

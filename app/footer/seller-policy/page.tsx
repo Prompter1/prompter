@@ -308,10 +308,11 @@ export default function SellerPolicyPage() {
                   과세 유형(일반과세자 / 간이과세자)을 정확히 선택해야 합니다.
                 </li>
                 <li>
-                  플랫폼 수수료(사업자 기준 15%, 프로모션 적용 시 5%)에 대해서는
-                  Prompter가 사업자 판매자에게 세금계산서를 발행합니다. 발행된 세금계산서는{' '}
-                  <strong className="text-surface-200">마이페이지 &gt; 수익 정산</strong>
-                  에서 확인할 수 있습니다.
+                  사업자 판매자는 매월 정산 금액에 대해{' '}
+                  <strong className="text-surface-200">Prompter(사업자번호 530-13-02815) 앞으로 전자세금계산서를 직접 발행</strong>해야
+                  합니다. 홈택스(www.hometax.go.kr) 또는 손택스 앱에서 발행하며,
+                  발행된 세금계산서는 국세청 시스템을 통해 자동 전달됩니다.
+                  별도 파일 제출은 불필요하고, 발행 기한은 익월 10일입니다.
                 </li>
               </ul>
             </div>
