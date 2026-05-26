@@ -133,7 +133,11 @@ export function UnlockModal({
   return (
     <>
       <Script
-        src="https://stgstdpay.inicis.com/stdjs/INIStdPay.js"
+        src={
+          process.env.NEXT_PUBLIC_INICIS_DEV_BYPASS === 'true'
+            ? 'https://stgstdpay.inicis.com/stdjs/INIStdPay.js'
+            : 'https://stdpay.inicis.com/stdjs/INIStdPay.js'
+        }
         strategy="afterInteractive"
         onLoad={() => setScriptReady(true)}
         onError={() => setSignError('결제 스크립트 로드에 실패했습니다.')}
