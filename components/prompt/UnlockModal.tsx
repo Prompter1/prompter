@@ -39,6 +39,7 @@ export function UnlockModal({
   const [scriptReady, setScriptReady] = useState(false)
   const [signData, setSignData] = useState<SignData | null>(null)
   const [signError, setSignError] = useState<string | null>(null)
+  const [fetchKey, setFetchKey] = useState(0)
 
   useEffect(() => {
     if (globalThis.INIStdPay) { setScriptReady(true); return }
@@ -49,6 +50,8 @@ export function UnlockModal({
   }, [])
 
   useEffect(() => {
+    setSignData(null)
+    setSignError(null)
     fetch('/api/payment/inicis-sign', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -64,7 +67,7 @@ export function UnlockModal({
         setSignError(msg)
         toastError('오류', msg)
       })
-  }, [postId, price, toastError])
+  }, [postId, price, toastError, fetchKey])
 
   function handlePayment() {
     const ini = globalThis.INIStdPay
@@ -120,6 +123,8 @@ export function UnlockModal({
 
     document.body.appendChild(form)
     ini.pay('inicis-pay-form')
+    // 다음 재시도를 위해 새 orderId 발급 — 팝업이 열린 사이 백그라운드에서 fetch
+    setFetchKey((k) => k + 1)
   }
 
   const ready = scriptReady && signData !== null

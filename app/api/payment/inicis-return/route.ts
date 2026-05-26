@@ -3,8 +3,8 @@ import { createHash } from 'node:crypto'
 import { createSupabaseAdminClient } from '@/src/lib/supabase-admin'
 import { resolveFeeRate } from '@/src/lib/settlement-utils'
 
-const INICIS_MID = process.env.INICIS_MID!
-const INICIS_SIGN_KEY = process.env.INICIS_SIGN_KEY!
+const INICIS_MID = process.env.INICIS_MID ?? ''
+const INICIS_SIGN_KEY = process.env.INICIS_SIGN_KEY ?? ''
 
 // POST /api/payment/inicis-return  (KG이니시스 returnUrl — 팝업 브라우저가 POST로 호출)
 // nextUrl(서버-서버) 대신 브라우저 경유로 step 1 + 2 인증을 완성, charge/success로 redirect
@@ -44,15 +44,17 @@ export async function POST(req: NextRequest) {
 
   // ── step 2: 이니시스 인증 완료 요청 (우리 서버 → 이니시스) ─────────────────
   const ts      = Date.now().toString()
-  // authSig: SHA256(authToken + timestamp) — step2 인증용 단순 연결
-  const authSig = createHash('sha256').update(authToken + ts).digest('hex')
+  // step2 signature = SHA256("authToken=X&timestamp=X")
+  const authSig          = createHash('sha256').update(`authToken=${authToken}&timestamp=${ts}`).digest('hex')
+  // step2 verification = SHA256("authToken=X&signKey=X&timestamp=X")
+  const authVerification = createHash('sha256').update(`authToken=${authToken}&signKey=${INICIS_SIGN_KEY}&timestamp=${ts}`).digest('hex')
 
   let authData: Record<string, string>
   try {
     const authRes = await fetch(authUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ mid: INICIS_MID, authToken, timestamp: ts, signature: authSig }),
+      body: new URLSearchParams({ mid: INICIS_MID, authToken, timestamp: ts, signature: authSig, verification: authVerification }),
     })
     const text = await authRes.text()
     authData = parseXmlFlat(text)
@@ -68,7 +70,7 @@ export async function POST(req: NextRequest) {
       .from('inicis_pending_orders')
       .update({ status: 'failed' })
       .eq('order_id', orderNumber)
-    return fail(`step2_fail:${authData.resultCode}`)
+    return fail(`step2_fail:${authData.resultCode}:${authData.resultMsg ?? ''}`)
   }
 
   const tid      = authData.tid ?? ''
@@ -103,7 +105,7 @@ export async function POST(req: NextRequest) {
     .eq('id', pending.post_id)
     .single()
 
-  if (!post || post.price !== amount) return fail(`post_price_mismatch`)
+  if (!post || post.price !== amount) return fail('post_price_mismatch')
 
   const { data: seller } = await adminSupabase
     .from('members')

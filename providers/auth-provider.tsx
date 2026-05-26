@@ -38,7 +38,7 @@ export function AuthProvider({
         setUser(session?.user ?? null)
         setIsLoading(false)
 
-        if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+        if (event === 'SIGNED_IN') {
           router.refresh()
         }
       }
@@ -49,7 +49,8 @@ export function AuthProvider({
 
   const signOut = async () => {
     await supabase.auth.signOut()
-    router.push('/')
+    // router.push 대신 full reload — router.refresh()와 충돌 없이 세션 완전 초기화
+    window.location.replace('/')
   }
 
   return (

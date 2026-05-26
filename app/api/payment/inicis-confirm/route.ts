@@ -47,14 +47,15 @@ export async function POST(req: NextRequest) {
 
   // ── 2단계: 우리 서버 → 이니시스 인증 완료 요청 ──────────────────────────
   const ts      = Date.now().toString()
-  const authSig = createHash('sha256').update(authToken + ts).digest('hex')
+  const authSig          = createHash('sha256').update(`authToken=${authToken}&timestamp=${ts}`).digest('hex')
+  const authVerification = createHash('sha256').update(`authToken=${authToken}&signKey=${INICIS_SIGN_KEY}&timestamp=${ts}`).digest('hex')
 
   let authData: Record<string, string>
   try {
     const authRes = await fetch(authUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ mid: INICIS_MID, authToken, timestamp: ts, signature: authSig }),
+      body: new URLSearchParams({ mid: INICIS_MID, authToken, timestamp: ts, signature: authSig, verification: authVerification }),
     })
     authData = parseXmlFlat(await authRes.text())
   } catch {
@@ -97,7 +98,7 @@ export async function POST(req: NextRequest) {
     .eq('id', pending.post_id)
     .single()
 
-  if (!post || post.price !== amount) return fail('PRICE_MISMATCH')
+  if (post?.price !== amount) return fail('PRICE_MISMATCH')
 
   const { data: seller } = await adminSupabase
     .from('members')
