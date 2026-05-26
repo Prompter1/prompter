@@ -20,6 +20,8 @@ interface SignData {
   timestamp: string
   mKey: string
   signature: string
+  verification: string
+  buyerEmail: string
 }
 
 declare global {
@@ -69,29 +71,43 @@ export function UnlockModal({
     if (!ini || !signData) return
 
     const origin = globalThis.location.origin
+    // NEXT_PUBLIC_PAYMENT_CALLBACK_URL: 로컬 개발 시 ngrok 등 외부 URL 설정
+    // 미설정 시 현재 origin 사용 (배포 환경에서는 자동으로 올바른 도메인이 됨)
+    const callbackBase =
+      process.env.NEXT_PUBLIC_PAYMENT_CALLBACK_URL?.replace(/\/$/, '') ?? origin
 
     document.getElementById('inicis-pay-form')?.remove()
 
-    // INIStdPay 신형 필드명 (P_ 방식 아님)
     const form = document.createElement('form')
     form.id = 'inicis-pay-form'
     form.method = 'post'
     form.style.display = 'none'
 
     const fields: [string, string][] = [
-      ['mid',        signData.mid],
-      ['oid',        signData.orderId],
-      ['price',      String(price)],
-      ['currency',   'WON'],
-      ['timestamp',  signData.timestamp],
-      ['mKey',       signData.mKey],
-      ['signature',  signData.signature],
-      ['goodName',   title],
-      ['buyerName',  '구매자'],
-      ['gopaymethod','Card'],
-      ['nextUrl',    `${origin}/api/payment/inicis-confirm`],
-      ['returnUrl',  `${origin}/charge/success?postId=${postId}`],
-      ['closeUrl',   `${origin}/charge/success?postId=${postId}`],
+      ['version',      '1.0'],
+      ['gopaymethod',  'Card'],
+      ['mid',          signData.mid],
+      ['oid',          signData.orderId],
+      ['price',        String(price)],
+      ['currency',     'WON'],
+      ['timestamp',    signData.timestamp],
+      ['use_chkfake',  'Y'],
+      ['mKey',         signData.mKey],
+      ['signature',    signData.signature],
+      ['verification', signData.verification],
+      ['goodname',     title.slice(0, 40)],
+      ['buyername',    '구매자'],
+      ['buyertel',     '01000000000'],
+      ['buyeremail',   signData.buyerEmail],
+      ['charset',      'UTF-8'],
+      ['acceptmethod', 'HPP(1):below1000:centerCd(Y)'],
+      // nextUrl: 서버-서버 콜백 — 외부 URL이 설정된 경우(배포 환경)에만 포함
+      // 로컬에서 nextUrl을 localhost로 보내면 KG이니시스가 도달 못해 authToken을 무효화함
+      ...(callbackBase === origin
+        ? []
+        : ([['nextUrl', `${callbackBase}/api/payment/inicis-confirm`]] as [string, string][])),
+      ['returnUrl',    `${origin}/api/payment/inicis-return?postId=${postId}`],
+      ['closeUrl',     `${origin}/charge/success?postId=${postId}`],
     ]
 
     for (const [name, value] of fields) {

@@ -1,5 +1,7 @@
 import { createSupabaseServerClient } from '@/src/lib/supabase-server'
-import { ADMIN_EVIDENCE_BUCKET } from '@/src/lib/storage'
+
+const ADMIN_EVIDENCE_BUCKET =
+  process.env.NEXT_PUBLIC_SUPABASE_ADMIN_EVIDENCE_BUCKET ?? 'admin-storage'
 
 export type PendingVerificationRow = {
   id: string                // ✅ UUID → string

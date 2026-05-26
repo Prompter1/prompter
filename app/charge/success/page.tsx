@@ -16,41 +16,57 @@ function PurchaseSuccessContent() {
 
   useEffect(() => {
     const postId = searchParams.get('postId')
+    const oid    = searchParams.get('oid')
+    const err    = searchParams.get('err')
+
+    if (err) {
+      setErrorMsg(`결제 처리 실패: ${err}`)
+      setStatus('error')
+      return
+    }
+
     if (!postId) {
       setErrorMsg('결제 정보가 올바르지 않습니다.')
       setStatus('error')
       return
     }
 
-    // inicis-confirm(P_NEXT_URL)에서 이미 DB 처리 완료됨
-    // transactions 테이블에서 구매 여부 확인으로 성공 판단
     const verify = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
+      const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         setErrorMsg('로그인이 필요합니다.')
         setStatus('error')
         return
       }
 
-      // 최대 8초 동안 0.5초 간격으로 확인 (서버 콜백 처리 지연 대비)
-      for (let i = 0; i < 16; i++) {
+      const hasTx = async () => {
         const { data } = await supabase
           .from('transactions')
           .select('id')
           .eq('prompt_post_id', Number(postId))
           .eq('buyer_id', user.id)
           .maybeSingle()
+        return Boolean(data)
+      }
 
-        if (data) {
+      // 최대 6초 polling (서버 콜백 처리 대기)
+      for (let i = 0; i < 12; i++) {
+        if (await hasTx()) {
           setStatus('success')
           setTimeout(() => router.push(`/prompt/${postId}`), 2000)
           return
         }
-
         await new Promise((r) => setTimeout(r, 500))
+      }
+
+      // 개발 환경 fallback: nextUrl 콜백 없이 직접 처리 (INICIS_DEV_BYPASS=true 시)
+      if (process.env.NEXT_PUBLIC_INICIS_DEV_BYPASS === 'true' && oid) {
+        const res = await fetch(`/api/payment/inicis-dev-confirm?oid=${oid}`)
+        if (res.ok && await hasTx()) {
+          setStatus('success')
+          setTimeout(() => router.push(`/prompt/${postId}`), 2000)
+          return
+        }
       }
 
       setErrorMsg('결제 처리 확인에 실패했습니다. 고객센터에 문의해 주세요.')

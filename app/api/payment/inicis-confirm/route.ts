@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({ mid: INICIS_MID, authToken, timestamp: ts, signature: authSig }),
     })
-    authData = (await authRes.json()) as Record<string, string>
+    authData = parseXmlFlat(await authRes.text())
   } catch {
     return fail('AUTH_FETCH_ERROR', 500)
   }
@@ -75,8 +75,8 @@ export async function POST(req: NextRequest) {
     return fail('INVALID_AUTH_RESPONSE')
   }
 
-  // 서명 검증: SHA256(TotPrice + signKey)
-  const expectedSig = createHash('sha256').update(totPrice + INICIS_SIGN_KEY).digest('hex')
+  // 서명 검증: SHA256("TotPrice=X&signKey=X")
+  const expectedSig = createHash('sha256').update(`TotPrice=${totPrice}&signKey=${INICIS_SIGN_KEY}`).digest('hex')
   if (authData.signature && authData.signature !== expectedSig) return fail('SIGN_MISMATCH')
 
   // ── 주문 조회 ──────────────────────────────────────────────────────────────
@@ -130,4 +130,12 @@ export async function POST(req: NextRequest) {
     .eq('order_id', oid)
 
   return new Response('OK', { status: 200 })
+}
+
+function parseXmlFlat(xml: string): Record<string, string> {
+  const result: Record<string, string> = {}
+  for (const m of xml.matchAll(/<([A-Za-z_]\w*)>([^<]*)<\/\1>/g)) {
+    result[m[1]] = m[2]
+  }
+  return result
 }

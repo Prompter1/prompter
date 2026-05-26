@@ -27,11 +27,15 @@ export async function POST(req: Request) {
   const timestamp = Date.now().toString()
   const orderId = `pmt-${postId}-${randomBytes(4).toString('hex')}`
 
-  // mKey = SHA256(signKey) — 가맹점 키 해시, 주문별 아님
+  // mKey = SHA256(signKey)
   const mKey = createHash('sha256').update(INICIS_SIGN_KEY).digest('hex')
-  // signature = SHA256(oid + price + timestamp + signKey) — 주문별 위변조 방지
+  // signature = SHA256("oid=X&price=X&timestamp=X") — 알파벳 순, key=value 형식
   const signature = createHash('sha256')
-    .update(`${orderId}${amount}${timestamp}${INICIS_SIGN_KEY}`)
+    .update(`oid=${orderId}&price=${amount}&timestamp=${timestamp}`)
+    .digest('hex')
+  // verification = SHA256("oid=X&price=X&signKey=X&timestamp=X") — signKey 포함
+  const verification = createHash('sha256')
+    .update(`oid=${orderId}&price=${amount}&signKey=${INICIS_SIGN_KEY}&timestamp=${timestamp}`)
     .digest('hex')
 
   const adminSupabase = createSupabaseAdminClient()
@@ -44,5 +48,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: '주문 생성에 실패했습니다.' }, { status: 500 })
   }
 
-  return NextResponse.json({ mid: INICIS_MID, orderId, timestamp, mKey, signature })
+  return NextResponse.json({
+    mid: INICIS_MID,
+    orderId,
+    timestamp,
+    mKey,
+    signature,
+    verification,
+    buyerEmail: user.email ?? '',
+  })
 }
