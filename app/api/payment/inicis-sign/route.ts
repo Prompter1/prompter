@@ -1,17 +1,10 @@
 import { NextResponse } from 'next/server'
-import { createHash } from 'node:crypto'
-import { createClient } from '@supabase/supabase-js'
+import { createHash, randomBytes } from 'node:crypto'
+import { createSupabaseAdminClient } from '@/src/lib/supabase-admin'
 import { createSupabaseServerClient } from '@/src/lib/supabase-server'
-import { nanoid } from 'nanoid'
 
 const INICIS_MID = process.env.INICIS_MID!
 const INICIS_SIGN_KEY = process.env.INICIS_SIGN_KEY!
-
-const adminSupabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { persistSession: false } }
-)
 
 export async function POST(req: Request) {
   if (!INICIS_MID || !INICIS_SIGN_KEY) {
@@ -32,9 +25,8 @@ export async function POST(req: Request) {
   }
 
   const timestamp = Date.now().toString()
-  const orderId = `pmt-${postId}-${nanoid(8)}`
+  const orderId = `pmt-${postId}-${randomBytes(4).toString('hex')}`
 
-  // INIStdPay 신형 방식
   // mKey = SHA256(signKey) — 가맹점 키 해시, 주문별 아님
   const mKey = createHash('sha256').update(INICIS_SIGN_KEY).digest('hex')
   // signature = SHA256(oid + price + timestamp + signKey) — 주문별 위변조 방지
@@ -42,6 +34,7 @@ export async function POST(req: Request) {
     .update(`${orderId}${amount}${timestamp}${INICIS_SIGN_KEY}`)
     .digest('hex')
 
+  const adminSupabase = createSupabaseAdminClient()
   const { error } = await adminSupabase
     .from('inicis_pending_orders')
     .insert({ order_id: orderId, buyer_id: user.id, post_id: postId, amount })

@@ -1,31 +1,26 @@
 import { NextRequest } from 'next/server'
 import { createHash } from 'node:crypto'
-import { createClient } from '@supabase/supabase-js'
+import { createSupabaseAdminClient } from '@/src/lib/supabase-admin'
 import { resolveFeeRate } from '@/src/lib/settlement-utils'
 
 const INICIS_MID = process.env.INICIS_MID!
 const INICIS_SIGN_KEY = process.env.INICIS_SIGN_KEY!
 
-const adminSupabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { persistSession: false } }
-)
-
 function fail(msg: string, status = 400) {
   return new Response(msg, { status })
-}
-
-async function markFailed(orderId: string) {
-  await adminSupabase
-    .from('inicis_pending_orders')
-    .update({ status: 'failed' })
-    .eq('order_id', orderId)
 }
 
 // POST /api/payment/inicis-confirm  (KG이니시스 nextUrl 서버 콜백 — INIStdPay 2단계 인증)
 // KG이니시스 서버에서 직접 호출 — 사용자 세션 없음
 export async function POST(req: NextRequest) {
+  const adminSupabase = createSupabaseAdminClient()
+
+  const markFailed = (orderId: string) =>
+    adminSupabase
+      .from('inicis_pending_orders')
+      .update({ status: 'failed' })
+      .eq('order_id', orderId)
+
   let form: FormData
   try {
     form = await req.formData()
