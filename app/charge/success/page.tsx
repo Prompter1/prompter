@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { CheckCircle, Loader2, Zap } from 'lucide-react'
 import Link from 'next/link'
+import { supabase } from '@/src/lib/supabase'
 
 function PurchaseSuccessContent() {
   const router = useRouter()
@@ -14,44 +15,49 @@ function PurchaseSuccessContent() {
   const [errorMsg, setErrorMsg] = useState('')
 
   useEffect(() => {
-    const paymentKey = searchParams.get('paymentKey')
-    const orderId = searchParams.get('orderId')
-    const amount = searchParams.get('amount')
     const postId = searchParams.get('postId')
-
-    if (!paymentKey || !orderId || !amount || !postId) {
+    if (!postId) {
       setErrorMsg('결제 정보가 올바르지 않습니다.')
       setStatus('error')
       return
     }
 
-    fetch('/api/payment/prompt-confirm', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        paymentKey,
-        orderId,
-        amount: Number(amount),
-        postId: Number(postId),
-      }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.ok) {
-          setStatus('success')
-          // 2초 후 해당 프롬프트 페이지로 이동
-          setTimeout(() => {
-            router.push(`/prompt/${postId}`)
-          }, 2000)
-        } else {
-          setErrorMsg(data.error ?? '결제 승인에 실패했습니다.')
-          setStatus('error')
-        }
-      })
-      .catch(() => {
-        setErrorMsg('네트워크 오류가 발생했습니다.')
+    // inicis-confirm(P_NEXT_URL)에서 이미 DB 처리 완료됨
+    // transactions 테이블에서 구매 여부 확인으로 성공 판단
+    const verify = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!user) {
+        setErrorMsg('로그인이 필요합니다.')
         setStatus('error')
-      })
+        return
+      }
+
+      // 최대 8초 동안 0.5초 간격으로 확인 (서버 콜백 처리 지연 대비)
+      for (let i = 0; i < 16; i++) {
+        const { data } = await supabase
+          .from('transactions')
+          .select('id')
+          .eq('prompt_post_id', Number(postId))
+          .eq('buyer_id', user.id)
+          .maybeSingle()
+
+        if (data) {
+          setStatus('success')
+          setTimeout(() => router.push(`/prompt/${postId}`), 2000)
+          return
+        }
+
+        await new Promise((r) => setTimeout(r, 500))
+      }
+
+      setErrorMsg('결제 처리 확인에 실패했습니다. 고객센터에 문의해 주세요.')
+      setStatus('error')
+    }
+
+    verify()
   }, [searchParams, router])
 
   if (status === 'loading') {

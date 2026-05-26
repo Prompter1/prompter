@@ -7,6 +7,7 @@ import Footer from '@/components/layout/Footer'
 import {
   ChevronDown,
   ChevronUp,
+  Clock,
   MessageCircle,
   CreditCard,
   Zap,
@@ -48,6 +49,13 @@ const FAQ_DATA: FAQItem[] = [
     answer:
       '결제 즉시 "마이페이지 > 구매 내역"에서 확인하실 수 있습니다. 구매한 프롬프트는 복사하기 기능을 통해 즉시 AI 서비스(ChatGPT, Claude 등)에 붙여넣어 사용 가능합니다.',
     icon: <Zap className="text-brand-400 h-5 w-5" />,
+  },
+  {
+    category: '구매·이용',
+    question: '구매한 프롬프트의 서비스 이용 기간은 얼마나 되나요?',
+    answer:
+      '플랫폼 내 열람·복사 기능은 구매일로부터 12개월간 제공됩니다. 단, 마이페이지 구매 내역의 [다운로드] 버튼을 통해 텍스트 파일(.txt)로 저장하면 기간 제한 없이 영구적으로 이용하실 수 있습니다. 중요한 프롬프트는 다운로드하여 보관하시기 바랍니다.',
+    icon: <Clock className="text-brand-400 h-5 w-5" />,
   },
 
   // ── 취소·환불 ─────────────────────────────────────────────────────────

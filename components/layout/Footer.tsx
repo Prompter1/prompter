@@ -40,6 +40,21 @@ export default function Footer() {
               검증된 AI 프롬프트를 거래하고 공유하는 마켓플레이스. 당신의
               프롬프트를 가장 가치 있는 자산으로
             </p>
+            <div className="border-border/30 mt-5 max-w-xs rounded-xl border bg-white/3 px-4 py-3">
+              <p className="text-muted-foreground text-xs leading-relaxed">
+                모든 거래에 대한 책임과 배송, 환불, 민원 등의 처리는
+                프롬프터에서 진행합니다.
+              </p>
+              <p className="text-muted-foreground mt-1.5 text-xs">
+                민원담당자 : 차민우{' '}
+                <a
+                  href="mailto:chaalsdn0217@naver.com"
+                  className="hover:text-foreground underline underline-offset-2 transition-colors"
+                >
+                  (chaalsdn0217@naver.com)
+                </a>
+              </p>
+            </div>
           </div>
 
           {/* Product links */}

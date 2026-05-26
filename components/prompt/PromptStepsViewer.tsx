@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { FileText, MessageSquare, Sparkles, Lock, Clock, X, Hourglass } from 'lucide-react'
+import { FileText, MessageSquare, Sparkles, Lock, Hourglass } from 'lucide-react'
 import { cn } from '@/src/lib/utils'
 import { CopyPromptButton } from './CopyPromptButton'
+import { UnlockModal } from './UnlockModal'
 
 export interface PromptStep {
   id: number
@@ -14,46 +15,6 @@ export interface PromptStep {
   input_media: string[]
   output_text: string
   output_media: string[]
-}
-
-// ── 프리론칭 안내 모달 ────────────────────────────────────────────────────────
-function PreLaunchNotice({ onClose }: Readonly<{ onClose: () => void }>) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      <div className="border-surface-700/50 bg-surface-800 relative w-full max-w-sm rounded-3xl border p-6 shadow-2xl">
-        <button
-          type="button"
-          onClick={onClose}
-          className="text-surface-400 hover:text-surface-200 absolute top-4 right-4 transition-colors"
-        >
-          <X className="h-5 w-5" />
-        </button>
-
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/15">
-          <Clock className="h-7 w-7 text-amber-400" />
-        </div>
-
-        <h2 className="mb-2 text-center text-lg font-bold text-white">
-          정식 론칭 준비 중
-        </h2>
-        <p className="text-surface-400 mb-1 text-center text-sm leading-relaxed">
-          해금 및 결제는 정식 런칭 이후 가능합니다.
-        </p>
-
-        <button
-          type="button"
-          onClick={onClose}
-          className="bg-surface-700 hover:bg-surface-600 mt-6 w-full rounded-2xl py-3 text-sm font-semibold text-white transition-colors"
-        >
-          확인
-        </button>
-      </div>
-    </div>
-  )
 }
 
 // ── 개별 스텝의 입력 프롬프트 ────────────────────────────────────────────────
@@ -168,9 +129,9 @@ export function PromptStepsViewer({
   isLoggedIn,
   isPendingReview = false,
   isDeleted = false,
-  postId: _postId,
-  title: _title,
-  userId: _userId,
+  postId,
+  title,
+  userId,
   onStepChange,
 }: Readonly<{
   steps: PromptStep[]
@@ -185,8 +146,8 @@ export function PromptStepsViewer({
   onStepChange?: (outputMedia: string[], inputMedia: string[]) => void
 }>) {
   const [activeStep, setActiveStep] = useState(0)
-  const [unlocked] = useState(canViewFull)
-  const [showNotice, setShowNotice] = useState(false)
+  const [unlocked, setUnlocked] = useState(canViewFull)
+  const [showUnlock, setShowUnlock] = useState(false)
 
   if (steps.length === 0) return null
 
@@ -247,7 +208,7 @@ export function PromptStepsViewer({
             isLoggedIn={isLoggedIn}
             isPendingReview={isPendingReview}
             isDeleted={isDeleted}
-            onRequestUnlock={() => setShowNotice(true)}
+            onRequestUnlock={() => setShowUnlock(true)}
           />
 
           {/* 출력 텍스트 */}
@@ -294,8 +255,19 @@ export function PromptStepsViewer({
         )}
       </div>
 
-      {/* 프리론칭 안내 */}
-      {showNotice && <PreLaunchNotice onClose={() => setShowNotice(false)} />}
+      {showUnlock && (
+        <UnlockModal
+          postId={postId}
+          title={title}
+          price={price}
+          userId={userId}
+          onClose={() => setShowUnlock(false)}
+          onSuccess={() => {
+            setUnlocked(true)
+            setShowUnlock(false)
+          }}
+        />
+      )}
     </>
   )
 }

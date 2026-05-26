@@ -40,7 +40,7 @@ interface BusinessProfile {
     email: string | null
     settlement_status: string | null
     monthly_gross: number
-    is_promotion?: boolean
+    is_promotion: boolean
   } | null
 }
 
@@ -58,13 +58,13 @@ interface SettlementRow {
   paid_at: string | null
   invoice_submitted: boolean
   is_promotion: boolean
-  member: { nickname: string | null; email: string | null; is_promotion?: boolean } | null
+  member: { nickname: string | null; email: string | null; is_promotion: boolean } | null
 }
 
 type RawBP = Omit<BusinessProfile, 'member'>
 type RawSettlement = Omit<SettlementRow, 'member'>
-type MemberRow = { id: string; nickname: string | null; email: string | null; settlement_status: string | null; monthly_gross: number; is_promotion?: boolean }
-type SellerRow = { id: string; nickname: string | null; email: string | null; is_promotion?: boolean }
+type MemberRow = { id: string; nickname: string | null; email: string | null; settlement_status: string | null; monthly_gross: number; is_promotion: boolean }
+type SellerRow = { id: string; nickname: string | null; email: string | null; is_promotion: boolean }
 
 const PERIOD_OPTIONS = buildPeriodOptions()
 
@@ -252,21 +252,22 @@ export default function AdminSettlementPage() {
 
       const rows = data ?? []
       // 개인: 전체 포함 / 사업자: 세금계산서 제출된 것만
-      const eligible = rows.filter(
-        (s: { seller_type: string; invoice_submitted: boolean }) =>
-          s.seller_type === 'individual' ||
-          (s.seller_type === 'business' && s.invoice_submitted)
+      const { total, individualCount, businessCount } = rows.reduce(
+        (
+          acc: { total: number; individualCount: number; businessCount: number },
+          s: { seller_type: string; net_amount: number; invoice_submitted: boolean }
+        ) => {
+          if (s.seller_type === 'individual') {
+            acc.total += s.net_amount ?? 0
+            acc.individualCount++
+          } else if (s.seller_type === 'business' && s.invoice_submitted) {
+            acc.total += s.net_amount ?? 0
+            acc.businessCount++
+          }
+          return acc
+        },
+        { total: 0, individualCount: 0, businessCount: 0 }
       )
-      const total = eligible.reduce(
-        (sum: number, s: { net_amount: number }) => sum + (s.net_amount ?? 0),
-        0
-      )
-      const individualCount = eligible.filter(
-        (s: { seller_type: string }) => s.seller_type === 'individual'
-      ).length
-      const businessCount = eligible.filter(
-        (s: { seller_type: string }) => s.seller_type === 'business'
-      ).length
 
       setRunResult({ total, individualCount, businessCount })
     } catch {
@@ -400,7 +401,7 @@ export default function AdminSettlementPage() {
         ) : (
           <div className="border-surface-700/50 overflow-hidden rounded-2xl border">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[700px] text-left text-sm">
+              <table className="w-full min-w-175 text-left text-sm">
                 <thead>
                   <tr className="border-surface-700/50 bg-surface-800/50 border-b">
                     {[
@@ -583,7 +584,7 @@ export default function AdminSettlementPage() {
         ) : (
           <div className="border-surface-700/50 overflow-hidden rounded-2xl border">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[960px] text-left text-sm">
+              <table className="w-full min-w-240 text-left text-sm">
                 <thead>
                   <tr className="border-surface-700/50 bg-surface-800/50 border-b">
                     {[

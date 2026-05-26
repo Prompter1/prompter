@@ -31,14 +31,7 @@ import { Navbar } from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { BusinessProfileForm } from '@/components/mypage/settlement/BusinessProfileForm'
 import { cn, formatKRW } from '@/src/lib/utils'
-
-// ─── Constants ───────────────────────────────────────────────────────────────
-
-const INDIVIDUAL_FEE_RATE = 0.2
-const BUSINESS_FEE_RATE = 0.15
-const PROMO_FEE_RATE = 0.05
-const WITHHOLDING_RATE = 0.033
-const MONTHLY_LIMIT = 500_000
+import { resolveFeeRate, WITHHOLDING_RATE, MONTHLY_LIMIT } from '@/src/lib/settlement-utils'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -55,6 +48,7 @@ interface MemberInfo {
   settlement_status: SettlementStatus
   total_revenue: number
   monthly_gross: number
+  is_promotion: boolean
 }
 
 interface Settlement {
@@ -90,12 +84,7 @@ function calcExample(
   verified: boolean,
   isPromotion = false
 ) {
-  const feeRate =
-    sellerType === 'business'
-      ? isPromotion
-        ? PROMO_FEE_RATE
-        : BUSINESS_FEE_RATE
-      : INDIVIDUAL_FEE_RATE
+  const feeRate = resolveFeeRate(sellerType, isPromotion)
   const fee = Math.floor(gross * feeRate)
   const afterFee = gross - fee
   const withhold = applyWithholding(sellerType, verified)
@@ -306,7 +295,7 @@ function SaveTypeButton({
 }: {
   saving: boolean
   saved: boolean
-  sellerType: 'individual' | 'business'
+  sellerType: NonNullable<SellerType>
   disabled: boolean
   onClick: () => void
 }) {
@@ -339,7 +328,6 @@ export default function SettlementPage() {
 
   const [memberInfo, setMemberInfo] = useState<MemberInfo | null>(null)
   const [verified, setVerified] = useState(false)
-  const [isPromotion, setIsPromotion] = useState(false)
   const [settlements, setSettlements] = useState<Settlement[]>([])
   const [dataLoading, setDataLoading] = useState(true)
   const [pendingAmount, setPendingAmount] = useState(0)
@@ -403,7 +391,6 @@ export default function SettlementPage() {
       if (member) {
         setMemberInfo(member as MemberInfo)
         setSelectedType((member as MemberInfo).seller_type ?? null)
-        setIsPromotion(Boolean((member as any).is_promotion))
       }
       setVerified(bp?.verified ?? false)
       setPendingAmount(
@@ -457,17 +444,19 @@ export default function SettlementPage() {
   const typeChanged = selectedType !== sellerType
   const hasWithhold = settlements.some((s) => s.withholding_tax > 0)
 
-  // status = 'ready' 이면 이전 달 정산이 미지급 상태
   const readySettlements = settlements.filter((s) => s.status === 'ready')
-  const readyNoInvoice = readySettlements.filter((s) => !s.invoice_submitted)
-  const readyNoInvoiceTotal = readyNoInvoice.reduce(
-    (sum, s) => sum + s.net_amount,
-    0
-  )
-  const prevUnpaidTotal = readySettlements.reduce(
-    (sum, s) => sum + s.net_amount,
-    0
-  )
+  const { prevUnpaidTotal, readyNoInvoice, readyNoInvoiceTotal } =
+    readySettlements.reduce(
+      (acc, s) => {
+        acc.prevUnpaidTotal += s.net_amount
+        if (!s.invoice_submitted) {
+          acc.readyNoInvoice.push(s)
+          acc.readyNoInvoiceTotal += s.net_amount
+        }
+        return acc
+      },
+      { prevUnpaidTotal: 0, readyNoInvoice: [] as Settlement[], readyNoInvoiceTotal: 0 }
+    )
 
   // 수수료 예시 (이번 달 매출 또는 10,000원)
   // selectedType 기준으로 계산 — 저장 전 미리보기 역할
@@ -479,7 +468,7 @@ export default function SettlementPage() {
     feeRate: exFeeRate,
     withhold: exWithhold,
     net: exNet,
-  } = calcExample(exGross, selectedType, previewVerified, isPromotion)
+  } = calcExample(exGross, selectedType, previewVerified, memberInfo?.is_promotion ?? false)
 
   const faqs = [
     {
@@ -540,7 +529,7 @@ export default function SettlementPage() {
             sellerType={sellerType}
             verified={verified}
             monthlyGross={monthly}
-            isPromotion={isPromotion}
+            isPromotion={memberInfo?.is_promotion ?? false}
           />
         </div>
 
@@ -736,9 +725,7 @@ export default function SettlementPage() {
                 </div>
                 <span className="text-brand-400 text-xl font-bold">
                   {selectedType === 'business'
-                    ? isPromotion
-                      ? '5% 🎉'
-                      : '15%'
+                    ? (memberInfo?.is_promotion ? '5% 🎉' : '15%')
                     : selectedType === 'individual'
                       ? '20%'
                       : '15~20%'}

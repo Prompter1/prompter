@@ -34,7 +34,7 @@ const businessDetails = [
   {
     icon: <MapPin className="text-brand-400 h-5 w-5" />,
     label: '사업장 주소',
-    value: '서울특별시 광진구 자양로 135',
+    value: '충청남도 예산군 삽교읍 홍예로 485',
   },
   {
     icon: <Mail className="text-brand-400 h-5 w-5" />,

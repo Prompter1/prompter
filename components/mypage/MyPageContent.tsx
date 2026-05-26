@@ -27,6 +27,7 @@ export interface PurchaseTransaction {
   fee: number
   seller_revenue: number
   created_at: string
+  prompt_post: { title: string } | null
 }
 
 // 구매자 목록 타입
@@ -120,7 +121,7 @@ export function MyPageContent() {
     try {
       const { data: txs } = await supabase
         .from('transactions')
-        .select('id, prompt_post_id, amount, fee, seller_revenue, created_at')
+        .select('id, prompt_post_id, amount, fee, seller_revenue, created_at, prompt_post:prompt_posts!prompt_post_id(title)')
         .eq('buyer_id', user.id)
         .order('created_at', { ascending: false })
 

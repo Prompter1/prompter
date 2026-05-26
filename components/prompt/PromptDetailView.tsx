@@ -230,7 +230,7 @@ export async function PromptDetailView({
 
             {/* 작성자 */}
             <Link
-              href={`/profile/${author.id}`}
+              href={`/user/${author.id}`}
               className="mb-6 flex items-center gap-3"
             >
               {author.avatar_url ? (

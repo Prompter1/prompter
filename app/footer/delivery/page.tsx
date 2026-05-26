@@ -1,6 +1,6 @@
 import { Navbar } from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
-import { Truck, History, MonitorSmartphone, AlertCircle, Hourglass } from 'lucide-react'
+import { Truck, Download, History, MonitorSmartphone, AlertCircle, Hourglass } from 'lucide-react'
 
 export default function DeliveryPage() {
   const lastUpdated = '2026. 05. 13'
@@ -30,7 +30,7 @@ export default function DeliveryPage() {
 
           <div className="text-surface-300 space-y-8 text-sm leading-relaxed">
             {/* 1. 제공 방식 요약 */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div className="bg-surface-800/30 border-surface-700/50 flex gap-4 rounded-2xl border p-6">
                 <div className="bg-brand-500/10 h-fit rounded-xl p-3">
                   <MonitorSmartphone className="text-brand-400 h-5 w-5" />
@@ -52,11 +52,26 @@ export default function DeliveryPage() {
                 </div>
                 <div>
                   <h3 className="mb-1 font-bold text-white">
-                    평생 무제한 열람
+                    플랫폼 12개월 이용
                   </h3>
                   <p className="text-surface-400 text-xs">
-                    한 번 구매한 프롬프트는 플랫폼이 서비스되는 한 구매 내역에서
-                    언제든지 다시 확인하고 이용하실 수 있습니다.
+                    구매일로부터 12개월간 마이페이지 구매 내역에서 언제든지
+                    열람·복사하여 이용하실 수 있습니다.
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-surface-800/30 border-surface-700/50 flex gap-4 rounded-2xl border p-6">
+                <div className="bg-brand-500/10 h-fit rounded-xl p-3">
+                  <Download className="text-brand-400 h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="mb-1 font-bold text-white">
+                    다운로드 영구 보관
+                  </h3>
+                  <p className="text-surface-400 text-xs">
+                    마이페이지에서 텍스트 파일(.txt)로 다운로드하면 기간 제한
+                    없이 영구적으로 이용하실 수 있습니다.
                   </p>
                 </div>
               </div>

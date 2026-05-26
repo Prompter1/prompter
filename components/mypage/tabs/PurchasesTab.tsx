@@ -1,12 +1,30 @@
 'use client'
 
 import Link from 'next/link'
-import { Clock, ExternalLink, ShoppingBag, Sparkles } from 'lucide-react'
+import { Clock, Download, ExternalLink, ShoppingBag, Sparkles } from 'lucide-react'
 import type { PurchaseTransaction } from '@/components/mypage/MyPageContent'
 
 interface PurchasesTabProps {
   purchases: PurchaseTransaction[]
   isLoading: boolean
+}
+
+function expiryDate(createdAt: string) {
+  const d = new Date(createdAt)
+  d.setFullYear(d.getFullYear() + 1)
+  return d.toLocaleDateString('ko-KR', { year: 'numeric', month: 'short', day: 'numeric' })
+}
+
+async function handleDownload(postId: number, title: string | null) {
+  const res = await fetch(`/api/download/prompt/${postId}`)
+  if (!res.ok) return
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${title ?? `prompt-${postId}`}.txt`
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 export function PurchasesTab({
@@ -30,7 +48,7 @@ export function PurchasesTab({
         <p className="font-medium text-white">구매 내역이 없습니다</p>
         <p className="text-surface-400 mt-1.5 flex items-center gap-1.5 text-sm">
           <Clock className="h-3.5 w-3.5" />
-          마음에 드는 유료 프롬프트를 크레딧으로 해금해보세요.
+          마음에 드는 유료 프롬프트를 구매하여 해금해보세요.
         </p>
         <Link
           href="/prompt?sort=popular"
@@ -50,39 +68,48 @@ export function PurchasesTab({
       </div>
       <ul className="divide-surface-700/50 divide-y">
         {purchases.map((tx) => {
-          const date = new Date(tx.created_at).toLocaleDateString('ko-KR', {
+          const purchasedDate = new Date(tx.created_at).toLocaleDateString('ko-KR', {
             year: 'numeric',
             month: 'short',
             day: 'numeric',
           })
+          const title = tx.prompt_post?.title ?? null
 
           return (
-            <li
-              key={tx.id}
-              className="flex flex-col gap-3 px-6 py-4 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div>
+            <li key={tx.id} className="flex flex-col gap-3 px-6 py-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex-1">
                 <p className="text-sm font-medium text-white">
-                  프롬프트 #{tx.prompt_post_id}
+                  {title ?? `프롬프트 #${tx.prompt_post_id}`}
                 </p>
-                <p className="text-surface-500 mt-1 text-xs">{date}</p>
+                <p className="text-surface-500 mt-1 text-xs">구매일: {purchasedDate}</p>
+                <p className="text-surface-600 mt-0.5 flex items-center gap-1 text-xs">
+                  <Clock className="h-3 w-3" />
+                  플랫폼 이용 만료: {expiryDate(tx.created_at)} · 다운로드 시 영구 이용
+                </p>
               </div>
-              <div className="flex items-center justify-between gap-4 sm:justify-end">
+              <div className="flex items-center justify-between gap-3 sm:justify-end">
                 <div className="text-right">
                   <p className="text-brand-400 text-sm font-bold">
-                    {tx.amount.toLocaleString()}P
-                  </p>
-                  <p className="text-surface-500 text-xs">
-                    수수료 {tx.fee.toLocaleString()}P
+                    {tx.amount.toLocaleString()}원
                   </p>
                 </div>
-                <Link
-                  href={`/prompt/${tx.prompt_post_id}`}
-                  className="border-surface-600 text-surface-300 hover:bg-surface-700 inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition-colors"
-                >
-                  열기
-                  <ExternalLink className="h-3.5 w-3.5" />
-                </Link>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleDownload(tx.prompt_post_id, title)}
+                    className="border-surface-600 text-surface-300 hover:bg-surface-700 inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition-colors"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    다운로드
+                  </button>
+                  <Link
+                    href={`/prompt/${tx.prompt_post_id}`}
+                    className="border-surface-600 text-surface-300 hover:bg-surface-700 inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition-colors"
+                  >
+                    열기
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
               </div>
             </li>
           )

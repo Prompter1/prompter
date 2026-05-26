@@ -148,7 +148,7 @@ begin
   end if;
 
   if buyer_points < prompt_row.price then
-    raise exception '크레딧이 부족합니다.' using errcode = 'P0001';
+    raise exception '잔고가 부족합니다.' using errcode = 'P0001';
   end if;
 
   fee_amount := floor(prompt_row.price * platform_fee_rate);
@@ -254,5 +254,5 @@ grant execute on function public.purchase_prompt_with_credits(bigint, numeric) t
 grant execute on function public.confirm_credit_charge(text, text, integer, integer, jsonb) to authenticated;
 
 comment on table public.transactions is '프롬프트 구매 및 판매자 정산 이력';
-comment on table public.payment_orders is '토스페이먼츠 크레딧 충전 승인 이력';
+comment on table public.payment_orders is '토스페이먼츠 승인 이력';
 comment on column public.prompt_posts.ai_versions is 'AI 도구 버전 태그. 예: Midjourney v6.1, GPT-4o';

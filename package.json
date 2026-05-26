@@ -10,7 +10,6 @@
   "dependencies": {
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.105.0",
-    "@tosspayments/payment-widget-sdk": "^0.12.1",
     "@vercel/analytics": "^2.0.1",
     "browser-image-compression": "^2.0.2",
     "clsx": "^2.1.1",

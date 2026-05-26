@@ -141,7 +141,7 @@ export default function PromptCard({
                 : 'bg-brand-500/80 text-white'
             }`}
           >
-            {price === 0 ? '무료' : `${price.toLocaleString()}P`}
+            {price === 0 ? '무료' : `${price.toLocaleString()}`}
           </span>
         </div>
       </div>
