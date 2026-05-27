@@ -30,7 +30,7 @@ export default function DeliveryPage() {
 
           <div className="text-surface-300 space-y-8 text-sm leading-relaxed">
             {/* 1. 제공 방식 요약 */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="flex flex-col gap-4">
               <div className="bg-surface-800/30 border-surface-700/50 flex gap-4 rounded-2xl border p-6">
                 <div className="bg-brand-500/10 h-fit rounded-xl p-3">
                   <MonitorSmartphone className="text-brand-400 h-5 w-5" />
@@ -52,10 +52,10 @@ export default function DeliveryPage() {
                 </div>
                 <div>
                   <h3 className="mb-1 font-bold text-white">
-                    플랫폼 12개월 이용
+                    플랫폼 3개월 이용
                   </h3>
                   <p className="text-surface-400 text-xs">
-                    구매일로부터 12개월간 마이페이지 구매 내역에서 언제든지
+                    구매일로부터 3개월간 마이페이지 구매 내역에서 언제든지
                     열람·복사하여 이용하실 수 있습니다.
                   </p>
                 </div>

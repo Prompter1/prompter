@@ -11,7 +11,7 @@ interface PurchasesTabProps {
 
 function expiryDate(createdAt: string) {
   const d = new Date(createdAt)
-  d.setFullYear(d.getFullYear() + 1)
+  d.setMonth(d.getMonth() + 3)
   return d.toLocaleDateString('ko-KR', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
@@ -69,7 +69,7 @@ export function PurchasesTab({
       <div className="border-surface-700/50 bg-surface-900/40 flex items-center gap-2 border-b px-6 py-2.5">
         <Clock className="text-surface-500 h-3 w-3 shrink-0" />
         <p className="text-surface-500 text-xs">
-          서비스 제공기간: 결제 즉시 제공 · 플랫폼 이용 12개월 / 다운로드 시 영구 제공 —{' '}
+          서비스 제공기간: 결제 즉시 제공 · 플랫폼 이용 3개월 / 다운로드 시 영구 제공 —{' '}
           <Link href="/footer/delivery" className="text-brand-400 hover:text-brand-300 underline underline-offset-2 transition-colors">
             상세 안내
           </Link>

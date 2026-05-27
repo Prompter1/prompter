@@ -45,7 +45,7 @@ export async function GET(
 
   const purchasedAt = new Date(tx.created_at)
   const expiresAt = new Date(purchasedAt)
-  expiresAt.setFullYear(expiresAt.getFullYear() + 1)
+  expiresAt.setMonth(expiresAt.getMonth() + 3)
 
   const fmt = (d: Date) =>
     d.toLocaleDateString('ko-KR', {
@@ -58,7 +58,7 @@ export async function GET(
   const lines: string[] = [
     `프롬프트: ${post.title}`,
     `구매일: ${fmt(purchasedAt)}`,
-    `플랫폼 이용 만료: ${fmt(expiresAt)} (구매일로부터 12개월)`,
+    `플랫폼 이용 만료: ${fmt(expiresAt)} (구매일로부터 3개월)`,
     `다운로드 파일은 만료 후에도 영구 이용 가능합니다.`,
     '',
     divider,
