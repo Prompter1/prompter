@@ -110,7 +110,7 @@ export function UnlockModal({
         ? []
         : ([['nextUrl', `${callbackBase}/api/payment/inicis-confirm`]] as [string, string][])),
       ['returnUrl',    `${origin}/api/payment/inicis-return?postId=${postId}`],
-      ['closeUrl',     `${origin}/charge/success?postId=${postId}`],
+      ['closeUrl',     `${origin}/prompt/${postId}`],
     ]
 
     for (const [name, value] of fields) {

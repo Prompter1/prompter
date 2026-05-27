@@ -31,49 +31,66 @@ function PurchaseSuccessContent() {
       return
     }
 
+    let cancelled = false
+
     const verify = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        setErrorMsg('로그인이 필요합니다.')
-        setStatus('error')
-        return
-      }
-
-      const hasTx = async () => {
-        const { data } = await supabase
-          .from('transactions')
-          .select('id')
-          .eq('prompt_post_id', Number(postId))
-          .eq('buyer_id', user.id)
-          .maybeSingle()
-        return Boolean(data)
-      }
-
-      // 최대 6초 polling (서버 콜백 처리 대기)
-      for (let i = 0; i < 12; i++) {
-        if (await hasTx()) {
-          setStatus('success')
-          setTimeout(() => router.push(`/prompt/${postId}`), 2000)
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (cancelled) return
+        if (!user) {
+          setErrorMsg('로그인이 필요합니다.')
+          setStatus('error')
           return
         }
-        await new Promise((r) => setTimeout(r, 500))
-      }
 
-      // 개발 환경 fallback: nextUrl 콜백 없이 직접 처리 (INICIS_DEV_BYPASS=true 시)
-      if (process.env.NEXT_PUBLIC_INICIS_DEV_BYPASS === 'true' && oid) {
-        const res = await fetch(`/api/payment/inicis-dev-confirm?oid=${oid}`)
-        if (res.ok && await hasTx()) {
-          setStatus('success')
-          setTimeout(() => router.push(`/prompt/${postId}`), 2000)
-          return
+        const hasTx = async () => {
+          const { data } = await supabase
+            .from('transactions')
+            .select('id')
+            .eq('prompt_post_id', Number(postId))
+            .eq('buyer_id', user.id)
+            .maybeSingle()
+          return Boolean(data)
+        }
+
+        // 최대 6초 polling (서버 콜백 처리 대기)
+        for (let i = 0; i < 12; i++) {
+          if (cancelled) return
+          if (await hasTx()) {
+            if (cancelled) return
+            setStatus('success')
+            setTimeout(() => { if (!cancelled) router.push(`/prompt/${postId}`) }, 2000)
+            return
+          }
+          await new Promise((r) => setTimeout(r, 500))
+        }
+
+        if (cancelled) return
+
+        // 개발 환경 fallback: nextUrl 콜백 없이 직접 처리 (INICIS_DEV_BYPASS=true 시)
+        if (process.env.NEXT_PUBLIC_INICIS_DEV_BYPASS === 'true' && oid) {
+          const res = await fetch(`/api/payment/inicis-dev-confirm?oid=${oid}`)
+          if (!cancelled && res.ok && await hasTx()) {
+            setStatus('success')
+            setTimeout(() => { if (!cancelled) router.push(`/prompt/${postId}`) }, 2000)
+            return
+          }
+        }
+
+        if (!cancelled) {
+          setErrorMsg('결제 처리 확인에 실패했습니다. 고객센터에 문의해 주세요.')
+          setStatus('error')
+        }
+      } catch {
+        if (!cancelled) {
+          setErrorMsg('결제 처리 확인에 실패했습니다. 고객센터에 문의해 주세요.')
+          setStatus('error')
         }
       }
-
-      setErrorMsg('결제 처리 확인에 실패했습니다. 고객센터에 문의해 주세요.')
-      setStatus('error')
     }
 
     verify()
+    return () => { cancelled = true }
   }, [searchParams, router])
 
   if (status === 'loading') {

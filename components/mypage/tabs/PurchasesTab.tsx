@@ -66,6 +66,15 @@ export function PurchasesTab({
         <h3 className="text-sm font-semibold text-white">구매 내역</h3>
         <span className="text-surface-500 text-xs">{purchases.length}건</span>
       </div>
+      <div className="border-surface-700/50 bg-surface-900/40 flex items-center gap-2 border-b px-6 py-2.5">
+        <Clock className="text-surface-500 h-3 w-3 shrink-0" />
+        <p className="text-surface-500 text-xs">
+          서비스 제공기간: 결제 즉시 제공 · 플랫폼 이용 12개월 / 다운로드 시 영구 제공 —{' '}
+          <Link href="/footer/delivery" className="text-brand-400 hover:text-brand-300 underline underline-offset-2 transition-colors">
+            상세 안내
+          </Link>
+        </p>
+      </div>
       <ul className="divide-surface-700/50 divide-y">
         {purchases.map((tx) => {
           const purchasedDate = new Date(tx.created_at).toLocaleDateString('ko-KR', {
