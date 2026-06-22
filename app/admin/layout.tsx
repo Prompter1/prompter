@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { LayoutDashboard, Home, Banknote, ClipboardList } from 'lucide-react'
+import { LayoutDashboard, Home, Banknote, ClipboardList, Flag } from 'lucide-react'
 import { requireAdmin } from '@/src/lib/admin-auth'
 
 export default async function AdminLayout({
@@ -35,6 +35,13 @@ export default async function AdminLayout({
               >
                 <Banknote className="h-3.5 w-3.5" />
                 정산 관리
+              </Link>
+              <Link
+                href="/admin/reports"
+                className="text-surface-400 hover:text-surface-100 flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-white/5"
+              >
+                <Flag className="h-3.5 w-3.5" />
+                신고 관리
               </Link>
             </nav>
           </div>

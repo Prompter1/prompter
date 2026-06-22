@@ -1041,11 +1041,11 @@ export function UploadForm() {
       </div>
 
       {/* ✅ 성인 컨텐츠 토글 */}
-      <AdultContentToggle
+      {/* <AdultContentToggle
         checked={isAdult}
         onChange={setIsAdult}
         disabled={isBusy}
-      />
+      /> */}
 
       {/* 스텝 에디터 */}
       <div className="space-y-4">

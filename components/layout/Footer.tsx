@@ -46,12 +46,12 @@ export default function Footer() {
                 프롬프터에서 진행합니다.
               </p>
               <p className="text-muted-foreground mt-1.5 text-xs">
-                민원담당자 : 차민우{' '}
+                민원담당자 : 차민우 {' '}
                 <a
                   href="mailto:chaalsdn0217@naver.com"
                   className="hover:text-foreground underline underline-offset-2 transition-colors"
                 >
-                  (chaalsdn0217@naver.com)
+                  chaalsdn0217@naver.com
                 </a>
               </p>
             </div>

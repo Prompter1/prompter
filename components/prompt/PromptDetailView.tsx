@@ -17,6 +17,7 @@ import { PromptMediaGallery } from '@/components/prompt/PromptMediaGallery'
 import { PromptStepsViewer } from '@/components/prompt/PromptStepsViewer'
 import { AdultContentGate } from '@/components/ui/AdultContentGate'
 import { PromptOwnerActions } from '@/components/prompt/PromptOwnerActions'
+import { ReportButton } from '@/components/prompt/ReportButton'
 import { createSupabaseServerClient } from '@/src/lib/supabase-server'
 
 interface PromptDetailViewProps {
@@ -311,6 +312,13 @@ export async function PromptDetailView({
 
             {/* 오너 액션 */}
             {isOwner && <PromptOwnerActions postId={post.id} title={title} />}
+
+            {/* 신고 */}
+            {!isOwner && (
+              <div className="mt-4 flex justify-end">
+                <ReportButton postId={post.id} userId={user?.id ?? ''} />
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -5,3 +5,8 @@
 3. Remove-Item -Force package-lock.json
 
 4. npm install
+
+
+로컬 결제 테스트
+
+npx ngrok http 3000

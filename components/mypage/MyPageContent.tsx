@@ -6,6 +6,7 @@ import { FileText, BarChart2, ShoppingBag, Sparkles } from 'lucide-react'
 import { useAuth } from '@/providers/auth-provider'
 import { supabase } from '@/src/lib/supabase'
 import { ProfileCard } from '@/components/mypage/ProfileCard'
+import { BankAccountForm } from '@/components/mypage/BankAccountForm'
 import { MyPromptsTab } from '@/components/mypage/tabs/MyPromptsTab'
 import { StatsTab } from '@/components/mypage/StatsTab'
 import { PurchasesTab } from '@/components/mypage/tabs/PurchasesTab'
@@ -18,6 +19,9 @@ interface MemberData {
   points: number
   is_sponsor: boolean
   total_revenue: number
+  bank_name: string | null
+  account_number: string | null
+  account_holder: string | null
 }
 
 export interface PurchaseTransaction {
@@ -84,7 +88,7 @@ export function MyPageContent() {
         const [{ data: member }, { data: prompts }] = await Promise.all([
           supabase
             .from('members')
-            .select('nickname, points, is_sponsor, total_revenue')
+            .select('nickname, points, is_sponsor, total_revenue, bank_name, account_number, account_holder')
             .eq('id', user.id)
             .single(),
           supabase
@@ -154,6 +158,24 @@ export function MyPageContent() {
     }
   }, [user, loadedTabs])
 
+  const handleBankAccountSave = async (data: {
+    bankName: string
+    accountNumber: string
+    accountHolder: string
+  }) => {
+    const res = await fetch('/api/mypage/bank-account', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+    if (!res.ok) throw new Error('저장에 실패했습니다.')
+    setMemberData((prev) =>
+      prev
+        ? { ...prev, bank_name: data.bankName, account_number: data.accountNumber, account_holder: data.accountHolder }
+        : prev
+    )
+  }
+
   const handleNicknameChange = async (nickname: string) => {
     if (!user) return
     const { error } = await supabase
@@ -212,6 +234,16 @@ export function MyPageContent() {
         onSignOut={signOut}
         onNicknameChange={handleNicknameChange}
       />
+
+      {/* 정산 계좌 */}
+      <div className="mb-8">
+        <BankAccountForm
+          initialBankName={memberData?.bank_name ?? ''}
+          initialAccountNumber={memberData?.account_number ?? ''}
+          initialAccountHolder={memberData?.account_holder ?? ''}
+          onSave={handleBankAccountSave}
+        />
+      </div>
 
       {/* 탭 네비게이션 */}
       <div className="border-surface-700/50 mb-8 flex space-x-1 overflow-x-auto border-b">

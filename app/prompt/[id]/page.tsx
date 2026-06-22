@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { Navbar } from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { PromptDetailView } from '@/components/prompt/PromptDetailView'
-import { fetchPromptPostById } from '@/src/lib/prompt-queries'
+import { fetchPromptPostById, normalizeResultMedia } from '@/src/lib/prompt-queries'
 
 type Props = Readonly<{
   params: Promise<{ id: string }>
@@ -23,9 +23,26 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       ? `${result.post.content.slice(0, 157)}…`
       : result.post.content
 
+  const images = normalizeResultMedia(result.post.result_media)
+  const ogImage = images[0]
+
   return {
-    title: `${result.post.title} | PROMPTER`,
+    title: result.post.title,
     description: desc || 'PROMPTER에서 프롬프트를 확인하세요.',
+    openGraph: {
+      title: result.post.title,
+      description: desc || 'PROMPTER에서 프롬프트를 확인하세요.',
+      type: 'article',
+      ...(ogImage && {
+        images: [{ url: ogImage, width: 1200, height: 630, alt: result.post.title }],
+      }),
+    },
+    twitter: {
+      card: ogImage ? 'summary_large_image' : 'summary',
+      title: result.post.title,
+      description: desc || 'PROMPTER에서 프롬프트를 확인하세요.',
+      ...(ogImage && { images: [ogImage] }),
+    },
   }
 }
 
